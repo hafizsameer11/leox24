@@ -158,13 +158,17 @@ export function isLegacyBatchLead(lead: ApiLead): boolean {
   return Array.isArray(lead.file_records) && lead.file_records.length > 0 && Array.isArray(lead.file_headers) && lead.file_headers.length > 0;
 }
 
+/** Keeps the Leads table usable when a legacy import stored many rows in one lead record. */
+const MAX_LEGACY_ROWS_PER_LEAD = 1500;
+
 export function expandApiLeadsToTableRows(leads: ApiLead[]): LeadTableRow[] {
   const out: LeadTableRow[] = [];
   for (const lead of leads) {
     if (isLegacyBatchLead(lead)) {
       const headers = lead.file_headers!.map((h) => String(h ?? ''));
       let idx = 0;
-      for (const rec of lead.file_records!) {
+      const cappedRecords = lead.file_records!.slice(0, MAX_LEGACY_ROWS_PER_LEAD);
+      for (const rec of cappedRecords) {
         const mapped = mapLeadImportRow(headers, rec);
         if (Object.keys(mapped.raw).length === 0) {
           idx += 1;

@@ -50,7 +50,7 @@ export default function Leads() {
     search: '',
   });
   /** Stacked filters on imported CSV columns (e.g. Città → Roma, Professione → Medico). */
-  const [importFilters, setImportFilters] = useState<ImportFilter[]>([
+  const [importFilters, setImportFilters] = useState<ImportFilter[]>(() => [
     { field: '', value: '' },
     { field: '', value: '' },
     { field: '', value: '' },
@@ -93,7 +93,11 @@ export default function Leads() {
     total: 0,
   });
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
-  const [debouncedImportFilters, setDebouncedImportFilters] = useState<ImportFilter[]>(importFilters);
+  const [debouncedImportFilters, setDebouncedImportFilters] = useState<ImportFilter[]>(() => [
+    { field: '', value: '' },
+    { field: '', value: '' },
+    { field: '', value: '' },
+  ]);
 
   // Debounce search
   useEffect(() => {
