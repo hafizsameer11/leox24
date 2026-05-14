@@ -319,6 +319,7 @@ export default function Leads() {
     ]);
   };
 
+  const updateImportFilter = (index: number, patch: Partial<ImportFilter>) => {
     setImportFilters((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], ...patch };
