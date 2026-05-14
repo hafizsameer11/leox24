@@ -108,6 +108,8 @@
     "addImportFilterRow": "Aggiungi filtro",
     "legacyBatch": "Formato precedente: {{count}} righe in un solo record — apri i dettagli.",
     "paginationHint": "Pagina {{current}} di {{last}} · {{total}} lead",
+    "tableRowPaginationHint": "Contatti {{from}}–{{to}} di {{total}} in questa pagina · {{page}} / {{last}}",
+    "serverPaginationLabel": "Lista lead",
     "viewContactTitle": "Contatto: {{name}}",
     "allImportFields": "Tutti i campi dell'import",
     "embeddedRecordsTitle": "Righe nel file ({{count}})",

@@ -15,6 +15,9 @@ import {
 
 type Lead = ApiLead;
 
+/** Renders only this many table body rows at a time (legacy imports expand to many contacts). */
+const LEADS_TABLE_ROWS_PER_PAGE = 25;
+
 function displayCell(value?: string | null): string {
   const s = value != null ? String(value).trim() : '';
   return s || '—';
@@ -87,6 +90,8 @@ export default function Leads() {
   const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
 
   const [listPage, setListPage] = useState(1);
+  /** Client-side page over expanded contact rows for the current API page. */
+  const [contactTablePage, setContactTablePage] = useState(1);
   const [paginationMeta, setPaginationMeta] = useState({
     current_page: 1,
     last_page: 1,
@@ -115,6 +120,10 @@ export default function Leads() {
   }, [filters.status, filters.source, filters.category, debouncedSearch, debouncedImportFilters]);
 
   useEffect(() => {
+    setContactTablePage(1);
+  }, [listPage, filters.status, filters.source, filters.category, debouncedSearch, debouncedImportFilters]);
+
+  useEffect(() => {
     void fetchLeads();
   }, [listPage, filters.status, filters.source, filters.category, debouncedSearch, debouncedImportFilters]);
 
@@ -127,6 +136,24 @@ export default function Leads() {
     const searched = filterTableRowsBySearch(expanded, debouncedSearch);
     return filterTableRowsByImportFilters(searched, debouncedImportFilters);
   }, [leads, debouncedSearch, debouncedImportFilters]);
+
+  const contactTableTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(tableRows.length / LEADS_TABLE_ROWS_PER_PAGE)),
+    [tableRows.length]
+  );
+
+  const pagedTableRows = useMemo(() => {
+    const start = (contactTablePage - 1) * LEADS_TABLE_ROWS_PER_PAGE;
+    return tableRows.slice(start, start + LEADS_TABLE_ROWS_PER_PAGE);
+  }, [tableRows, contactTablePage]);
+
+  useEffect(() => {
+    setContactTablePage((p) => Math.min(p, contactTableTotalPages));
+  }, [contactTableTotalPages]);
+
+  const contactRowFrom =
+    tableRows.length === 0 ? 0 : (contactTablePage - 1) * LEADS_TABLE_ROWS_PER_PAGE + 1;
+  const contactRowTo = Math.min(contactTablePage * LEADS_TABLE_ROWS_PER_PAGE, tableRows.length);
 
   const fetchCategories = async () => {
     try {
@@ -678,7 +705,7 @@ export default function Leads() {
               </tr>
             </thead>
             <tbody>
-              {tableRows.map((row) => {
+              {pagedTableRows.map((row) => {
                 const fromLegacyFile = row.legacyRowIndex !== null;
                 return (
                 <tr key={row.rowKey} className="border-b border-line/50 hover:bg-aqua-1/10 transition-colors">
@@ -762,9 +789,45 @@ export default function Leads() {
             </tbody>
           </table>
         </div>
+        {tableRows.length > LEADS_TABLE_ROWS_PER_PAGE && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 border-t border-line bg-aqua-1/20">
+            <p className="text-sm text-muted">
+              {t('leads.tableRowPaginationHint', {
+                from: contactRowFrom,
+                to: contactRowTo,
+                total: tableRows.length,
+                page: contactTablePage,
+                last: contactTableTotalPages,
+              })}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={contactTablePage <= 1}
+                onClick={() => setContactTablePage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1.5 text-sm border border-line rounded-lg hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {t('common.previous')}
+              </button>
+              <span className="text-sm text-ink font-medium">
+                {contactTablePage} / {contactTableTotalPages}
+              </span>
+              <button
+                type="button"
+                disabled={contactTablePage >= contactTableTotalPages}
+                onClick={() => setContactTablePage((p) => Math.min(contactTableTotalPages, p + 1))}
+                className="px-3 py-1.5 text-sm border border-line rounded-lg hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {t('common.next')}
+              </button>
+            </div>
+          </div>
+        )}
         {paginationMeta.last_page > 1 && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-line bg-aqua-1/15">
             <p className="text-sm text-muted">
+              <span className="font-medium text-ink">{t('leads.serverPaginationLabel')}</span>
+              {' · '}
               {t('leads.paginationHint', {
                 current: paginationMeta.current_page,
                 last: paginationMeta.last_page,

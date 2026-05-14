@@ -108,6 +108,8 @@
     "addImportFilterRow": "Add filter",
     "legacyBatch": "Old format: {{count}} rows in one file — open details to see all.",
     "paginationHint": "Page {{current}} of {{last}} · {{total}} leads",
+    "tableRowPaginationHint": "Contacts {{from}}–{{to}} of {{total}} on this page · {{page}} / {{last}}",
+    "serverPaginationLabel": "Lead list",
     "viewContactTitle": "Contact: {{name}}",
     "allImportFields": "All fields from import",
     "embeddedRecordsTitle": "Rows in file ({{count}})",
