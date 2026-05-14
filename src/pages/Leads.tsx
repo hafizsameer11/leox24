@@ -10,6 +10,7 @@ import {
   expandApiLeadsToTableRows,
   filterTableRowsBySearch,
   filterTableRowsByImportFilters,
+  computeTopRawAttributeKeys,
   type ImportFilter,
 } from '../utils/leadTableRows';
 
@@ -21,6 +22,16 @@ const LEADS_TABLE_ROWS_PER_PAGE = 25;
 function displayCell(value?: string | null): string {
   const s = value != null ? String(value).trim() : '';
   return s || '—';
+}
+
+function rawAttributeCell(row: LeadTableRow, headerKey: string): string {
+  const raw = row.raw_attributes;
+  if (!raw) return '—';
+  if (raw[headerKey] !== undefined && String(raw[headerKey]).trim() !== '') {
+    return displayCell(raw[headerKey]);
+  }
+  const match = Object.keys(raw).find((k) => k.trim().toLowerCase() === headerKey.trim().toLowerCase());
+  return match ? displayCell(raw[match]) : '—';
 }
 
 interface FollowUp {
@@ -136,6 +147,8 @@ export default function Leads() {
     const searched = filterTableRowsBySearch(expanded, debouncedSearch);
     return filterTableRowsByImportFilters(searched, debouncedImportFilters);
   }, [leads, debouncedSearch, debouncedImportFilters]);
+
+  const dynamicImportKeys = useMemo(() => computeTopRawAttributeKeys(tableRows, 4), [tableRows]);
 
   const contactTableTotalPages = useMemo(
     () => Math.max(1, Math.ceil(tableRows.length / LEADS_TABLE_ROWS_PER_PAGE)),
@@ -697,6 +710,15 @@ export default function Leads() {
                 <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.name')}</th>
                 <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.email')}</th>
                 <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.phone')}</th>
+                {dynamicImportKeys.map((colKey) => (
+                  <th
+                    key={colKey}
+                    title={colKey}
+                    className="text-left text-xs font-bold text-muted uppercase py-3 px-4 max-w-[130px] truncate"
+                  >
+                    {colKey}
+                  </th>
+                ))}
                 <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.category')}</th>
                 <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('leads.importFile')}</th>
                 <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.status')}</th>
@@ -723,6 +745,18 @@ export default function Leads() {
                   <td className="py-3 px-4 text-sm text-ink whitespace-nowrap">
                     {displayCell(row.phone)}
                   </td>
+                  {dynamicImportKeys.map((colKey) => {
+                    const full = rawAttributeCell(row, colKey);
+                    return (
+                      <td
+                        key={colKey}
+                        className="py-3 px-4 text-sm text-ink max-w-[150px] truncate"
+                        title={full !== '—' ? full : undefined}
+                      >
+                        {full}
+                      </td>
+                    );
+                  })}
                   <td className="py-3 px-4">
                     <span className="text-sm text-ink">{displayCell(row.category)}</span>
                   </td>

@@ -45,6 +45,110 @@ function normalizeHeaderToken(header: string): string {
     .replace(/\s+/g, ' ');
 }
 
+/** Remove CSV-style wrapping quotes. */
+function stripCsvQuotes(s: string): string {
+  let t = s.trim();
+  if (t.length >= 2 && t.startsWith('"') && t.endsWith('"')) {
+    t = t.slice(1, -1).replace(/""/g, '"');
+  }
+  return t;
+}
+
+/** Split on delimiter outside of double quotes (enough for typical IT CSV). */
+function splitUnquotedDelimiter(line: string, delimiter: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      inQuotes = !inQuotes;
+      cur += c;
+      continue;
+    }
+    if (!inQuotes && c === delimiter) {
+      out.push(cur);
+      cur = '';
+      continue;
+    }
+    cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+function extractRowStrings(rec: unknown): string[] {
+  if (Array.isArray(rec)) {
+    return rec.map((c) => String(c ?? '').trim());
+  }
+  if (typeof rec === 'string') {
+    return [rec.trim()];
+  }
+  return [];
+}
+
+/**
+ * Legacy imports sometimes stored each file row as one string (EU `;` CSV) while
+ * `fgetcsv` had used comma — one DB cell per row. Re-split headers/row so columns align.
+ */
+export function coerceLegacyCsvShape(
+  headers: string[],
+  rec: unknown
+): { headers: string[]; row: string[] } {
+  let headerCells = headers.map((x) => stripCsvQuotes(String(x ?? '').trim()));
+
+  if (headerCells.length === 1 && headerCells[0].includes(';')) {
+    const parts = splitUnquotedDelimiter(headerCells[0], ';').map(stripCsvQuotes);
+    if (parts.length > 1) {
+      headerCells = parts;
+    }
+  } else if (headerCells.length === 1 && headerCells[0].includes(',') && !headerCells[0].includes(';')) {
+    const parts = splitUnquotedDelimiter(headerCells[0], ',').map(stripCsvQuotes);
+    if (parts.length > 1) {
+      headerCells = parts;
+    }
+  }
+
+  let cells = extractRowStrings(rec);
+
+  if (cells.length === 1) {
+    const s = cells[0];
+    const bySemi = splitUnquotedDelimiter(s, ';').map(stripCsvQuotes);
+    const byComma = splitUnquotedDelimiter(s, ',').map(stripCsvQuotes);
+
+    if (headerCells.length > 1) {
+      if (bySemi.length === headerCells.length) {
+        cells = bySemi;
+      } else if (byComma.length === headerCells.length) {
+        cells = byComma;
+      } else if (bySemi.length >= byComma.length && bySemi.length > 1) {
+        cells = bySemi;
+      } else if (byComma.length > 1) {
+        cells = byComma;
+      }
+    } else {
+      cells =
+        bySemi.length >= byComma.length && bySemi.length > 1
+          ? bySemi
+          : byComma.length > 1
+            ? byComma
+            : [stripCsvQuotes(s)];
+      if (headerCells.length === 1 && cells.length > 1) {
+        headerCells = cells.map((_, i) => `Column ${i + 1}`);
+      }
+    }
+  }
+
+  while (cells.length < headerCells.length) {
+    cells.push('');
+  }
+  if (cells.length > headerCells.length) {
+    cells = cells.slice(0, headerCells.length);
+  }
+
+  return { headers: headerCells, row: cells };
+}
+
 function headerLooksLikeEmail(norm: string): boolean {
   if (norm === 'mail' || norm === 'e-mail' || norm === 'email') return true;
   if (norm.includes('email') || norm.includes('e-mail')) return true;
@@ -64,6 +168,7 @@ type NormPair = { norm: string; value: string; label: string };
 function pickNameFromRow(normPairs: NormPair[]): string {
   const priorityFragments: string[][] = [
     ['ragione sociale'],
+    ['insegna'],
     ['denominazione'],
     ['company', 'name'],
     ['company'],
@@ -107,24 +212,28 @@ function normalizePhone(value: string): string {
   return digits || value.trim();
 }
 
-export function mapLeadImportRow(headers: string[], row: (string | number | null | undefined)[]): {
+export function mapLeadImportRow(headers: string[], row: (string | number | null | undefined)[] | unknown): {
   name: string;
   email?: string;
   phone?: string;
   raw: Record<string, string>;
 } {
-  const rowStr = row.map((c) => String(c ?? '').trim());
+  const { headers: h, row: coerced } = coerceLegacyCsvShape(
+    headers.map((x) => String(x ?? '')),
+    row
+  );
+  const rowStr = coerced.map((c) => String(c ?? '').trim());
   const raw: Record<string, string> = {};
-  headers.forEach((h, i) => {
-    const label = String(h ?? '').trim();
+  h.forEach((headerLabel, i) => {
+    const label = String(headerLabel ?? '').trim();
     const cell = rowStr[i] ?? '';
     if (label && cell) raw[label] = cell;
   });
 
-  const normPairs: NormPair[] = headers.map((h, i) => ({
-    norm: normalizeHeaderToken(String(h ?? '')),
+  const normPairs: NormPair[] = h.map((headerLabel, i) => ({
+    norm: normalizeHeaderToken(String(headerLabel ?? '')),
     value: rowStr[i] ?? '',
-    label: String(h ?? ''),
+    label: String(headerLabel ?? ''),
   })).filter((p) => p.norm);
 
   let email: string | undefined;
@@ -257,4 +366,56 @@ export function filterTableRowsByImportFilters(rows: LeadTableRow[], filters: Im
       return String(raw[key]).toLowerCase().includes(needle);
     })
   );
+}
+
+const RAW_KEYS_SKIP_NORMALIZED = new Set([
+  'email',
+  'e-mail',
+  'mail',
+  'pec',
+  'telefono',
+  'cellulare',
+  'mobile',
+  'phone',
+  'tel',
+  'fax',
+  'nome',
+  'cognome',
+  'name',
+  'ragione sociale',
+  'denominazione',
+  'azienda',
+  'company',
+  'first name',
+  'last name',
+  'full name',
+  'nome e cognome',
+  'nome completo',
+]);
+
+function rawKeyEligibleForDynamicColumn(label: string): boolean {
+  const n = normalizeHeaderToken(label);
+  if (n.length === 0 || n.length > 80) return false;
+  if (RAW_KEYS_SKIP_NORMALIZED.has(n)) return false;
+  return true;
+}
+
+/** Most frequent non-core import headers on the current result set (for extra table columns). */
+export function computeTopRawAttributeKeys(rows: LeadTableRow[], maxKeys: number, sample = 800): string[] {
+  const counts = new Map<string, number>();
+  const limit = Math.min(rows.length, sample);
+  for (let i = 0; i < limit; i++) {
+    const raw = rows[i]?.raw_attributes;
+    if (!raw) continue;
+    for (const [k, v] of Object.entries(raw)) {
+      const label = k.trim();
+      if (!label || !String(v).trim()) continue;
+      if (!rawKeyEligibleForDynamicColumn(label)) continue;
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, maxKeys)
+    .map(([k]) => k);
 }
