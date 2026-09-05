@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
@@ -45,6 +46,7 @@ interface HotLead {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [kpis, setKpis] = useState<KPIs | null>(null);
   const [leadSources, setLeadSources] = useState<LeadSource[]>([]);
@@ -124,21 +126,21 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Sales Dashboard"
-        subtitle="KPIs, pipeline and hot leads — overview of your sales performance"
+        title={t('dashboard.salesTitle')}
+        subtitle={t('dashboard.salesSubtitle')}
         actions={
           <>
             <button 
               onClick={fetchData}
               className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
             >
-              Refresh
+              {t('dashboard.refresh')}
             </button>
             <button 
               onClick={() => navigate('/leads')}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              ➕ New Lead
+              ➕ {t('dashboard.newLead')}
             </button>
           </>
         }
@@ -147,7 +149,7 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">New Leads</h3>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('dashboard.newLeads')}</h3>
           <div className="flex items-end justify-between">
             <div className="text-3xl font-extrabold text-ink">{kpis?.lead_new ?? 0}</div>
             {kpis?.lead_new_delta !== undefined && (
@@ -159,7 +161,7 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Open Opportunities</h3>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('dashboard.openOpportunities')}</h3>
           <div className="flex items-end justify-between">
             <div className="text-3xl font-extrabold text-ink">{kpis?.opportunities_open ?? 0}</div>
             {kpis?.opportunities_delta !== undefined && (
@@ -171,7 +173,7 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Sales (Period)</h3>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('dashboard.salesPeriod')}</h3>
           <div className="flex items-end justify-between">
             <div className="text-3xl font-extrabold text-ink">{kpis?.sales_count ?? 0}</div>
             {kpis?.sales_count_delta !== undefined && (
@@ -183,7 +185,7 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Value (Period)</h3>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('dashboard.valuePeriod')}</h3>
           <div className="flex items-end justify-between">
             <div className="text-3xl font-extrabold text-ink">
               € {kpis?.sales_value ? kpis.sales_value.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0'}
@@ -201,7 +203,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Lead Sources Chart */}
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-sm font-bold text-ink mb-4">Leads by Portal</h3>
+          <h3 className="text-sm font-bold text-ink mb-4">{t('dashboard.leadsByPortal')}</h3>
           {leadSources.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={leadSources}>
@@ -214,23 +216,23 @@ export default function Dashboard() {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-[200px] text-muted">
-              No data available
+              {t('dashboard.noData')}
             </div>
           )}
         </div>
 
         {/* Top Operators */}
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-sm font-bold text-ink mb-4">Top Operators</h3>
+          <h3 className="text-sm font-bold text-ink mb-4">{t('dashboard.topOperators')}</h3>
           {topOperators.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-line">
-                    <th className="text-left text-xs font-bold text-muted uppercase py-2">Operator</th>
-                    <th className="text-right text-xs font-bold text-muted uppercase py-2">Leads</th>
-                    <th className="text-right text-xs font-bold text-muted uppercase py-2">Sales</th>
-                    <th className="text-right text-xs font-bold text-muted uppercase py-2">Conv.</th>
+                    <th className="text-left text-xs font-bold text-muted uppercase py-2">{t('dashboard.operator')}</th>
+                    <th className="text-right text-xs font-bold text-muted uppercase py-2">{t('sidebar.leads')}</th>
+                    <th className="text-right text-xs font-bold text-muted uppercase py-2">{t('sidebar.sales')}</th>
+                    <th className="text-right text-xs font-bold text-muted uppercase py-2">{t('dashboard.conversion')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -247,7 +249,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="flex items-center justify-center h-[200px] text-muted">
-              No data available
+              {t('dashboard.noData')}
             </div>
           )}
         </div>
@@ -257,16 +259,16 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Pipeline */}
         <div className="lg:col-span-2 bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-sm font-bold text-ink mb-4">Opportunity Pipeline</h3>
+          <h3 className="text-sm font-bold text-ink mb-4">{t('dashboard.opportunityPipeline')}</h3>
           {pipeline.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-line">
-                    <th className="text-left text-xs font-bold text-muted uppercase py-2">Customer</th>
-                    <th className="text-left text-xs font-bold text-muted uppercase py-2">Stage</th>
-                    <th className="text-right text-xs font-bold text-muted uppercase py-2">Value</th>
-                    <th className="text-left text-xs font-bold text-muted uppercase py-2">Next Step</th>
+                    <th className="text-left text-xs font-bold text-muted uppercase py-2">{t('dashboard.customer')}</th>
+                    <th className="text-left text-xs font-bold text-muted uppercase py-2">{t('dashboard.stage')}</th>
+                    <th className="text-right text-xs font-bold text-muted uppercase py-2">{t('common.value')}</th>
+                    <th className="text-left text-xs font-bold text-muted uppercase py-2">{t('dashboard.nextStep')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -283,14 +285,14 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="flex items-center justify-center h-[200px] text-muted">
-              No opportunities in pipeline
+              {t('dashboard.noPipeline')}
             </div>
           )}
         </div>
 
         {/* Hot Leads */}
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-sm font-bold text-ink mb-4">Hot Leads to Call</h3>
+          <h3 className="text-sm font-bold text-ink mb-4">{t('dashboard.hotLeadsToCall')}</h3>
           {hotLeads.length > 0 ? (
             <div className="space-y-3">
               {hotLeads.map((lead, idx) => (
@@ -307,7 +309,7 @@ export default function Dashboard() {
                       href={`tel:${lead.phone}`}
                       className="mt-2 inline-block text-xs px-3 py-1 bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors"
                     >
-                      📞 Call
+                      📞 {t('dashboard.call')}
                     </a>
                   )}
                 </div>
@@ -315,7 +317,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="flex items-center justify-center h-[200px] text-muted">
-              No hot leads available
+              {t('dashboard.noHotLeads')}
             </div>
           )}
         </div>

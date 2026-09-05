@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
 
@@ -47,6 +48,7 @@ interface ProjectAccess {
 }
 
 export default function Companies() {
+  const { t } = useTranslation();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -151,7 +153,7 @@ export default function Companies() {
       fetchCompanies();
     } catch (error: any) {
       console.error('Failed to create company:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to create company. Please try again.';
+      const errorMessage = error.response?.data?.message || t('companies.createFailed');
       alert(errorMessage);
     }
   };
@@ -181,13 +183,13 @@ export default function Companies() {
       fetchCompanies();
     } catch (error: any) {
       console.error('Failed to update company:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to update company. Please try again.';
+      const errorMessage = error.response?.data?.message || t('companies.updateFailed');
       alert(errorMessage);
     }
   };
 
   const handleDeleteCompany = async (companyId: number) => {
-    if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
+    if (!confirm(t('companies.deleteConfirm'))) {
       return;
     }
 
@@ -196,7 +198,7 @@ export default function Companies() {
       fetchCompanies();
     } catch (error: any) {
       console.error('Failed to delete company:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to delete company. Please try again.';
+      const errorMessage = error.response?.data?.message || t('companies.deleteFailed');
       alert(errorMessage);
     }
   };
@@ -266,7 +268,7 @@ export default function Companies() {
         console.log('Registration result:', regResult);
         
         // Get project name from response
-        const projectName = response.data.project?.name || 'external project';
+        const projectName = response.data.project?.name || t('companies.externalProject');
         
         if (regResult.results) {
           const { success, failed, total } = regResult.results;
@@ -274,7 +276,7 @@ export default function Companies() {
           const failedCount = Array.isArray(failed) ? failed.length : 0;
           
           if (successCount > 0) {
-            alert(`Successfully registered ${successCount} out of ${total} users to ${projectName}.`);
+            alert(t('companies.registrationSuccess', { success: successCount, total, project: projectName }));
           }
           if (failedCount > 0) {
             console.warn('Some users failed to register:', failed);
@@ -291,7 +293,7 @@ export default function Companies() {
               return msg;
             }).join('\n');
             
-            alert(`Warning: ${failedCount} users failed to register to ${projectName}:\n\n${errorMessages}`);
+            alert(t('companies.registrationWarning', { failed: failedCount, project: projectName, details: errorMessages }));
           }
         }
       }
@@ -302,20 +304,20 @@ export default function Companies() {
     } catch (error: any) {
       console.error('Failed to grant project access:', error);
       console.error('Error response:', error.response?.data);
-      alert(error.response?.data?.message || 'Failed to grant project access');
+      alert(error.response?.data?.message || t('companies.grantFailed'));
     }
   };
 
   const handleRevokeProjectAccess = async (projectId: number) => {
     if (!viewingCompany) return;
-    if (!confirm('Are you sure you want to revoke access to this project?')) return;
+    if (!confirm(t('companies.revokeConfirm'))) return;
 
     try {
       await api.delete(`/companies/${viewingCompany.id}/projects/${projectId}`);
       openViewModal(viewingCompany); // Refresh company data
     } catch (error: any) {
       console.error('Failed to revoke project access:', error);
-      alert(error.response?.data?.message || 'Failed to revoke project access');
+      alert(error.response?.data?.message || t('companies.revokeFailed'));
     }
   };
 
@@ -327,7 +329,7 @@ export default function Companies() {
       openViewModal(viewingCompany); // Refresh company data
     } catch (error: any) {
       console.error('Failed to update project access:', error);
-      alert(error.response?.data?.message || 'Failed to update project access');
+      alert(error.response?.data?.message || t('companies.updateAccessFailed'));
     }
   };
 
@@ -351,12 +353,12 @@ export default function Companies() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Companies"
-        subtitle="Manage companies and their settings"
+        title={t('companies.title')}
+        subtitle={t('companies.subtitle')}
         actions={
           <>
             <button className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium">
-              Export
+              {t('common.export')}
             </button>
             <button 
               onClick={() => {
@@ -365,7 +367,7 @@ export default function Companies() {
               }}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              ➕ New Company
+              ➕ {t('companies.newCompany')}
             </button>
           </>
         }
@@ -376,7 +378,7 @@ export default function Companies() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
             type="text"
-            placeholder="Search companies..."
+            placeholder={t('companies.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
@@ -386,10 +388,10 @@ export default function Companies() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="suspended">Suspended</option>
+            <option value="all">{t('common.allStatus')}</option>
+            <option value="active">{t('companies.active')}</option>
+            <option value="pending">{t('common.pending')}</option>
+            <option value="suspended">{t('companies.suspended')}</option>
           </select>
           {(searchTerm || statusFilter !== 'all') && (
             <button
@@ -399,7 +401,7 @@ export default function Companies() {
               }}
               className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
             >
-              Clear Filters
+              {t('common.clearFilters')}
             </button>
           )}
         </div>
@@ -413,10 +415,10 @@ export default function Companies() {
               <table className="w-full">
                 <thead className="bg-aqua-1">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">VAT</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Status</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-muted uppercase">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('common.name')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('companies.vat')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('common.status')}</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-muted uppercase">{t('common.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -437,19 +439,19 @@ export default function Companies() {
                             onClick={() => openViewModal(company)}
                             className="text-sm text-aqua-5 hover:text-aqua-4 font-medium transition-colors"
                           >
-                            View
+                            {t('common.view')}
                           </button>
                           <button
                             onClick={() => openEditModal(company)}
                             className="text-sm text-ink hover:text-aqua-5 font-medium transition-colors"
                           >
-                            Edit
+                            {t('common.edit')}
                           </button>
                           <button
                             onClick={() => handleDeleteCompany(company.id)}
                             className="text-sm text-bad hover:text-bad/80 font-medium transition-colors"
                           >
-                            Delete
+                            {t('common.delete')}
                           </button>
                         </div>
                       </td>
@@ -463,7 +465,12 @@ export default function Companies() {
             {pagination.last_page > 1 && (
               <div className="px-4 py-3 border-t border-line flex items-center justify-between">
                 <div className="text-sm text-muted">
-                  Showing {((currentPage - 1) * pagination.per_page) + 1} to {Math.min(currentPage * pagination.per_page, pagination.total)} of {pagination.total} companies
+                  {t('common.showingRange', {
+                    from: ((currentPage - 1) * pagination.per_page) + 1,
+                    to: Math.min(currentPage * pagination.per_page, pagination.total),
+                    total: pagination.total,
+                    entity: t('companies.paginationEntity'),
+                  })}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -473,7 +480,7 @@ export default function Companies() {
                     disabled={currentPage === 1}
                     className="px-3 py-1.5 text-sm border border-line rounded-lg hover:bg-aqua-1/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t('common.previous')}
                   </button>
                   <button
                     onClick={() => {
@@ -482,7 +489,7 @@ export default function Companies() {
                     disabled={currentPage >= pagination.last_page}
                     className="px-3 py-1.5 text-sm border border-line rounded-lg hover:bg-aqua-1/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('common.next')}
                   </button>
                 </div>
               </div>
@@ -490,13 +497,13 @@ export default function Companies() {
           </>
         ) : (
           <div className="text-center py-12 text-muted">
-            <p>No companies found.</p>
+            <p>{t('companies.noCompanies')}</p>
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
                 className="mt-2 text-sm text-aqua-5 hover:text-aqua-4"
               >
-                Clear search
+                {t('companies.clearSearch')}
               </button>
             )}
           </div>
@@ -508,54 +515,54 @@ export default function Companies() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-ink mb-4">
-              {editingCompany ? 'Edit Company' : 'New Company'}
+              {editingCompany ? t('companies.editCompany') : t('companies.newCompany')}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Company Name *</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('companies.companyName')} *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                  placeholder="Enter company name"
+                  placeholder={t('companies.enterCompanyName')}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">VAT Number</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('common.vatNumber')}</label>
                 <input
                   type="text"
                   value={formData.vat}
                   onChange={(e) => setFormData({ ...formData, vat: e.target.value })}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                  placeholder="Enter VAT number"
+                  placeholder={t('companies.enterVat')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Address</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('common.address')}</label>
                 <textarea
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                  placeholder="Enter company address"
+                  placeholder={t('companies.enterAddress')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Status</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('common.status')}</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                 >
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="suspended">Suspended</option>
+                  <option value="active">{t('companies.active')}</option>
+                  <option value="pending">{t('common.pending')}</option>
+                  <option value="suspended">{t('companies.suspended')}</option>
                 </select>
               </div>
             </div>
@@ -569,13 +576,13 @@ export default function Companies() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={editingCompany ? handleUpdateCompany : handleCreateCompany}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                {editingCompany ? 'Update' : 'Create'}
+                {editingCompany ? t('common.update') : t('common.create')}
               </button>
             </div>
           </div>
@@ -586,29 +593,29 @@ export default function Companies() {
       {showViewModal && viewingCompany && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-ink mb-4">Company Details</h2>
+            <h2 className="text-xl font-bold text-ink mb-4">{t('companies.companyDetails')}</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-muted mb-1">Company Name</label>
+                <label className="block text-sm font-medium text-muted mb-1">{t('companies.companyName')}</label>
                 <p className="text-ink font-semibold">{viewingCompany.name}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-muted mb-1">VAT Number</label>
+                <label className="block text-sm font-medium text-muted mb-1">{t('common.vatNumber')}</label>
                 <p className="text-ink">{viewingCompany.vat || '-'}</p>
               </div>
 
               {viewingCompany.address && (
                 <div>
-                  <label className="block text-sm font-medium text-muted mb-1">Address</label>
+                  <label className="block text-sm font-medium text-muted mb-1">{t('common.address')}</label>
                   <p className="text-ink">{viewingCompany.address}</p>
                 </div>
               )}
 
               {viewingCompany.users && viewingCompany.users.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-muted mb-1">Company Admin Email</label>
+                  <label className="block text-sm font-medium text-muted mb-1">{t('companies.companyAdminEmail')}</label>
                   {(() => {
                     const adminUser = viewingCompany.users?.find((u) => u.role === 'company_admin');
                     const displayUser = adminUser || viewingCompany.users?.[0];
@@ -622,7 +629,7 @@ export default function Companies() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-muted mb-1">Status</label>
+                <label className="block text-sm font-medium text-muted mb-1">{t('common.status')}</label>
                 <span className={`inline-block text-xs px-2 py-1 rounded-full border font-medium ${getStatusBadge(viewingCompany.status)}`}>
                   {viewingCompany.status}
                 </span>
@@ -630,7 +637,7 @@ export default function Companies() {
 
               {viewingCompany.created_at && (
                 <div>
-                  <label className="block text-sm font-medium text-muted mb-1">Created At</label>
+                  <label className="block text-sm font-medium text-muted mb-1">{t('leads.createdAt')}</label>
                   <p className="text-ink text-sm">{new Date(viewingCompany.created_at).toLocaleString()}</p>
                 </div>
               )}
@@ -638,7 +645,7 @@ export default function Companies() {
               {/* Requested Projects Section */}
               {viewingCompany.signup_request && (
                 <div className="border-t border-line pt-4 mt-4">
-                  <label className="block text-sm font-semibold text-ink mb-3">Requested Projects</label>
+                  <label className="block text-sm font-semibold text-ink mb-3">{t('companies.requestedProjects')}</label>
                   {viewingCompany.signup_request.requested_projects && viewingCompany.signup_request.requested_projects.length > 0 ? (
                     <>
                       <div className="space-y-2 mb-4">
@@ -650,23 +657,23 @@ export default function Companies() {
                                 <div className="text-xs text-muted mt-1">{project.description}</div>
                               )}
                               <div className="text-xs text-cyan-600 mt-1">
-                                Type: {project.integration_type}
+                                {t('companies.typeLabel', { type: project.integration_type })}
                               </div>
                             </div>
                             <span className="text-xs px-2 py-1 bg-warn/20 text-warn border border-warn/30 rounded-full font-medium">
-                              Requested
+                              {t('companies.requested')}
                             </span>
                           </div>
                         ))}
                       </div>
                       {viewingCompany.signup_request.requested_at && (
                         <p className="text-xs text-muted">
-                          Requested on {new Date(viewingCompany.signup_request.requested_at).toLocaleString()}
+                          {t('companies.requestedOn', { date: new Date(viewingCompany.signup_request.requested_at).toLocaleString() })}
                         </p>
                       )}
                     </>
                   ) : (
-                    <p className="text-sm text-muted">No projects were requested during registration.</p>
+                    <p className="text-sm text-muted">{t('companies.noProjectsRequested')}</p>
                   )}
                 </div>
               )}
@@ -674,12 +681,12 @@ export default function Companies() {
               {/* Project Access Section */}
               <div className="border-t border-line pt-4 mt-4">
                 <div className="flex justify-between items-center mb-3">
-                  <label className="block text-sm font-semibold text-ink">Project Access</label>
+                  <label className="block text-sm font-semibold text-ink">{t('companies.projectAccess')}</label>
                   <button
                     onClick={() => setShowProjectAccessModal(true)}
                     className="px-3 py-1 text-xs bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors"
                   >
-                    ➕ Grant Access
+                    ➕ {t('companies.grantAccessBtn')}
                   </button>
                 </div>
                 
@@ -697,23 +704,23 @@ export default function Companies() {
                             onChange={(e) => handleUpdateProjectAccessStatus(access.project_id, e.target.value)}
                             className="text-xs px-2 py-1 border border-line rounded-lg focus:outline-none"
                           >
-                            <option value="pending">Pending</option>
-                            <option value="active">Active</option>
-                            <option value="suspended">Suspended</option>
-                            <option value="revoked">Revoked</option>
+                            <option value="pending">{t('common.pending')}</option>
+                            <option value="active">{t('companies.active')}</option>
+                            <option value="suspended">{t('companies.suspended')}</option>
+                            <option value="revoked">{t('companies.revoked')}</option>
                           </select>
                           <button
                             onClick={() => handleRevokeProjectAccess(access.project_id)}
                             className="px-2 py-1 text-xs bg-bad text-white rounded-lg hover:bg-bad/80 transition-colors"
                           >
-                            Revoke
+                            {t('companies.revoke')}
                           </button>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted">No project access granted yet.</p>
+                  <p className="text-sm text-muted">{t('companies.noProjectAccess')}</p>
                 )}
               </div>
             </div>
@@ -726,7 +733,7 @@ export default function Companies() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Close
+                {t('common.close')}
               </button>
               <button
                 onClick={() => {
@@ -735,7 +742,7 @@ export default function Companies() {
                 }}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                Edit
+                {t('common.edit')}
               </button>
             </div>
           </div>
@@ -746,17 +753,17 @@ export default function Companies() {
       {showProjectAccessModal && viewingCompany && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-ink mb-4">Grant Project Access</h2>
+            <h2 className="text-xl font-bold text-ink mb-4">{t('companies.grantAccess')}</h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Select Project</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('companies.selectProject')}</label>
                 <select
                   value={selectedProjectId || ''}
                   onChange={(e) => setSelectedProjectId(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                 >
-                  <option value="">-- Select a project --</option>
+                  <option value="">{t('companies.selectProjectPlaceholder')}</option>
                   {allProjects
                     .filter(project => 
                       !viewingCompany.project_accesses?.some(access => access.project_id === project.id)
@@ -778,14 +785,14 @@ export default function Companies() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleGrantProjectAccess}
                 disabled={!selectedProjectId}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Grant Access
+                {t('companies.grantAccessBtn')}
               </button>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
@@ -100,6 +101,7 @@ interface CustomerStats {
 type Tab = 'overview' | 'opportunities' | 'tasks' | 'notes' | 'documents' | 'activity';
 
 export default function CustomerDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -167,7 +169,7 @@ export default function CustomerDetail() {
       }
     } catch (error) {
       console.error('Failed to fetch customer:', error);
-      alert('Failed to load customer details');
+      alert(t('customerDetail.loadError'));
       navigate('/customers');
     } finally {
       setLoading(false);
@@ -194,7 +196,7 @@ export default function CustomerDetail() {
       fetchCustomerDetail();
     } catch (error: any) {
       console.error('Failed to update customer:', error);
-      alert(error.response?.data?.message || 'Failed to update customer');
+      alert(error.response?.data?.message || t('customerDetail.updateFailed'));
     }
   };
 
@@ -223,7 +225,7 @@ export default function CustomerDetail() {
       fetchCustomerDetail(); // Refresh customer data to show new opportunity
     } catch (error: any) {
       console.error('Failed to create opportunity:', error);
-      alert(error.response?.data?.message || 'Failed to create opportunity. Please try again.');
+      alert(error.response?.data?.message || t('customerDetail.createOpportunityFailed'));
     }
   };
 
@@ -319,12 +321,12 @@ export default function CustomerDetail() {
   if (!customer) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted">Customer not found</p>
+        <p className="text-muted">{t('customerDetail.notFound')}</p>
         <button
           onClick={() => navigate('/customers')}
           className="mt-4 px-4 py-2 bg-aqua-5 text-white rounded-xl"
         >
-          Back to Customers
+          {t('customerDetail.backToCustomers')}
         </button>
       </div>
     );
@@ -334,19 +336,19 @@ export default function CustomerDetail() {
     <div className="space-y-6">
       <Topbar
         title={getCustomerName(customer)}
-        subtitle="Customer Details"
+        subtitle={t('customerDetail.title')}
         actions={
           <>
             <Button
               variant="ghost"
               onClick={() => navigate('/customers')}
             >
-              ← Back
+              ← {t('customerDetail.back')}
             </Button>
             <Button
               onClick={() => setShowEditModal(true)}
             >
-              Edit Customer
+              {t('customerDetail.editCustomer')}
             </Button>
           </>
         }
@@ -356,21 +358,21 @@ export default function CustomerDetail() {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-sm text-muted">Opportunities</div>
+            <div className="text-sm text-muted">{t('customerDetail.opportunities')}</div>
             <div className="text-2xl font-bold text-ink mt-1">{stats.opportunities_count}</div>
-            <div className="text-xs text-muted mt-1">{stats.open_opportunities_count} open</div>
+            <div className="text-xs text-muted mt-1">{t('customerDetail.openCount', { count: stats.open_opportunities_count })}</div>
           </div>
           <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-sm text-muted">Tasks</div>
+            <div className="text-sm text-muted">{t('customerDetail.tasks')}</div>
             <div className="text-2xl font-bold text-ink mt-1">{stats.tasks_count}</div>
-            <div className="text-xs text-muted mt-1">{stats.pending_tasks_count} pending</div>
+            <div className="text-xs text-muted mt-1">{t('customerDetail.pendingCount', { count: stats.pending_tasks_count })}</div>
           </div>
           <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-sm text-muted">Notes</div>
+            <div className="text-sm text-muted">{t('customerDetail.notes')}</div>
             <div className="text-2xl font-bold text-ink mt-1">{stats.notes_count}</div>
           </div>
           <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-sm text-muted">Documents</div>
+            <div className="text-sm text-muted">{t('customerDetail.documents')}</div>
             <div className="text-2xl font-bold text-ink mt-1">{stats.documents_count}</div>
           </div>
         </div>
@@ -390,7 +392,7 @@ export default function CustomerDetail() {
                     : 'border-transparent text-muted hover:text-ink hover:border-line'
                 }`}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {t(`customerDetail.${tab}`)}
               </button>
             ))}
           </nav>
@@ -402,44 +404,44 @@ export default function CustomerDetail() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-ink mb-4">Contact Information</h3>
+                  <h3 className="text-lg font-semibold text-ink mb-4">{t('customerDetail.contactInformation')}</h3>
                   <div className="space-y-3">
                     <div>
-                      <div className="text-sm text-muted">Email</div>
+                      <div className="text-sm text-muted">{t('common.email')}</div>
                       <div className="text-ink">{customer.email}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted">Phone</div>
+                      <div className="text-sm text-muted">{t('common.phone')}</div>
                       <div className="text-ink">{customer.phone}</div>
                     </div>
                     {customer.vat && (
                       <div>
-                        <div className="text-sm text-muted">VAT Number</div>
+                        <div className="text-sm text-muted">{t('common.vatNumber')}</div>
                         <div className="text-ink">{customer.vat}</div>
                       </div>
                     )}
                     {customer.address && (
                       <div>
-                        <div className="text-sm text-muted">Address</div>
+                        <div className="text-sm text-muted">{t('common.address')}</div>
                         <div className="text-ink">{customer.address}</div>
                       </div>
                     )}
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-ink mb-4">Additional Information</h3>
+                  <h3 className="text-lg font-semibold text-ink mb-4">{t('customerDetail.additionalInformation')}</h3>
                   <div className="space-y-3">
                     <div>
-                      <div className="text-sm text-muted">Created</div>
+                      <div className="text-sm text-muted">{t('customerDetail.created')}</div>
                       <div className="text-ink">{formatDateTime(customer.created_at)}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted">Last Updated</div>
+                      <div className="text-sm text-muted">{t('customerDetail.lastUpdated')}</div>
                       <div className="text-ink">{formatDateTime(customer.updated_at)}</div>
                     </div>
                     {customer.notes_text && (
                       <div>
-                        <div className="text-sm text-muted">Notes</div>
+                        <div className="text-sm text-muted">{t('common.notes')}</div>
                         <div className="text-ink whitespace-pre-wrap">{customer.notes_text}</div>
                       </div>
                     )}
@@ -453,9 +455,9 @@ export default function CustomerDetail() {
           {activeTab === 'opportunities' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-ink">Opportunities</h3>
+                <h3 className="text-lg font-semibold text-ink">{t('customerDetail.opportunities')}</h3>
                 <Button onClick={() => setShowOpportunityModal(true)}>
-                  + New Opportunity
+                  {t('customerDetail.newOpportunity')}
                 </Button>
               </div>
               {customer.opportunities && customer.opportunities.length > 0 ? (
@@ -469,9 +471,9 @@ export default function CustomerDetail() {
                             <div className="text-sm text-muted mt-1">{opp.description}</div>
                           )}
                           <div className="flex gap-4 mt-3 text-sm text-muted">
-                            <span>Value: {formatCurrency(opp.value, opp.currency)}</span>
-                            {opp.probability !== null && <span>Probability: {opp.probability}%</span>}
-                            {opp.expected_close_date && <span>Close: {formatDate(opp.expected_close_date)}</span>}
+                            <span>{t('customerDetail.valueLabel', { value: formatCurrency(opp.value, opp.currency) })}</span>
+                            {opp.probability !== null && <span>{t('customerDetail.probabilityLabel', { value: opp.probability })}</span>}
+                            {opp.expected_close_date && <span>{t('customerDetail.closeLabel', { date: formatDate(opp.expected_close_date) })}</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -485,7 +487,7 @@ export default function CustomerDetail() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted">
-                  No opportunities found. Create one to get started!
+                  {t('customerDetail.noOpportunities')}
                 </div>
               )}
             </div>
@@ -495,9 +497,9 @@ export default function CustomerDetail() {
           {activeTab === 'tasks' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-ink">Tasks</h3>
+                <h3 className="text-lg font-semibold text-ink">{t('customerDetail.tasks')}</h3>
                 <Button onClick={() => navigate(`/tasks?taskable_type=Customer&taskable_id=${customer.id}`)}>
-                  + New Task
+                  {t('customerDetail.newTask')}
                 </Button>
               </div>
               {customer.tasks && customer.tasks.length > 0 ? (
@@ -511,8 +513,8 @@ export default function CustomerDetail() {
                             <div className="text-sm text-muted mt-1">{task.description}</div>
                           )}
                           <div className="flex gap-4 mt-3 text-sm text-muted">
-                            {task.due_date && <span>Due: {formatDate(task.due_date)}</span>}
-                            {task.assignee && <span>Assigned to: {task.assignee.name}</span>}
+                            {task.due_date && <span>{t('customerDetail.dueLabel', { date: formatDate(task.due_date) })}</span>}
+                            {task.assignee && <span>{t('customerDetail.assignedToLabel', { name: task.assignee.name })}</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -529,7 +531,7 @@ export default function CustomerDetail() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted">
-                  No tasks found. Create one to get started!
+                  {t('customerDetail.noTasks')}
                 </div>
               )}
             </div>
@@ -539,9 +541,9 @@ export default function CustomerDetail() {
           {activeTab === 'notes' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-ink">Notes</h3>
+                <h3 className="text-lg font-semibold text-ink">{t('customerDetail.notes')}</h3>
                 <Button onClick={() => navigate(`/notes?noteable_type=Customer&noteable_id=${customer.id}`)}>
-                  + New Note
+                  {t('customerDetail.newNote')}
                 </Button>
               </div>
               {customer.notes && Array.isArray(customer.notes) && customer.notes.length > 0 ? (
@@ -549,7 +551,7 @@ export default function CustomerDetail() {
                   {customer.notes.map((note) => (
                     <div key={note.id} className="border border-line rounded-lg p-4 hover:bg-aqua-1/10 transition-colors">
                       <div className="flex justify-between items-start mb-2">
-                        <div className="font-semibold text-ink">{note.title || 'Untitled Note'}</div>
+                        <div className="font-semibold text-ink">{note.title || t('customerDetail.untitledNote')}</div>
                         <div className="flex items-center gap-2">
                           {note.is_pinned && <span className="text-xs">📌</span>}
                           {note.is_important && <span className="text-xs">⭐</span>}
@@ -558,14 +560,14 @@ export default function CustomerDetail() {
                       </div>
                       <div className="text-sm text-ink whitespace-pre-wrap">{note.content}</div>
                       {note.user && (
-                        <div className="text-xs text-muted mt-2">By {note.user.name}</div>
+                        <div className="text-xs text-muted mt-2">{t('customerDetail.byUser', { name: note.user.name })}</div>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted">
-                  No notes found. Create one to get started!
+                  {t('customerDetail.noNotes')}
                 </div>
               )}
             </div>
@@ -575,9 +577,9 @@ export default function CustomerDetail() {
           {activeTab === 'documents' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-ink">Documents</h3>
+                <h3 className="text-lg font-semibold text-ink">{t('customerDetail.documents')}</h3>
                 <Button onClick={() => navigate(`/documents?documentable_type=Customer&documentable_id=${customer.id}`)}>
-                  + Upload Document
+                  {t('customerDetail.uploadDocument')}
                 </Button>
               </div>
               {customer.documents && customer.documents.length > 0 ? (
@@ -597,7 +599,7 @@ export default function CustomerDetail() {
                           variant="ghost"
                           onClick={() => window.open(`/api/documents/${doc.id}/download`, '_blank')}
                         >
-                          Download
+                          {t('customerDetail.download')}
                         </Button>
                       </div>
                     </div>
@@ -605,7 +607,7 @@ export default function CustomerDetail() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted">
-                  No documents found. Upload one to get started!
+                  {t('customerDetail.noDocuments')}
                 </div>
               )}
             </div>
@@ -614,7 +616,7 @@ export default function CustomerDetail() {
           {/* Activity Tab */}
           {activeTab === 'activity' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-ink">Activity Log</h3>
+              <h3 className="text-lg font-semibold text-ink">{t('customerDetail.activityLog')}</h3>
               {activityLogs.length > 0 ? (
                 <div className="space-y-3">
                   {activityLogs.map((log) => (
@@ -634,7 +636,7 @@ export default function CustomerDetail() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted">
-                  No activity logs found.
+                  {t('customerDetail.noActivity')}
                 </div>
               )}
             </div>
@@ -650,60 +652,60 @@ export default function CustomerDetail() {
             setShowOpportunityModal(false);
             resetOpportunityForm();
           }}
-          title="Create New Opportunity"
+          title={t('customerDetail.createOpportunity')}
           size="lg"
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-ink mb-1">Opportunity Name *</label>
+              <label className="block text-sm font-medium text-ink mb-1">{t('customerDetail.opportunityName')}</label>
               <input
                 type="text"
                 value={opportunityFormData.name}
                 onChange={(e) => setOpportunityFormData({ ...opportunityFormData, name: e.target.value })}
                 className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 required
-                placeholder="e.g., New Client Deal"
+                placeholder={t('customerDetail.opportunityNamePlaceholder')}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink mb-1">Description</label>
+              <label className="block text-sm font-medium text-ink mb-1">{t('common.description')}</label>
               <textarea
                 value={opportunityFormData.description}
                 onChange={(e) => setOpportunityFormData({ ...opportunityFormData, description: e.target.value })}
                 rows={3}
                 className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none resize-none"
-                placeholder="Describe the opportunity..."
+                placeholder={t('customerDetail.descriptionPlaceholder')}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink mb-1">Stage *</label>
+              <label className="block text-sm font-medium text-ink mb-1">{t('sales.stage')} *</label>
               <select
                 value={opportunityFormData.stage}
                 onChange={(e) => setOpportunityFormData({ ...opportunityFormData, stage: e.target.value as any })}
                 className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 required
               >
-                <option value="prospecting">Prospecting</option>
-                <option value="qualification">Qualification</option>
-                <option value="proposal">Proposal</option>
-                <option value="negotiation">Negotiation</option>
-                <option value="closed_won">Closed Won</option>
-                <option value="closed_lost">Closed Lost</option>
-                <option value="on_hold">On Hold</option>
+                <option value="prospecting">{t('sales.prospecting')}</option>
+                <option value="qualification">{t('sales.qualification')}</option>
+                <option value="proposal">{t('sales.proposal')}</option>
+                <option value="negotiation">{t('sales.negotiation')}</option>
+                <option value="closed_won">{t('sales.closedWon')}</option>
+                <option value="closed_lost">{t('sales.closedLost')}</option>
+                <option value="on_hold">{t('sales.onHold')}</option>
               </select>
             </div>
 
             {users.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Assigned To</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.assignedTo')}</label>
                 <select
                   value={opportunityFormData.assigned_to}
                   onChange={(e) => setOpportunityFormData({ ...opportunityFormData, assigned_to: e.target.value })}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 >
-                  <option value="">Select User (Optional)</option>
+                  <option value="">{t('customerDetail.selectUserOptional')}</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.name}
@@ -715,7 +717,7 @@ export default function CustomerDetail() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Expected Close Date</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.expectedCloseDate')}</label>
                 <input
                   type="date"
                   value={opportunityFormData.expected_close_date}
@@ -727,7 +729,7 @@ export default function CustomerDetail() {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Value</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('common.value')}</label>
                 <input
                   type="number"
                   value={opportunityFormData.value}
@@ -740,7 +742,7 @@ export default function CustomerDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Currency</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.currency')}</label>
                 <select
                   value={opportunityFormData.currency}
                   onChange={(e) => setOpportunityFormData({ ...opportunityFormData, currency: e.target.value })}
@@ -754,7 +756,7 @@ export default function CustomerDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Probability (%)</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('customerDetail.probabilityPercent')}</label>
                 <input
                   type="number"
                   value={opportunityFormData.probability}
@@ -769,23 +771,23 @@ export default function CustomerDetail() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Source</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('leads.source')}</label>
                 <input
                   type="text"
                   value={opportunityFormData.source}
                   onChange={(e) => setOpportunityFormData({ ...opportunityFormData, source: e.target.value })}
-                  placeholder="e.g., website, referral, cold_call"
+                  placeholder={t('customerDetail.sourcePlaceholder')}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Campaign</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.campaign')}</label>
                 <input
                   type="text"
                   value={opportunityFormData.campaign}
                   onChange={(e) => setOpportunityFormData({ ...opportunityFormData, campaign: e.target.value })}
-                  placeholder="Campaign name"
+                  placeholder={t('customerDetail.campaignPlaceholder')}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 />
               </div>
@@ -800,13 +802,13 @@ export default function CustomerDetail() {
                 }}
                 className="flex-1"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={handleCreateOpportunity}
                 className="flex-1"
               >
-                Create Opportunity
+                {t('sales.createOpportunity')}
               </Button>
             </div>
           </div>
@@ -818,18 +820,18 @@ export default function CustomerDetail() {
         <Modal
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
-          title="Edit Customer"
+          title={t('customerDetail.editCustomer')}
         >
           <div className="space-y-4">
             <Input
-              label="Email *"
+              label={`${t('common.email')} *`}
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
             <Input
-              label="Phone *"
+              label={`${t('common.phone')} *`}
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -837,23 +839,23 @@ export default function CustomerDetail() {
             />
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="First Name"
+                label={t('common.firstName')}
                 value={formData.first_name}
                 onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
               />
               <Input
-                label="Last Name"
+                label={t('common.lastName')}
                 value={formData.last_name}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
               />
             </div>
             <Input
-              label="VAT Number"
+              label={t('common.vatNumber')}
               value={formData.vat}
               onChange={(e) => setFormData({ ...formData, vat: e.target.value })}
             />
             <div>
-              <label className="block text-sm font-medium text-ink mb-1">Address</label>
+              <label className="block text-sm font-medium text-ink mb-1">{t('common.address')}</label>
               <textarea
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -862,7 +864,7 @@ export default function CustomerDetail() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink mb-1">Notes</label>
+              <label className="block text-sm font-medium text-ink mb-1">{t('common.notes')}</label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -876,13 +878,13 @@ export default function CustomerDetail() {
                 onClick={() => setShowEditModal(false)}
                 className="flex-1"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={handleUpdateCustomer}
                 className="flex-1"
               >
-                Update
+                {t('common.update')}
               </Button>
             </div>
           </div>

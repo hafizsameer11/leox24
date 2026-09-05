@@ -225,7 +225,7 @@ export default function Leads() {
       window.URL.revokeObjectURL(url_blob);
     } catch (error: any) {
       console.error('Failed to export leads:', error);
-      alert(error.response?.data?.message || 'Failed to export leads. Please try again.');
+      alert(error.response?.data?.message || t('leadsPage.exportFailed'));
     }
   };
 
@@ -315,8 +315,8 @@ export default function Leads() {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           error.message || 
-                          'Failed to upload lead file. Please try again.';
-      alert(`Error: ${errorMessage}`);
+                          t('leads.uploadError');
+      alert(t('leadsPage.errorWithMessage', { message: errorMessage }));
     }
   };
 
@@ -334,7 +334,7 @@ export default function Leads() {
       fetchLeads();
     } catch (error) {
       console.error('Failed to delete lead:', error);
-      alert('Failed to delete lead. Please try again.');
+      alert(t('leadsPage.deleteFailed'));
     }
   };
 
@@ -395,7 +395,7 @@ export default function Leads() {
 
     try {
       if (!followUpFormData.title || !followUpFormData.scheduled_at) {
-        alert('Please fill in title and scheduled date');
+        alert(t('leadsPage.fillTitleDate'));
         return;
       }
 
@@ -411,36 +411,36 @@ export default function Leads() {
       setShowFollowUpModal(false);
       resetFollowUpForm();
       await fetchFollowUps(selectedLeadId);
-      alert('Follow-up scheduled successfully!');
+      alert(t('leadsPage.followUpScheduled'));
     } catch (error: any) {
       console.error('Failed to create follow-up:', error);
-      alert(error.response?.data?.message || 'Failed to create follow-up');
+      alert(error.response?.data?.message || t('leadsPage.createFollowUpFailed'));
     }
   };
 
   const handleCompleteFollowUp = async (followUpId: number, leadId: number) => {
     try {
-      const outcome = prompt('Enter outcome/notes:');
+      const outcome = prompt(t('leadsPage.enterOutcomePrompt'));
       if (outcome === null) return; // User cancelled
 
       await api.post(`/follow-ups/${followUpId}/complete`, { outcome });
       await fetchFollowUps(leadId);
-      alert('Follow-up marked as completed!');
+      alert(t('leadsPage.followUpCompleted'));
     } catch (error: any) {
       console.error('Failed to complete follow-up:', error);
-      alert(error.response?.data?.message || 'Failed to complete follow-up');
+      alert(error.response?.data?.message || t('leadsPage.completeFollowUpFailed'));
     }
   };
 
   const handleDeleteFollowUp = async (followUpId: number, leadId: number) => {
-    if (!confirm('Are you sure you want to delete this follow-up?')) return;
+    if (!confirm(t('leadsPage.confirmDeleteFollowUp'))) return;
 
     try {
       await api.delete(`/follow-ups/${followUpId}`);
       await fetchFollowUps(leadId);
     } catch (error: any) {
       console.error('Failed to delete follow-up:', error);
-      alert(error.response?.data?.message || 'Failed to delete follow-up');
+      alert(error.response?.data?.message || t('leadsPage.deleteFollowUpFailed'));
     }
   };
 
@@ -473,14 +473,14 @@ export default function Leads() {
 
       const response = await api.post('/calls', callPayload);
 
-      alert(`Call started! Call ID: ${response.data.id}\n\nYou can complete the call from the Calls page.`);
+      alert(t('leadsPage.callStarted', { id: response.data.id }));
 
       if (followUp && selectedLeadId) {
         await fetchFollowUps(selectedLeadId);
       }
     } catch (error: any) {
       console.error('Failed to start call:', error);
-      alert(error.response?.data?.message || 'Failed to start call. Please try again.');
+      alert(error.response?.data?.message || t('leadsPage.startCallFailed'));
     }
   };
 
@@ -496,7 +496,7 @@ export default function Leads() {
 
   const handleSendWhatsApp = async () => {
     if (!actionContactRow?.phone || !whatsAppMessage.trim()) {
-      alert('Please enter a message');
+      alert(t('leadsPage.enterMessage'));
       return;
     }
 
@@ -507,13 +507,13 @@ export default function Leads() {
         message: whatsAppMessage,
       });
 
-      alert('WhatsApp message sent successfully!');
+      alert(t('leadsPage.whatsAppSent'));
       setShowWhatsAppModal(false);
       setWhatsAppMessage('');
       setActionContactRow(null);
     } catch (error: any) {
       console.error('Failed to send WhatsApp message:', error);
-      alert(error.response?.data?.message || 'Failed to send WhatsApp message. Please check Twilio configuration.');
+      alert(error.response?.data?.message || t('leadsPage.whatsAppFailed'));
     } finally {
       setWhatsAppSending(false);
     }
@@ -778,14 +778,14 @@ export default function Leads() {
                           <button
                             onClick={() => handleStartCall(null, row)}
                             className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
-                            title="Start Call Now"
+                            title={t('leadsPage.startCallNow')}
                           >
                             📞
                           </button>
                           <button
                             onClick={() => openWhatsAppModal(row)}
                             className="p-1.5 hover:bg-green-100 rounded-lg transition-colors text-green-600"
-                            title="Send WhatsApp"
+                            title={t('leads.sendWhatsApp')}
                           >
                             💬
                           </button>
@@ -797,21 +797,21 @@ export default function Leads() {
                           setShowViewModal(true);
                         }}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors"
-                        title="View Details"
+                        title={t('leadsPage.viewDetails')}
                       >
                         👁️
                       </button>
                       <button
                         onClick={() => openFollowUpModal(row)}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors"
-                        title="Follow-ups"
+                        title={t('leads.followUps')}
                       >
                         📅
                       </button>
                       <button
                         onClick={() => handleDeleteLead(row)}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors text-red-500"
-                        title="Delete"
+                        title={t('common.delete')}
                       >
                         🗑️
                       </button>
@@ -1100,7 +1100,7 @@ export default function Leads() {
       {showWhatsAppModal && actionContactRow && (
         <Modal
           isOpen={true}
-          title="Send WhatsApp Message"
+          title={t('leadsPage.sendWhatsAppTitle')}
           onClose={() => {
             setShowWhatsAppModal(false);
             setWhatsAppMessage('');
@@ -1109,13 +1109,13 @@ export default function Leads() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-ink mb-1">Message</label>
+              <label className="block text-sm font-medium text-ink mb-1">{t('leads.whatsAppMessage')}</label>
               <textarea
                 value={whatsAppMessage}
                 onChange={(e) => setWhatsAppMessage(e.target.value)}
                 rows={4}
                 className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                placeholder="Type your message here..."
+                placeholder={t('leadsPage.messagePlaceholder')}
               />
             </div>
 
@@ -1128,14 +1128,14 @@ export default function Leads() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleSendWhatsApp}
                 disabled={whatsAppSending || !whatsAppMessage.trim()}
                 className="flex-1 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {whatsAppSending ? 'Sending...' : 'Send Message'}
+                {whatsAppSending ? t('leads.sending') : t('leadsPage.sendMessage')}
               </button>
             </div>
           </div>
@@ -1146,7 +1146,7 @@ export default function Leads() {
       {showFollowUpModal && selectedLeadId && (
         <Modal
           isOpen={true}
-          title="Follow-ups"
+          title={t('leads.followUps')}
           onClose={() => {
             setShowFollowUpModal(false);
             resetFollowUpForm();
@@ -1170,28 +1170,28 @@ export default function Leads() {
                           <span className="text-lg">{getFollowUpTypeIcon(followUp.type)}</span>
                           <span className="font-semibold text-ink">{followUp.title}</span>
                           <span className={`text-xs px-2 py-0.5 rounded ${getPriorityColor(followUp.priority)} bg-opacity-10`}>
-                            {followUp.priority}
+                            {t(`leads.${followUp.priority}`)}
                           </span>
                           <span className={`text-xs px-2 py-0.5 rounded ${
                             followUp.status === 'completed' ? 'bg-green-100 text-green-800' :
                             followUp.status === 'overdue' ? 'bg-red-100 text-red-800' :
                             'bg-blue-100 text-blue-800'
                           }`}>
-                            {followUp.status}
+                            {t(`leads.${followUp.status}`)}
                           </span>
                         </div>
                         {followUp.notes && (
                           <p className="text-sm text-muted mb-2">{followUp.notes}</p>
                         )}
                         <div className="text-xs text-muted">
-                          Scheduled: {new Date(followUp.scheduled_at).toLocaleString()}
+                          {t('leadsPage.scheduledAt', { date: new Date(followUp.scheduled_at).toLocaleString() })}
                           {followUp.completed_at && (
-                            <> • Completed: {new Date(followUp.completed_at).toLocaleString()}</>
+                            <> • {t('leadsPage.completedAt', { date: new Date(followUp.completed_at).toLocaleString() })}</>
                           )}
                         </div>
                         {followUp.outcome && (
                           <div className="mt-2 text-sm text-ink bg-gray-50 p-2 rounded">
-                            <strong>Outcome:</strong> {followUp.outcome}
+                            <strong>{t('leadsPage.outcomeLabel')}</strong> {followUp.outcome}
                           </div>
                         )}
                       </div>
@@ -1200,9 +1200,9 @@ export default function Leads() {
                           <button
                             onClick={() => handleStartCall(followUp, actionContactRow)}
                             className="px-3 py-1 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-1"
-                            title="Start Call"
+                            title={t('leadsPage.startCall')}
                           >
-                            📞 Start Call
+                            📞 {t('leadsPage.startCall')}
                           </button>
                         )}
                         {followUp.status !== 'completed' && (
@@ -1210,7 +1210,7 @@ export default function Leads() {
                             onClick={() => handleCompleteFollowUp(followUp.id, selectedLeadId)}
                             className="px-3 py-1 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600"
                           >
-                            ✓ Complete
+                            ✓ {t('leadsPage.completeFollowUp')}
                           </button>
                         )}
                         <button
@@ -1224,59 +1224,59 @@ export default function Leads() {
                   </div>
                 ))
               ) : (
-                <div className="text-center text-muted py-8">No follow-ups scheduled</div>
+                <div className="text-center text-muted py-8">{t('leadsPage.noFollowUpsScheduled')}</div>
               )}
             </div>
 
             {/* Create Follow-up Form */}
             <div className="border-t border-line pt-4">
-              <h3 className="font-semibold text-ink mb-4">Schedule New Follow-up</h3>
+              <h3 className="font-semibold text-ink mb-4">{t('leadsPage.scheduleNewFollowUp')}</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Title *</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('leads.followUpTitle')} *</label>
                   <input
                     type="text"
                     value={followUpFormData.title}
                     onChange={(e) => setFollowUpFormData({ ...followUpFormData, title: e.target.value })}
                     className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                    placeholder="e.g., Call to discuss pricing"
+                    placeholder={t('leadsPage.followUpTitlePlaceholder')}
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-1">Type *</label>
+                    <label className="block text-sm font-medium text-ink mb-1">{t('leads.followUpType')} *</label>
                     <select
                       value={followUpFormData.type}
                       onChange={(e) => setFollowUpFormData({ ...followUpFormData, type: e.target.value as FollowUp['type'] })}
                       className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                     >
-                      <option value="call">📞 Call</option>
-                      <option value="email">📧 Email</option>
-                      <option value="meeting">🤝 Meeting</option>
-                      <option value="message">💬 Message</option>
-                      <option value="other">📝 Other</option>
+                      <option value="call">📞 {t('leads.call')}</option>
+                      <option value="email">📧 {t('leads.email')}</option>
+                      <option value="meeting">🤝 {t('leads.meeting')}</option>
+                      <option value="message">💬 {t('leads.message')}</option>
+                      <option value="other">📝 {t('leads.other')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-1">Priority</label>
+                    <label className="block text-sm font-medium text-ink mb-1">{t('leads.followUpPriority')}</label>
                     <select
                       value={followUpFormData.priority}
                       onChange={(e) => setFollowUpFormData({ ...followUpFormData, priority: e.target.value as FollowUp['priority'] })}
                       className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                     >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
+                      <option value="low">{t('leads.low')}</option>
+                      <option value="medium">{t('leads.medium')}</option>
+                      <option value="high">{t('leads.high')}</option>
+                      <option value="urgent">{t('leads.urgent')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Scheduled Date & Time *</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('leadsPage.scheduledDateTime')}</label>
                   <input
                     type="datetime-local"
                     value={followUpFormData.scheduled_at}
@@ -1287,13 +1287,13 @@ export default function Leads() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Notes</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('common.notes')}</label>
                   <textarea
                     value={followUpFormData.notes}
                     onChange={(e) => setFollowUpFormData({ ...followUpFormData, notes: e.target.value })}
                     className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                     rows={3}
-                    placeholder="Additional notes about this follow-up..."
+                    placeholder={t('leadsPage.followUpNotesPlaceholder')}
                   />
                 </div>
 
@@ -1305,13 +1305,13 @@ export default function Leads() {
                     }}
                     className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
                   >
-                    Close
+                    {t('common.close')}
                   </button>
                   <button
                     onClick={handleCreateFollowUp}
                     className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
                   >
-                    Schedule Follow-up
+                    {t('leadsPage.scheduleFollowUp')}
                   </button>
                 </div>
               </div>

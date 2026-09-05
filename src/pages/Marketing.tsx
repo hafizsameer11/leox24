@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
@@ -79,6 +80,7 @@ interface Project {
 }
 
 export default function Marketing() {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const isSuperAdmin = user?.role === 'super_admin';
   const [searchParams, setSearchParams] = useSearchParams();
@@ -156,7 +158,7 @@ export default function Marketing() {
       }
     } catch (error: any) {
       console.error('Failed to process payment success:', error);
-      alert(error.response?.data?.message || 'Failed to process payment. Please contact support.');
+      alert(error.response?.data?.message || t('marketing.paymentProcessFailed', 'Failed to process payment. Please contact support.'));
     }
   };
 
@@ -338,14 +340,14 @@ export default function Marketing() {
       fetchStats();
     } catch (error: any) {
       console.error('Failed to save campaign:', error);
-      setFormError(error.response?.data?.message || 'Failed to save campaign. Please try again.');
+      setFormError(error.response?.data?.message || t('marketing.saveFailed', 'Failed to save campaign. Please try again.'));
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleStatusChange = async (campaignId: number, newStatus: string) => {
-    if (!confirm(`Are you sure you want to change the status to ${newStatus}?`)) {
+    if (!confirm(t('marketing.statusChangeConfirm', 'Are you sure you want to change the status to {{status}}?', { status: formatCampaignStatus(newStatus) }))) {
       return;
     }
 
@@ -380,12 +382,12 @@ export default function Marketing() {
       fetchStats();
     } catch (error: any) {
       console.error('Failed to update campaign status:', error);
-      alert(error.response?.data?.message || 'Failed to update campaign status');
+      alert(error.response?.data?.message || t('marketing.statusUpdateFailed', 'Failed to update campaign status'));
     }
   };
 
   const handleResume = async (campaign: Campaign) => {
-    if (!confirm('Are you sure you want to resume this campaign?')) {
+    if (!confirm(t('marketing.resumeConfirm', 'Are you sure you want to resume this campaign?'))) {
       return;
     }
 
@@ -414,12 +416,12 @@ export default function Marketing() {
       fetchStats();
     } catch (error: any) {
       console.error('Failed to resume campaign:', error);
-      alert(error.response?.data?.message || 'Failed to resume campaign');
+      alert(error.response?.data?.message || t('marketing.resumeFailed', 'Failed to resume campaign'));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this campaign?')) {
+    if (!confirm(t('marketing.deleteConfirm', 'Are you sure you want to delete this campaign?'))) {
       return;
     }
 
@@ -429,15 +431,15 @@ export default function Marketing() {
       fetchStats();
     } catch (error) {
       console.error('Failed to delete campaign:', error);
-      alert('Failed to delete campaign');
+      alert(t('marketing.deleteFailed', 'Failed to delete campaign'));
     }
   };
 
   const handleActivate = async (campaign: Campaign) => {
     const isAlreadyActive = campaign.status === 'active';
     const confirmMessage = isAlreadyActive
-      ? 'Are you sure you want to re-activate this campaign? This will register/update the ad in the tg-calabria site.'
-      : 'Are you sure you want to activate this campaign? This will create an ad in the tg-calabria site.';
+      ? t('marketing.reActivateConfirmFull', 'Are you sure you want to re-activate this campaign? This will register/update the ad in the tg-calabria site.')
+      : t('marketing.activateConfirmFull', 'Are you sure you want to activate this campaign? This will create an ad in the tg-calabria site.');
     
     if (!confirm(confirmMessage)) {
       return;
@@ -445,23 +447,23 @@ export default function Marketing() {
 
     try {
       const response = await api.post(`/campaigns/${campaign.id}/activate`);
-      alert(response.data.message || 'Campaign activated successfully');
+      alert(response.data.message || t('marketing.activateSuccess', 'Campaign activated successfully'));
       fetchCampaigns();
       fetchStats();
     } catch (error: any) {
       console.error('Failed to activate campaign:', error);
-      alert(error.response?.data?.message || 'Failed to activate campaign');
+      alert(error.response?.data?.message || t('marketing.activateFailed', 'Failed to activate campaign'));
     }
   };
 
   const handlePayment = async (campaign: Campaign) => {
     if (!campaign.budget || campaign.budget <= 0) {
-      alert('Campaign must have a valid budget to proceed with payment');
+      alert(t('marketing.budgetRequired', 'Campaign must have a valid budget to proceed with payment'));
       return;
     }
 
     if (campaign.payment_status === 'paid') {
-      alert('This campaign has already been paid');
+      alert(t('marketing.alreadyPaid', 'This campaign has already been paid'));
       return;
     }
 
@@ -475,14 +477,14 @@ export default function Marketing() {
       // Validate checkout URL
       if (!checkout_url) {
         console.error('No checkout URL received from server');
-        alert('Failed to create payment session. Please try again.');
+        alert(t('marketing.paymentSessionFailed', 'Failed to create payment session. Please try again.'));
         return;
       }
 
       // Verify URL is valid
       if (!checkout_url.startsWith('https://checkout.stripe.com')) {
         console.error('Invalid checkout URL format:', checkout_url);
-        alert('Invalid payment URL. Please contact support.');
+        alert(t('marketing.invalidPaymentUrl', 'Invalid payment URL. Please contact support.'));
         return;
       }
 
@@ -491,7 +493,7 @@ export default function Marketing() {
       window.location.href = checkout_url;
     } catch (error: any) {
       console.error('Failed to create payment checkout:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to initiate payment. Please try again.';
+      const errorMessage = error.response?.data?.message || error.message || t('marketing.paymentInitFailed', 'Failed to initiate payment. Please try again.');
       alert(errorMessage);
     }
   };
@@ -517,8 +519,18 @@ export default function Marketing() {
     return styles[status as keyof typeof styles] || styles.pending;
   };
 
-  const getTypeBadge = (type: string) => {
-    const typeNames = {
+  const formatCampaignType = (type: string) => {
+    const typeKeys: Record<string, string> = {
+      BANNER_TOP: 'marketing.bannerTop',
+      BANNER_SIDE: 'marketing.bannerSide',
+      INLINE: 'marketing.inline',
+      FOOTER: 'marketing.footer',
+      SLIDER: 'marketing.slider',
+      TICKER: 'marketing.ticker',
+      POPUP: 'marketing.popup',
+      STICKY: 'marketing.sticky',
+    };
+    const defaults: Record<string, string> = {
       BANNER_TOP: 'Banner Top',
       BANNER_SIDE: 'Banner Side',
       INLINE: 'Inline',
@@ -528,7 +540,29 @@ export default function Marketing() {
       POPUP: 'Popup',
       STICKY: 'Sticky',
     };
-    return typeNames[type as keyof typeof typeNames] || type;
+    return t(typeKeys[type] || type, defaults[type] || type);
+  };
+
+  const formatCampaignStatus = (status: string) => {
+    const statusKeys: Record<string, string> = {
+      pending: 'common.pending',
+      active: 'marketing.active',
+      paused: 'marketing.paused',
+      expired: 'marketing.expired',
+      rejected: 'marketing.rejected',
+    };
+    return t(statusKeys[status] || status);
+  };
+
+  const formatPaymentStatus = (status: string | null) => {
+    if (!status) return '';
+    const statusKeys: Record<string, string> = {
+      paid: 'marketing.paid',
+      pending: 'common.pending',
+      unpaid: 'marketing.unpaid',
+      failed: 'calls.failed',
+    };
+    return t(statusKeys[status] || status);
   };
 
   const formatCurrency = (amount: number | null, currency: string = 'EUR') => {
@@ -559,8 +593,8 @@ export default function Marketing() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Marketing"
-        subtitle="Campaigns, email marketing, and analytics"
+        title={t('marketing.title')}
+        subtitle={t('marketing.subtitle')}
         actions={
           <>
             {/* <button
@@ -576,7 +610,7 @@ export default function Marketing() {
               }}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              ➕ New Campaign
+              ➕ {t('marketing.newCampaign')}
             </button>
           </>
         }
@@ -601,27 +635,27 @@ export default function Marketing() {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Total Campaigns</h3>
+            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('marketing.totalCampaigns')}</h3>
             <div className="text-3xl font-extrabold text-ink">{stats.total_campaigns}</div>
-            <div className="text-sm text-muted mt-1">{stats.active_campaigns} active</div>
+            <div className="text-sm text-muted mt-1">{stats.active_campaigns} {t('marketing.active').toLowerCase()}</div>
           </div>
 
           <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Total Sent</h3>
+            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('marketing.totalSent')}</h3>
             <div className="text-3xl font-extrabold text-ink">{stats.total_sent.toLocaleString()}</div>
-            <div className="text-sm text-muted mt-1">{formatPercentage(stats.avg_open_rate)} avg open rate</div>
+            <div className="text-sm text-muted mt-1">{formatPercentage(stats.avg_open_rate)} {t('marketing.avgOpenRate', 'avg open rate')}</div>
           </div>
 
           <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Total Clicks</h3>
+            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('marketing.totalClicks')}</h3>
             <div className="text-3xl font-extrabold text-ink">{stats.total_clicked.toLocaleString()}</div>
-            <div className="text-sm text-muted mt-1">{formatPercentage(stats.avg_click_rate)} avg click rate</div>
+            <div className="text-sm text-muted mt-1">{formatPercentage(stats.avg_click_rate)} {t('marketing.avgClickRate', 'avg click rate')}</div>
           </div>
 
           <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Total Budget</h3>
+            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('marketing.totalBudget')}</h3>
             <div className="text-3xl font-extrabold text-ink">{formatCurrency(stats.total_budget)}</div>
-            <div className="text-sm text-muted mt-1">{formatCurrency(stats.total_spent)} spent</div>
+            <div className="text-sm text-muted mt-1">{formatCurrency(stats.total_spent)} {t('marketing.spent', 'spent')}</div>
           </div>
         </div>
       )}
@@ -630,46 +664,46 @@ export default function Marketing() {
       <div className="bg-white border border-line rounded-2xl p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-muted mb-2">Search</label>
+            <label className="block text-xs font-semibold text-muted mb-2">{t('common.search')}</label>
             <input
               type="text"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              placeholder="Search campaigns..."
+              placeholder={t('marketing.searchPlaceholder')}
               className="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted mb-2">Status</label>
+            <label className="block text-xs font-semibold text-muted mb-2">{t('common.status')}</label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               className="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
             >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="expired">Expired</option>
-              <option value="rejected">Rejected</option>
+              <option value="all">{t('common.allStatus')}</option>
+              <option value="pending">{t('common.pending')}</option>
+              <option value="active">{t('marketing.active')}</option>
+              <option value="paused">{t('marketing.paused')}</option>
+              <option value="expired">{t('marketing.expired')}</option>
+              <option value="rejected">{t('marketing.rejected')}</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted mb-2">Type</label>
+            <label className="block text-xs font-semibold text-muted mb-2">{t('common.type')}</label>
             <select
               value={filters.type}
               onChange={(e) => setFilters({ ...filters, type: e.target.value })}
               className="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
             >
-              <option value="all">All Types</option>
-              <option value="BANNER_TOP">Banner Top</option>
-              <option value="BANNER_SIDE">Banner Side</option>
-              <option value="INLINE">Inline</option>
-              <option value="FOOTER">Footer</option>
-              <option value="SLIDER">Slider</option>
-              <option value="TICKER">Ticker</option>
-              <option value="POPUP">Popup</option>
-              <option value="STICKY">Sticky</option>
+              <option value="all">{t('common.allTypes')}</option>
+              <option value="BANNER_TOP">{formatCampaignType('BANNER_TOP')}</option>
+              <option value="BANNER_SIDE">{formatCampaignType('BANNER_SIDE')}</option>
+              <option value="INLINE">{formatCampaignType('INLINE')}</option>
+              <option value="FOOTER">{formatCampaignType('FOOTER')}</option>
+              <option value="SLIDER">{formatCampaignType('SLIDER')}</option>
+              <option value="TICKER">{formatCampaignType('TICKER')}</option>
+              <option value="POPUP">{formatCampaignType('POPUP')}</option>
+              <option value="STICKY">{formatCampaignType('STICKY')}</option>
             </select>
           </div>
           <div className="flex items-end">
@@ -680,7 +714,7 @@ export default function Marketing() {
               }}
               className="w-full px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
             >
-              Clear Filters
+              {t('common.clearFilters')}
             </button>
           </div>
         </div>
@@ -692,20 +726,20 @@ export default function Marketing() {
           <table className="w-full">
             <thead className="bg-aqua-1/30">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">Campaign</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">Budget</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">Payment</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">Performance</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">{t('marketing.campaigns', 'Campaign')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">{t('common.type')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">{t('common.status')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">{t('marketing.budget')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">{t('marketing.payment', 'Payment')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">{t('marketing.performance', 'Performance')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {campaigns.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-muted">
-                    No campaigns found. Create your first campaign to get started.
+                    {t('marketing.noCampaigns')}. {t('marketing.createFirst')}
                   </td>
                 </tr>
               ) : (
@@ -718,18 +752,18 @@ export default function Marketing() {
                           <div className="text-xs text-muted mt-1 line-clamp-1">{campaign.description}</div>
                         )}
                         {campaign.project && (
-                          <div className="text-xs text-muted mt-1">Project: {campaign.project.name}</div>
+                          <div className="text-xs text-muted mt-1">{t('sales.project')}: {campaign.project.name}</div>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-1 rounded-full text-xs bg-aqua-1/30 text-aqua-5 border border-aqua-5/30">
-                        {getTypeBadge(campaign.type)}
+                        {formatCampaignType(campaign.type)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs border ${getStatusBadge(campaign.status)}`}>
-                        {campaign.status}
+                        {formatCampaignStatus(campaign.status)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -737,14 +771,14 @@ export default function Marketing() {
                         {formatCurrency(campaign.budget, campaign.currency)}
                       </div>
                       {campaign.spent > 0 && (
-                        <div className="text-xs text-muted">Spent: {formatCurrency(campaign.spent, campaign.currency)}</div>
+                        <div className="text-xs text-muted">{t('marketing.spent', 'Spent')}: {formatCurrency(campaign.spent, campaign.currency)}</div>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-xs space-y-1">
                         {campaign.payment_status && (
                           <span className={`px-2 py-1 rounded-full border ${getPaymentStatusBadge(campaign.payment_status)}`}>
-                            {campaign.payment_status}
+                            {formatPaymentStatus(campaign.payment_status)}
                           </span>
                         )}
                        
@@ -752,11 +786,11 @@ export default function Marketing() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-xs space-y-1">
-                        <div>Sent: {campaign.sent_count.toLocaleString()}</div>
-                        <div>Opens: {formatPercentage(campaign.open_rate)}</div>
-                        <div>Clicks: {formatPercentage(campaign.click_rate)}</div>
+                        <div>{t('marketing.sent', 'Sent')}: {campaign.sent_count.toLocaleString()}</div>
+                        <div>{t('marketing.opens', 'Opens')}: {formatPercentage(campaign.open_rate)}</div>
+                        <div>{t('marketing.clicks', 'Clicks')}: {formatPercentage(campaign.click_rate)}</div>
                         {campaign.converted_count > 0 && (
-                          <div>Conversions: {campaign.converted_count} ({formatPercentage(campaign.conversion_rate)})</div>
+                          <div>{t('marketing.conversions', 'Conversions')}: {campaign.converted_count} ({formatPercentage(campaign.conversion_rate)})</div>
                         )}
                       </div>
                     </td>
@@ -769,11 +803,11 @@ export default function Marketing() {
                               onChange={(e) => handleStatusChange(campaign.id, e.target.value)}
                               className="text-xs border border-line rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                             >
-                              <option value="pending">Pending</option>
-                              <option value="active">Active</option>
-                              <option value="paused">Paused</option>
-                              <option value="expired">Expired</option>
-                              <option value="rejected">Rejected</option>
+                              <option value="pending">{t('common.pending')}</option>
+                              <option value="active">{t('marketing.active')}</option>
+                              <option value="paused">{t('marketing.paused')}</option>
+                              <option value="expired">{t('marketing.expired')}</option>
+                              <option value="rejected">{t('marketing.rejected')}</option>
                             </select>
                           )}
                           {(isSuperAdmin || campaign.creator?.id === user?.id) && (
@@ -784,7 +818,7 @@ export default function Marketing() {
                               }}
                               className="text-xs text-aqua-5 hover:text-aqua-4 font-medium"
                             >
-                              Edit
+                              {t('common.edit')}
                             </button>
                           )}
                           {(isSuperAdmin || campaign.creator?.id === user?.id) && (
@@ -792,7 +826,7 @@ export default function Marketing() {
                               onClick={() => handleDelete(campaign.id)}
                               className="text-xs text-bad hover:text-bad/80 font-medium"
                             >
-                              Delete
+                              {t('common.delete')}
                             </button>
                           )}
                         </div>
@@ -801,7 +835,7 @@ export default function Marketing() {
                                 onClick={() => handlePayment(campaign)}
                                 className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 font-medium"
                               >
-                                Pay
+                                {t('marketing.pay')}
                               </button>
                             )}
                         {isSuperAdmin && campaign.payment_status === 'paid' && (
@@ -810,9 +844,9 @@ export default function Marketing() {
                               <button
                                 onClick={() => handleActivate(campaign)}
                                 className="text-xs px-2 py-1 rounded font-medium bg-blue-500 text-white hover:bg-blue-600"
-                                title="Activate campaign and create ad in tg-calabria"
+                                title={t('marketing.activateTooltip', 'Activate campaign and create ad in tg-calabria')}
                               >
-                                Activate
+                                {t('marketing.activate')}
                               </button>
                             )}
                             {campaign.status === 'active' && (
@@ -824,9 +858,9 @@ export default function Marketing() {
                                 ? 'bg-blue-500 text-white hover:bg-blue-600'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
-                                title={!campaign.target_link ? 'Please add a target link to activate this campaign' : 'Re-activate campaign in tg-calabria site'}
+                                title={!campaign.target_link ? t('marketing.targetLinkRequired', 'Please add a target link to activate this campaign') : t('marketing.reActivateTooltip', 'Re-activate campaign in tg-calabria site')}
                           >
-                                Re-Activate
+                                {t('marketing.reActivate')}
                           </button>
                             )}
                             {campaign.status === 'paused' && (
@@ -838,27 +872,27 @@ export default function Marketing() {
                                     ? 'bg-green-500 text-white hover:bg-green-600'
                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 }`}
-                                title={!campaign.target_link ? 'Please add a target link to resume this campaign' : 'Resume campaign'}
+                                title={!campaign.target_link ? t('marketing.targetLinkResumeRequired', 'Please add a target link to resume this campaign') : t('marketing.resumeTooltip', 'Resume campaign')}
                               >
-                                Resume
+                                {t('marketing.resume', 'Resume')}
                               </button>
                             )}
                             {campaign.status === 'rejected' && (
                               <button
                                 disabled={true}
                                 className="text-xs px-2 py-1 rounded font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
-                                title="Campaign is rejected"
+                                title={t('marketing.rejectedTooltip', 'Campaign is rejected')}
                               >
-                                Rejected
+                                {t('marketing.rejected')}
                               </button>
                             )}
                             {campaign.status === 'expired' && (
                               <button
                                 disabled={true}
                                 className="text-xs px-2 py-1 rounded font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
-                                title="Campaign is expired"
+                                title={t('marketing.expiredTooltip', 'Campaign is expired')}
                               >
-                                Expired
+                                {t('marketing.expired')}
                               </button>
                             )}
                           </>
@@ -877,8 +911,12 @@ export default function Marketing() {
         {pagination.last_page > 1 && (
           <div className="px-4 py-3 border-t border-line flex items-center justify-between">
             <div className="text-sm text-muted">
-              Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to{' '}
-              {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total} campaigns
+              {t('common.showingRange', {
+                from: ((pagination.current_page - 1) * pagination.per_page) + 1,
+                to: Math.min(pagination.current_page * pagination.per_page, pagination.total),
+                total: pagination.total,
+                entity: t('marketing.campaigns', 'campaigns').toLowerCase(),
+              })}
             </div>
             <div className="flex gap-2">
               <button
@@ -886,14 +924,14 @@ export default function Marketing() {
                 disabled={pagination.current_page === 1}
                 className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-aqua-1/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Previous
+                {t('common.previous')}
               </button>
               <button
                 onClick={() => setPagination({ ...pagination, current_page: pagination.current_page + 1 })}
                 disabled={pagination.current_page === pagination.last_page}
                 className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-aqua-1/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                {t('common.next')}
               </button>
             </div>
           </div>
@@ -906,7 +944,7 @@ export default function Marketing() {
           <div className="bg-white rounded-2xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-ink">
-                {editingCampaign ? 'Edit Campaign' : 'New Campaign'}
+                {editingCampaign ? t('marketing.editCampaign') : t('marketing.newCampaign')}
               </h2>
               <button
                 onClick={() => {
@@ -923,7 +961,7 @@ export default function Marketing() {
             {!editingCampaign && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                 <p className="text-sm text-yellow-800">
-                  <strong>Note:</strong> New campaigns will be created with "Draft" status and require admin approval.
+                  <strong>{t('marketing.note', 'Note')}:</strong> {t('marketing.draftNote', 'New campaigns will be created with "Draft" status and require admin approval.')}
                 </p>
               </div>
             )}
@@ -938,13 +976,13 @@ export default function Marketing() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-ink mb-2">
-                    Title <span className="text-red-500">*</span>
+                    {t('marketing.campaignName')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Advertisement title"
+                    placeholder={t('marketing.titlePlaceholder', 'Advertisement title')}
                     required
                     className="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                   />
@@ -952,23 +990,23 @@ export default function Marketing() {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-ink mb-2">
-                    Display Name (Optional)
+                    {t('marketing.displayName', 'Display Name')} ({t('common.optional')})
                   </label>
                   <input
                     type="text"
                     value={formData.displayName}
                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                    placeholder="E.g.: Christmas Promotion Ticker"
+                    placeholder={t('marketing.displayNamePlaceholder', 'E.g.: Christmas Promotion Ticker')}
                     className="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                   />
                   <p className="text-xs text-muted mt-1">
-                    Useful for easily identifying ticker ads in the list
+                    {t('marketing.displayNameHint', 'Useful for easily identifying ticker ads in the list')}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-ink mb-2">
-                    Type * (Ad Type)
+                    {t('marketing.adType')} *
                   </label>
                   <select
                     value={formData.type}
@@ -976,30 +1014,30 @@ export default function Marketing() {
                     required
                     className="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                   >
-                    <option value="BANNER_TOP">Banner Top</option>
-                    <option value="BANNER_SIDE">Banner Side</option>
-                    <option value="INLINE">Inline</option>
-                    <option value="FOOTER">Footer</option>
-                    <option value="SLIDER">Slider</option>
-                    <option value="TICKER">Ticker</option>
-                    <option value="POPUP">Popup</option>
-                    <option value="STICKY">Sticky</option>
+                    <option value="BANNER_TOP">{formatCampaignType('BANNER_TOP')}</option>
+                    <option value="BANNER_SIDE">{formatCampaignType('BANNER_SIDE')}</option>
+                    <option value="INLINE">{formatCampaignType('INLINE')}</option>
+                    <option value="FOOTER">{formatCampaignType('FOOTER')}</option>
+                    <option value="SLIDER">{formatCampaignType('SLIDER')}</option>
+                    <option value="TICKER">{formatCampaignType('TICKER')}</option>
+                    <option value="POPUP">{formatCampaignType('POPUP')}</option>
+                    <option value="STICKY">{formatCampaignType('STICKY')}</option>
                   </select>
                   <p className="text-xs text-muted mt-1">
-                    Ad type defines the size and behavior (e.g., Banner Top: 728x90px, Slider: 1920x600px, Slider Top: for homepage hero section)
+                    {t('marketing.adTypeHint', 'Ad type defines the size and behavior (e.g., Banner Top: 728x90px, Slider: 1920x600px, Slider Top: for homepage hero section)')}
                   </p>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-ink mb-2">
-                    Image/Video URL <span className="text-red-500">*</span>
+                    {t('marketing.image')} <span className="text-red-500">*</span>
                   </label>
                   <div className="flex gap-2">
                   <input
                       type="text"
                       value={formData.imageUrl}
                       onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                      placeholder="https://example.com/image.jpg"
+                      placeholder={t('marketing.imageUrlPlaceholder', 'https://example.com/image.jpg')}
                       required
                       className="flex-1 px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                   />
@@ -1008,7 +1046,7 @@ export default function Marketing() {
                       onClick={() => setShowMediaLibrary(true)}
                       className="px-4 py-2 border border-line rounded-xl text-sm hover:bg-gray-50 transition-colors"
                     >
-                      Media Library
+                      {t('marketing.selectFromMedia')}
                     </button>
                   </div>
                   {formData.imageUrl && (
@@ -1021,12 +1059,12 @@ export default function Marketing() {
                           muted
                           playsInline
                         >
-                          Your browser does not support the video tag.
+                          {t('marketing.videoNotSupported', 'Your browser does not support the video tag.')}
                         </video>
                       ) : (
                         <img 
                           src={formData.imageUrl} 
-                          alt="Preview" 
+                          alt={t('marketing.preview', 'Preview')} 
                           className="max-w-xs max-h-48 rounded-lg border border-line object-cover" 
                           loading="lazy"
                           onError={(e) => {
@@ -1050,7 +1088,7 @@ export default function Marketing() {
                     onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
                     className="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                   >
-                    <option value="">No Project</option>
+                    <option value="">{t('marketing.noProject')}</option>
                     {_projects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
@@ -1061,23 +1099,23 @@ export default function Marketing() {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-ink mb-2">
-                    Target Link (Optional)
+                    {t('marketing.targetLink')} ({t('common.optional')})
                   </label>
                   <input
                     type="url"
                     value={formData.target_link}
                     onChange={(e) => setFormData({ ...formData, target_link: e.target.value })}
-                    placeholder="https://example.com (optional)"
+                    placeholder={t('marketing.targetLinkPlaceholder', 'https://example.com (optional)')}
                     className="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                   />
                   <p className="text-xs text-muted mt-1">
-                    Optional: If not specified, the ad will not be clickable
+                    {t('marketing.targetLinkHint', 'Optional: If not specified, the ad will not be clickable')}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-ink mb-2">
-                    Price (€) (Optional)
+                    {t('marketing.price', 'Price')} (€) ({t('common.optional')})
                   </label>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted">€</span>
@@ -1092,40 +1130,40 @@ export default function Marketing() {
                     />
                   </div>
                   <p className="text-xs text-muted mt-1">
-                    Optional: whole euros only (e.g. 400). If not set, price is calculated from type and duration.
+                    {t('marketing.priceHint', 'Optional: whole euros only (e.g. 400). If not set, price is calculated from type and duration.')}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-ink mb-2">
-                    Position (Optional)
+                    {t('marketing.position')} ({t('common.optional')})
                   </label>
                     <select
                     value={formData.position}
                     onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                     >
-                    <option value="">None (Auto)</option>
-                    <option value="HEADER">Header</option>
-                    <option value="HEADER_LEADERBOARD">Sidebar</option>
-                    <option value="SIDEBAR">Sidebar Rectangle</option>
-                    <option value="SIDEBAR_RECT">Inline Article (inside news article)</option>
-                    <option value="INLINE_ARTICLE">Mid Page (homepage, one slot)</option>
-                    <option value="MID_PAGE">Between Sections 1 (homepage)</option>
-                    <option value="BETWEEN_SECTIONS_1">Between Sections 2 (homepage)</option>
-                    <option value="BETWEEN_SECTIONS_2">Between Sections 3 (homepage)</option>
-                    <option value="BETWEEN_SECTIONS_3">Footer</option>
-                    <option value="FOOTER">Mobile</option>
-                    <option value="MOBILE">Mobile</option>
+                    <option value="">{t('marketing.positionNone', 'None (Auto)')}</option>
+                    <option value="HEADER">{t('marketing.positionHeader', 'Header')}</option>
+                    <option value="HEADER_LEADERBOARD">{t('marketing.positionSidebar', 'Sidebar')}</option>
+                    <option value="SIDEBAR">{t('marketing.positionSidebarRect', 'Sidebar Rectangle')}</option>
+                    <option value="SIDEBAR_RECT">{t('marketing.positionInlineArticle', 'Inline Article (inside news article)')}</option>
+                    <option value="INLINE_ARTICLE">{t('marketing.positionMidPage', 'Mid Page (homepage, one slot)')}</option>
+                    <option value="MID_PAGE">{t('marketing.positionBetween1', 'Between Sections 1 (homepage)')}</option>
+                    <option value="BETWEEN_SECTIONS_1">{t('marketing.positionBetween2', 'Between Sections 2 (homepage)')}</option>
+                    <option value="BETWEEN_SECTIONS_2">{t('marketing.positionBetween3', 'Between Sections 3 (homepage)')}</option>
+                    <option value="BETWEEN_SECTIONS_3">{t('marketing.positionFooter', 'Footer')}</option>
+                    <option value="FOOTER">{t('marketing.positionMobile', 'Mobile')}</option>
+                    <option value="MOBILE">{t('marketing.positionMobile', 'Mobile')}</option>
                     </select>
                   <p className="text-xs text-muted mt-1">
-                    Optional: Specify a position to book a specific slot. If not specified, ad will be auto-assigned based on type.
+                    {t('marketing.positionHint', 'Optional: Specify a position to book a specific slot. If not specified, ad will be auto-assigned based on type.')}
                   </p>
                   </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-ink mb-2">
-                    Start Date <span className="text-red-500">*</span>
+                    {t('marketing.startDate')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="datetime-local"
@@ -1138,7 +1176,7 @@ export default function Marketing() {
 
                 <div>
                   <label className="block text-sm font-semibold text-ink mb-2">
-                    End Date <span className="text-red-500">*</span>
+                    {t('marketing.endDate')} <span className="text-red-500">*</span>
                   </label>
                       <input
                     type="datetime-local"
@@ -1150,46 +1188,60 @@ export default function Marketing() {
                     </div>
 
                     <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-ink mb-2">Target Audience</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('marketing.targetAudience', 'Target Audience')}</label>
                   <div className="space-y-2">
-                    {['All Users', 'New Customers', 'Existing Customers', 'VIP Customers', 'Inactive Customers'].map((option) => (
-                      <label key={option} className="flex items-center gap-2 cursor-pointer">
+                    {[
+                      { value: 'All Users', label: t('marketing.audienceAllUsers', 'All Users') },
+                      { value: 'New Customers', label: t('marketing.audienceNewCustomers', 'New Customers') },
+                      { value: 'Existing Customers', label: t('marketing.audienceExistingCustomers', 'Existing Customers') },
+                      { value: 'VIP Customers', label: t('marketing.audienceVipCustomers', 'VIP Customers') },
+                      { value: 'Inactive Customers', label: t('marketing.audienceInactiveCustomers', 'Inactive Customers') },
+                    ].map(({ value, label }) => (
+                      <label key={value} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={formData.target_audience.includes(option)}
+                          checked={formData.target_audience.includes(value)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setFormData({ ...formData, target_audience: [...formData.target_audience, option] });
+                              setFormData({ ...formData, target_audience: [...formData.target_audience, value] });
                             } else {
-                              setFormData({ ...formData, target_audience: formData.target_audience.filter(a => a !== option) });
+                              setFormData({ ...formData, target_audience: formData.target_audience.filter(a => a !== value) });
                             }
                           }}
                           className="w-4 h-4 text-aqua-5 border-line rounded focus:ring-aqua-5/20"
                       />
-                        <span className="text-sm text-ink">{option}</span>
+                        <span className="text-sm text-ink">{label}</span>
                       </label>
                     ))}
                     </div>
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-ink mb-2">Target Criteria</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('marketing.targetCriteria', 'Target Criteria')}</label>
                   <div className="space-y-2">
-                    {['Age 18-25', 'Age 26-35', 'Age 36-45', 'Age 46+', 'Location: Italy', 'Location: Europe', 'Location: Global'].map((option) => (
-                      <label key={option} className="flex items-center gap-2 cursor-pointer">
+                    {[
+                      { value: 'Age 18-25', label: t('marketing.criteriaAge1825', 'Age 18-25') },
+                      { value: 'Age 26-35', label: t('marketing.criteriaAge2635', 'Age 26-35') },
+                      { value: 'Age 36-45', label: t('marketing.criteriaAge3645', 'Age 36-45') },
+                      { value: 'Age 46+', label: t('marketing.criteriaAge46', 'Age 46+') },
+                      { value: 'Location: Italy', label: t('marketing.criteriaItaly', 'Location: Italy') },
+                      { value: 'Location: Europe', label: t('marketing.criteriaEurope', 'Location: Europe') },
+                      { value: 'Location: Global', label: t('marketing.criteriaGlobal', 'Location: Global') },
+                    ].map(({ value, label }) => (
+                      <label key={value} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={formData.target_criteria.includes(option)}
+                          checked={formData.target_criteria.includes(value)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setFormData({ ...formData, target_criteria: [...formData.target_criteria, option] });
+                              setFormData({ ...formData, target_criteria: [...formData.target_criteria, value] });
                             } else {
-                              setFormData({ ...formData, target_criteria: formData.target_criteria.filter(c => c !== option) });
+                              setFormData({ ...formData, target_criteria: formData.target_criteria.filter(c => c !== value) });
                             }
                           }}
                           className="w-4 h-4 text-aqua-5 border-line rounded focus:ring-aqua-5/20"
                   />
-                        <span className="text-sm text-ink">{option}</span>
+                        <span className="text-sm text-ink">{label}</span>
                       </label>
                     ))}
                   </div>
@@ -1203,7 +1255,7 @@ export default function Marketing() {
                       onChange={(e) => setFormData({ ...formData, track_clicks: e.target.checked })}
                       className="w-4 h-4 text-aqua-5 border-line rounded focus:ring-aqua-5/20"
                     />
-                    <span className="text-sm text-ink">Track Clicks</span>
+                    <span className="text-sm text-ink">{t('marketing.trackClicks')}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -1212,7 +1264,7 @@ export default function Marketing() {
                       onChange={(e) => setFormData({ ...formData, track_opens: e.target.checked })}
                       className="w-4 h-4 text-aqua-5 border-line rounded focus:ring-aqua-5/20"
                     />
-                    <span className="text-sm text-ink">Track Opens</span>
+                    <span className="text-sm text-ink">{t('marketing.trackOpens')}</span>
                   </label>
                 </div>
               </div>
@@ -1227,14 +1279,14 @@ export default function Marketing() {
                   }}
                   className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={formLoading}
                   className="px-4 py-2 text-sm bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {formLoading ? 'Saving...' : editingCampaign ? 'Update Campaign' : 'Create Campaign'}
+                  {formLoading ? t('marketing.saving', 'Saving...') : editingCampaign ? t('marketing.updateCampaign', 'Update Campaign') : t('marketing.createCampaign')}
                 </button>
               </div>
             </form>

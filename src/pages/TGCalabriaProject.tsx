@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuthStore } from '../stores/authStore';
@@ -91,6 +92,7 @@ interface ArticleFormData {
 }
 
 export default function TGCalabriaProject() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -144,7 +146,7 @@ export default function TGCalabriaProject() {
         if (loginResponse.status >= 200 && loginResponse.status < 300) {
           return true;
         }
-        setError('Failed to authenticate with TG Calabria. Please try again.');
+        setError(t('tgCalabria.authFailed'));
         return false;
       }
     } catch (err: any) {
@@ -212,7 +214,7 @@ export default function TGCalabriaProject() {
           
           setStats(transformedStats);
         } else {
-          setError('Failed to load TG Calabria stats');
+          setError(t('tgCalabria.statsFailed'));
         }
 
         // Process news data
@@ -232,20 +234,20 @@ export default function TGCalabriaProject() {
         }
       } catch (dataErr: any) {
         console.error('Error fetching data:', dataErr);
-        setError(dataErr.response?.data?.message || 'Failed to load TG Calabria data');
+        setError(dataErr.response?.data?.message || t('tgCalabria.loadError'));
       }
     } catch (err: any) {
       console.error('Failed to fetch TG Calabria data:', err);
       
       // Handle different error scenarios
       if (err.response?.status === 401) {
-        setError('Session expired. Please refresh the page and try again.');
+        setError(t('tgCalabria.sessionExpired'));
       } else if (err.response?.status === 403) {
-        setError('You do not have access to this project.');
+        setError(t('tgCalabria.accessDenied'));
       } else if (err.response?.status === 400) {
-        setError(err.response?.data?.message || 'Invalid project. Please contact support.');
+        setError(err.response?.data?.message || t('tgCalabria.invalidProject'));
       } else {
-        setError(err.response?.data?.message || 'Failed to load TG Calabria project data. Please try again.');
+        setError(err.response?.data?.message || t('tgCalabria.loadDataFailed'));
       }
     } finally {
       setLoading(false);
@@ -255,7 +257,7 @@ export default function TGCalabriaProject() {
   const handleCreateArticle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectId) {
-      setSubmitError('Project ID not found');
+      setSubmitError(t('tgCalabria.projectIdNotFound'));
       return;
     }
 
@@ -309,20 +311,20 @@ export default function TGCalabriaProject() {
         resetForm();
         // Refresh stats
         await fetchProjectData();
-        alert('✅ Article created successfully!');
+        alert(t('tgCalabria.articleCreated'));
       }
     } catch (err: any) {
       console.error('Failed to create article:', err);
       
       // Handle specific error messages
       if (err.response?.status === 401) {
-        setSubmitError('Session expired. Please refresh the page and try again.');
+        setSubmitError(t('tgCalabria.sessionExpired'));
       } else if (err.response?.status === 422) {
-        setSubmitError('Please fill all required fields correctly.');
+        setSubmitError(t('tgCalabria.fillRequiredFields'));
       } else if (err.response?.data?.message) {
         setSubmitError(err.response.data.message);
       } else {
-        setSubmitError('Failed to create article. Please try again.');
+        setSubmitError(t('tgCalabria.createArticleFailed'));
       }
     } finally {
       setSubmitting(false);
@@ -363,13 +365,13 @@ export default function TGCalabriaProject() {
             onClick={() => navigate('/projects')}
             className="px-3 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
-            ← Back to Projects
+            {t('tgCalabria.back')}
           </button>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-5 mx-auto mb-4"></div>
-            <p className="text-muted">Loading TG Calabria data...</p>
+            <p className="text-muted">{t('tgCalabria.loading')}</p>
           </div>
         </div>
       </div>
@@ -384,18 +386,18 @@ export default function TGCalabriaProject() {
             onClick={() => navigate('/projects')}
             className="px-3 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
-            ← Back to Projects
+            {t('tgCalabria.back')}
           </button>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="bg-white rounded-xl p-8 border border-bad/30 max-w-md text-center">
-            <h3 className="text-lg font-semibold text-ink mb-2">⚠️ Error</h3>
-            <p className="text-muted text-sm mb-4">{error || 'Unable to load TG Calabria data'}</p>
+            <h3 className="text-lg font-semibold text-ink mb-2">{t('tgCalabria.error')}</h3>
+            <p className="text-muted text-sm mb-4">{error || t('tgCalabria.unableToLoad')}</p>
             <button
               onClick={fetchProjectData}
               className="px-4 py-2 bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors font-medium"
             >
-              Try Again
+              {t('common.tryAgain')}
             </button>
           </div>
         </div>
@@ -412,9 +414,9 @@ export default function TGCalabriaProject() {
             onClick={() => navigate('/projects')}
             className="px-3 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
-            ← Back to Projects
+            {t('tgCalabria.back')}
           </button>
-          <h1 className="text-xl font-bold text-ink">TG Calabria Report</h1>
+          <h1 className="text-xl font-bold text-ink">{t('tgCalabria.title')}</h1>
         </div>
         <div className="flex items-center gap-2">
           {!isSuperAdmin && (
@@ -422,14 +424,14 @@ export default function TGCalabriaProject() {
               onClick={() => navigate(projectId ? `/projects/${projectId}/tg-calabria/try` : '/projects')}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              Want to try
+              {t('tgCalabria.wantToTry')}
             </button>
           )}
           <button
             onClick={() => setShowArticleModal(true)}
             className="px-4 py-2 text-sm bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-all font-semibold"
           >
-            + Create Article
+            {t('tgCalabria.createArticle')}
           </button>
         </div>
       </div>
@@ -445,31 +447,31 @@ export default function TGCalabriaProject() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-aqua-5">{stats.overview?.total || 0}</div>
-              <div className="text-xs text-muted mt-1">Total News</div>
+              <div className="text-xs text-muted mt-1">{t('tgCalabria.totalNews')}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{stats.overview?.published || 0}</div>
-              <div className="text-xs text-muted mt-1">Published</div>
+              <div className="text-xs text-muted mt-1">{t('tgCalabria.published')}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-600">{stats.overview?.draft || 0}</div>
-              <div className="text-xs text-muted mt-1">Draft</div>
+              <div className="text-xs text-muted mt-1">{t('tgCalabria.draft')}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">{stats.overview?.pending || 0}</div>
-              <div className="text-xs text-muted mt-1">Pending</div>
+              <div className="text-xs text-muted mt-1">{t('tgCalabria.pending')}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">{stats.overview?.rejected || 0}</div>
-              <div className="text-xs text-muted mt-1">Rejected</div>
+              <div className="text-xs text-muted mt-1">{t('tgCalabria.rejected')}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">{stats.overview?.featured || 0}</div>
-              <div className="text-xs text-muted mt-1">Featured</div>
+              <div className="text-xs text-muted mt-1">{t('tgCalabria.featured')}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-700">{stats.overview?.breaking || 0}</div>
-              <div className="text-xs text-muted mt-1">Breaking</div>
+              <div className="text-xs text-muted mt-1">{t('tgCalabria.breaking')}</div>
             </div>
           </div>
         </div>
@@ -479,9 +481,9 @@ export default function TGCalabriaProject() {
       <div className="px-6 mb-4">
         <div className="bg-white rounded-xl border border-line p-1 inline-flex gap-1">
           {[
-            { id: 'overview', label: '📊 Overview' },
-            { id: 'topNews', label: '⭐ Top News' },
-            { id: 'categories', label: '📁 Categories' },
+            { id: 'overview', label: t('tgCalabria.overview') },
+            { id: 'topNews', label: t('tgCalabria.topNews') },
+            { id: 'categories', label: `📁 ${t('tgCalabria.categories')}` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -505,28 +507,28 @@ export default function TGCalabriaProject() {
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white rounded-xl border border-line p-6">
-                <h3 className="text-lg font-semibold text-ink mb-4">📈 Total Views</h3>
+                <h3 className="text-lg font-semibold text-ink mb-4">{t('tgCalabria.totalViews')}</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-muted">Total Views</span>
+                    <span className="text-muted">{t('tgCalabria.totalViewsLabel')}</span>
                     <span className="text-2xl font-bold text-aqua-5">{stats.views?.total?.toLocaleString() || 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted">Average per News</span>
+                    <span className="text-muted">{t('tgCalabria.averagePerNews')}</span>
                     <span className="text-2xl font-bold text-aqua-5">{Math.round(stats.views?.average || 0)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="bg-white rounded-xl border border-line p-6">
-                <h3 className="text-lg font-semibold text-ink mb-4">📅 Recent Activity</h3>
+                <h3 className="text-lg font-semibold text-ink mb-4">{t('tgCalabria.recentActivity')}</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-muted">Last 7 Days</span>
+                    <span className="text-muted">{t('tgCalabria.last7Days')}</span>
                     <span className="text-2xl font-bold text-aqua-5">{stats.recentActivity?.newsLast7Days || 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted">Last 30 Days</span>
+                    <span className="text-muted">{t('tgCalabria.last30Days')}</span>
                     <span className="text-2xl font-bold text-aqua-5">{stats.recentActivity?.newsLast30Days || 0}</span>
                   </div>
                 </div>
@@ -543,9 +545,9 @@ export default function TGCalabriaProject() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <h4 className="font-semibold text-ink mb-2">{article.title}</h4>
-                        <p className="text-sm text-muted mb-3 line-clamp-2">{article.summary || article.content || 'No description'}</p>
+                        <p className="text-sm text-muted mb-3 line-clamp-2">{article.summary || article.content || t('tgCalabria.noDescription')}</p>
                         <div className="flex items-center gap-3 text-sm text-muted flex-wrap">
-                          <span className="bg-gray-100 px-2 py-1 rounded">{article.category?.nameEn || 'Uncategorized'}</span>
+                          <span className="bg-gray-100 px-2 py-1 rounded">{article.category?.nameEn || t('tgCalabria.uncategorized')}</span>
                           <span>•</span>
                           <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
                           <span>•</span>
@@ -556,19 +558,19 @@ export default function TGCalabriaProject() {
                           }`}>
                             {article.status}
                           </span>
-                          {article.isFeatured && <span className="text-purple-600">⭐ Featured</span>}
-                          {article.isBreaking && <span className="text-red-600">🔴 Breaking</span>}
+                          {article.isFeatured && <span className="text-purple-600">⭐ {t('tgCalabria.featured')}</span>}
+                          {article.isBreaking && <span className="text-red-600">🔴 {t('tgCalabria.breaking')}</span>}
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-aqua-5">{article.views?.toLocaleString() || 0}</div>
-                        <div className="text-xs text-muted">views</div>
+                        <div className="text-xs text-muted">{t('tgCalabria.views')}</div>
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-12 text-muted">No news found</div>
+                <div className="text-center py-12 text-muted">{t('tgCalabria.noNewsFound')}</div>
               )}
             </div>
           )}
@@ -577,7 +579,7 @@ export default function TGCalabriaProject() {
           {activeTab === 'categories' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-ink mb-4">📊 Category Breakdown</h3>
+                <h3 className="text-lg font-semibold text-ink mb-4">{t('tgCalabria.categoryBreakdown')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {stats.categoryBreakdown && stats.categoryBreakdown.length > 0 ? (
                     stats.categoryBreakdown.map((cat) => (
@@ -585,11 +587,11 @@ export default function TGCalabriaProject() {
                         <h4 className="font-semibold text-ink mb-3">{cat.category?.nameEn}</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted">News Count</span>
+                            <span className="text-sm text-muted">{t('tgCalabria.newsCount')}</span>
                             <span className="font-bold text-aqua-5">{cat.newsCount}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted">Total Views</span>
+                            <span className="text-sm text-muted">{t('tgCalabria.totalViewsCount')}</span>
                             <span className="font-bold text-aqua-5">{cat.totalViews?.toLocaleString() || 0}</span>
                           </div>
                           <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
@@ -606,13 +608,13 @@ export default function TGCalabriaProject() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-12 text-muted col-span-full">No category breakdown found</div>
+                    <div className="text-center py-12 text-muted col-span-full">{t('tgCalabria.noCategoryBreakdown')}</div>
                   )}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-ink mb-4">📚 All Categories</h3>
+                <h3 className="text-lg font-semibold text-ink mb-4">{t('tgCalabria.allCategories')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {categories && categories.length > 0 ? (
                     categories.map((cat) => (
@@ -621,7 +623,7 @@ export default function TGCalabriaProject() {
                           <div className="flex-1">
                             <h4 className="font-semibold text-ink mb-2">{cat.nameEn}</h4>
                             <p className="text-sm text-muted mb-2 italic">{cat.nameIt}</p>
-                            <p className="text-xs text-muted">Slug: <code className="bg-gray-100 px-2 py-1 rounded">{cat.slug}</code></p>
+                            <p className="text-xs text-muted">{t('tgCalabria.slug')}: <code className="bg-gray-100 px-2 py-1 rounded">{cat.slug}</code></p>
                           </div>
                           <div className="text-xs text-muted bg-gray-100 px-3 py-1 rounded">
                             ID: {cat.id.substring(0, 8)}...
@@ -630,7 +632,7 @@ export default function TGCalabriaProject() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-12 text-muted col-span-full">No categories found</div>
+                    <div className="text-center py-12 text-muted col-span-full">{t('tgCalabria.noCategoriesFound')}</div>
                   )}
                 </div>
               </div>
@@ -644,7 +646,7 @@ export default function TGCalabriaProject() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-auto py-6">
           <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl my-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-ink">Create Article</h3>
+              <h3 className="text-2xl font-bold text-ink">{t('tgCalabria.createArticle')}</h3>
               <button
                 onClick={() => {
                   setShowArticleModal(false);
@@ -665,13 +667,13 @@ export default function TGCalabriaProject() {
             <form onSubmit={handleCreateArticle} className="space-y-5">
               {/* Title */}
               <div>
-                <label className="block text-sm font-semibold text-ink mb-2">Title *</label>
+                <label className="block text-sm font-semibold text-ink mb-2">{t('tgCalabria.titleLabel')}</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
-                  placeholder="Article title"
+                  placeholder={t('tgCalabria.titlePlaceholder')}
                   className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                 />
               </div>
@@ -679,26 +681,26 @@ export default function TGCalabriaProject() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Slug */}
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">Slug</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('tgCalabria.slugLabel')}</label>
                   <input
                     type="text"
                     value={formData.slug}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="Auto-generated if empty"
+                    placeholder={t('tgCalabria.slugPlaceholder')}
                     className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                   />
                 </div>
 
                 {/* Category */}
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">Category *</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('tgCalabria.categoryLabel')}</label>
                   <select
                     value={formData.categoryId}
                     onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                     required
                     className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                   >
-                    <option value="">Select a category</option>
+                    <option value="">{t('tgCalabria.selectCategory')}</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.nameEn}
@@ -710,12 +712,12 @@ export default function TGCalabriaProject() {
 
               {/* Summary */}
               <div>
-                <label className="block text-sm font-semibold text-ink mb-2">Summary *</label>
+                <label className="block text-sm font-semibold text-ink mb-2">{t('tgCalabria.summaryLabel')}</label>
                 <textarea
                   value={formData.summary}
                   onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
                   required
-                  placeholder="Brief summary of the article"
+                  placeholder={t('tgCalabria.summaryPlaceholder')}
                   rows={2}
                   className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5 resize-none"
                 />
@@ -723,12 +725,12 @@ export default function TGCalabriaProject() {
 
               {/* Content */}
               <div>
-                <label className="block text-sm font-semibold text-ink mb-2">Content *</label>
+                <label className="block text-sm font-semibold text-ink mb-2">{t('tgCalabria.contentLabel')}</label>
                 <textarea
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   required
-                  placeholder="Full article content (HTML format)"
+                  placeholder={t('tgCalabria.contentPlaceholder')}
                   rows={4}
                   className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5 resize-none"
                 />
@@ -736,7 +738,7 @@ export default function TGCalabriaProject() {
 
               {/* Image Upload */}
               <div>
-                <label className="block text-sm font-semibold text-ink mb-2">Main Image</label>
+                <label className="block text-sm font-semibold text-ink mb-2">{t('tgCalabria.mainImage')}</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -758,12 +760,12 @@ export default function TGCalabriaProject() {
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-semibold text-ink mb-2">Tags</label>
+                <label className="block text-sm font-semibold text-ink mb-2">{t('tgCalabria.tags')}</label>
                 <input
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  placeholder="Comma-separated (e.g., breaking, news, event)"
+                  placeholder={t('tgCalabria.tagsPlaceholder')}
                   className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                 />
               </div>
@@ -777,7 +779,7 @@ export default function TGCalabriaProject() {
                     onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
                     className="w-4 h-4 accent-aqua-5 rounded"
                   />
-                  <span className="text-sm font-medium text-ink">Featured</span>
+                  <span className="text-sm font-medium text-ink">{t('tgCalabria.featuredLabel')}</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -787,13 +789,13 @@ export default function TGCalabriaProject() {
                     onChange={(e) => setFormData({ ...formData, isBreaking: e.target.checked })}
                     className="w-4 h-4 accent-aqua-5 rounded"
                   />
-                  <span className="text-sm font-medium text-ink">Breaking News</span>
+                  <span className="text-sm font-medium text-ink">{t('tgCalabria.breakingNews')}</span>
                 </label>
               </div>
 
               {/* Status */}
               <div>
-                <label className="block text-sm font-semibold text-ink mb-2">Status</label>
+                <label className="block text-sm font-semibold text-ink mb-2">{t('tgCalabria.status')}</label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -804,7 +806,7 @@ export default function TGCalabriaProject() {
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                       className="w-4 h-4 accent-aqua-5"
                     />
-                    <span className="text-sm font-medium text-ink">Published</span>
+                    <span className="text-sm font-medium text-ink">{t('tgCalabria.published')}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -815,7 +817,7 @@ export default function TGCalabriaProject() {
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                       className="w-4 h-4 accent-aqua-5"
                     />
-                    <span className="text-sm font-medium text-ink">Draft</span>
+                    <span className="text-sm font-medium text-ink">{t('tgCalabria.draft')}</span>
                   </label>
                 </div>
               </div>
@@ -831,14 +833,14 @@ export default function TGCalabriaProject() {
                   }}
                   className="flex-1 px-4 py-2 border border-line text-ink rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? 'Creating...' : 'Create Article'}
+                  {submitting ? t('tgCalabria.creating') : t('tgCalabria.createArticle')}
                 </button>
               </div>
             </form>

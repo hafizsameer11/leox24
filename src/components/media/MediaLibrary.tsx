@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -21,6 +22,7 @@ interface MediaLibraryProps {
 }
 
 export default function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibraryProps) {
+  const { t } = useTranslation();
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -39,21 +41,18 @@ export default function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibrary
       const response = await api.get('/media');
       const items = Array.isArray(response.data) ? response.data : [];
       
-      // Filter out items with invalid URLs and ensure name is a string
       const validItems = items
         .filter((item: any) => {
           return item.url && (item.url.startsWith('http://') || item.url.startsWith('https://') || item.url.startsWith('/'));
         })
         .map((item: any) => ({
           ...item,
-          name: typeof item.name === 'string' ? item.name : (item.name?.toString() || 'Media image'),
+          name: typeof item.name === 'string' ? item.name : (item.name?.toString() || t('mediaLibrary.defaultImageName')),
         }));
       
-      console.log('Fetched media items:', validItems.length, 'valid items');
       setMediaItems(validItems);
     } catch (error: any) {
       console.error('Failed to fetch media items:', error);
-      console.error('Error details:', error.response?.data);
       setMediaItems([]);
     } finally {
       setLoading(false);
@@ -72,17 +71,15 @@ export default function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibrary
       
       if (response.data?.url) {
         const imageUrl = response.data.url;
-        // Refresh the media list to include the new upload
         await fetchMediaItems();
         setSelectedUrl(imageUrl);
-        // Auto-select and close after upload
         setTimeout(() => {
           handleSelect(imageUrl);
         }, 500);
       }
     } catch (error: any) {
       console.error('Failed to upload image:', error);
-      alert(error.response?.data?.message || 'Failed to upload image');
+      alert(error.response?.data?.message || t('mediaLibrary.uploadFailed'));
     } finally {
       setUploading(false);
     }
@@ -94,10 +91,9 @@ export default function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibrary
       if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
         handleFileUpload(file);
       } else {
-        alert('Please select an image or video file');
+        alert(t('mediaLibrary.invalidFileType'));
       }
     }
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -113,11 +109,10 @@ export default function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibrary
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Media Library"
+      title={t('mediaLibrary.title')}
       size="xl"
     >
       <div className="space-y-4">
-        {/* Upload Section */}
         <div className="border border-line rounded-lg p-4 bg-gray-50">
           <div className="flex items-center gap-4">
             <input
@@ -132,22 +127,21 @@ export default function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibrary
               htmlFor="media-upload"
               className="px-4 py-2 bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors cursor-pointer font-medium"
             >
-              {uploading ? 'Uploading...' : '+ Upload Media'}
+              {uploading ? t('mediaLibrary.uploading') : t('mediaLibrary.uploadMedia')}
             </label>
             <p className="text-sm text-muted">
-              Upload a new image or video, or select from existing media below
+              {t('mediaLibrary.uploadHintSelect')}
             </p>
           </div>
         </div>
 
-        {/* Media Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <LoadingSpinner />
           </div>
         ) : mediaItems.length === 0 ? (
           <div className="text-center py-12 text-muted">
-            No media found. Upload an image or video to get started.
+            {t('mediaLibrary.noMediaFound')}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
@@ -169,27 +163,25 @@ export default function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibrary
                       muted
                       playsInline
                     >
-                      Your browser does not support the video tag.
+                      {t('mediaLibrary.videoNotSupported')}
                     </video>
                   ) : (
                     <img
                       src={item.url}
-                      alt={item.name || 'Media image'}
+                      alt={item.name || t('mediaLibrary.defaultImageName')}
                       className="w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
-                        // Hide broken images instead of showing error text
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                       onLoad={(e) => {
-                        // Ensure image is visible when loaded
                         (e.target as HTMLImageElement).style.display = 'block';
                       }}
                     />
                   )}
                   {(item.type === 'video' || item.url.match(/\.(mp4|webm|ogg|mov|avi)$/i)) && (
                     <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-1 rounded text-xs">
-                      ▶ Video
+                      {t('mediaLibrary.video')}
                     </div>
                   )}
                 </div>
@@ -208,14 +200,13 @@ export default function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibrary
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-line">
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           {selectedUrl && (
             <Button onClick={() => handleSelect(selectedUrl)}>
-              Use Selected Image
+              {t('common.useSelectedImage')}
             </Button>
           )}
         </div>

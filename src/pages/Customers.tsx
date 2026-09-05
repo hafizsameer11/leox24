@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
@@ -17,6 +18,7 @@ interface Customer {
 }
 
 export default function Customers() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ export default function Customers() {
       fetchCustomers();
     } catch (error: any) {
       console.error('Failed to create customer:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to create customer. Please try again.';
+      const errorMessage = error.response?.data?.message || t('customers.createFailed');
       alert(errorMessage);
     }
   };
@@ -126,13 +128,13 @@ export default function Customers() {
       fetchCustomers();
     } catch (error: any) {
       console.error('Failed to update customer:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to update customer. Please try again.';
+      const errorMessage = error.response?.data?.message || t('customers.updateFailed');
       alert(errorMessage);
     }
   };
 
   const handleDeleteCustomer = async (customerId: number) => {
-    if (!confirm('Are you sure you want to delete this customer?')) {
+    if (!confirm(t('customers.deleteConfirm'))) {
       return;
     }
 
@@ -141,7 +143,7 @@ export default function Customers() {
       fetchCustomers();
     } catch (error: any) {
       console.error('Failed to delete customer:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to delete customer. Please try again.';
+      const errorMessage = error.response?.data?.message || t('customers.deleteFailed');
       alert(errorMessage);
     }
   };
@@ -189,14 +191,14 @@ export default function Customers() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Customers"
-        subtitle="Manage all your customer contacts"
+        title={t('customers.title')}
+        subtitle={t('customers.subtitle')}
         actions={
           <button 
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
           >
-            + New Customer
+            + {t('customers.newCustomer')}
           </button>
         }
       />
@@ -205,7 +207,7 @@ export default function Customers() {
       <div className="bg-white border border-line rounded-2xl p-4">
         <input
           type="text"
-          placeholder="Search customers by name, email, phone, or VAT..."
+          placeholder={t('customers.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
@@ -218,11 +220,11 @@ export default function Customers() {
           <table className="w-full">
             <thead className="bg-aqua-1/30 border-b border-line">
               <tr>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Name</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Email</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Phone</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">VAT</th>
-                <th className="text-right text-xs font-bold text-muted uppercase py-3 px-4">Actions</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.name')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.email')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.phone')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.vatNumber')}</th>
+                <th className="text-right text-xs font-bold text-muted uppercase py-3 px-4">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -245,21 +247,21 @@ export default function Customers() {
                       <button 
                         onClick={() => navigate(`/customers/${customer.id}`)}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors" 
-                        title="View Details"
+                        title={t('customers.viewDetails')}
                       >
                         👁️
                       </button>
                       <button 
                         onClick={() => openEditModal(customer)}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors" 
-                        title="Edit"
+                        title={t('common.edit')}
                       >
                         ✏️
                       </button>
                       <button 
                         onClick={() => handleDeleteCustomer(customer.id)}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors text-red-500" 
-                        title="Delete"
+                        title={t('common.delete')}
                       >
                         🗑️
                       </button>
@@ -272,7 +274,7 @@ export default function Customers() {
         </div>
         {customers.length === 0 && !loading && (
           <div className="p-8 text-center text-muted">
-            No customers found. Create your first customer to get started!
+            {t('customers.noCustomersFound')}
           </div>
         )}
       </div>
@@ -282,12 +284,12 @@ export default function Customers() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-ink mb-4">
-              {editingCustomer ? 'Edit Customer' : 'Create New Customer'}
+              {editingCustomer ? t('customers.editCustomer') : t('customers.createNewCustomer')}
             </h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Email *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('common.email')} *</label>
                 <input
                   type="email"
                   value={formData.email}
@@ -298,7 +300,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Phone *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('common.phone')} *</label>
                 <input
                   type="tel"
                   value={formData.phone}
@@ -310,7 +312,7 @@ export default function Customers() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">First Name</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('common.firstName')}</label>
                   <input
                     type="text"
                     value={formData.first_name}
@@ -320,7 +322,7 @@ export default function Customers() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Last Name</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('common.lastName')}</label>
                   <input
                     type="text"
                     value={formData.last_name}
@@ -331,7 +333,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">VAT Number</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('common.vatNumber')}</label>
                 <input
                   type="text"
                   value={formData.vat}
@@ -341,7 +343,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Address</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('common.address')}</label>
                 <textarea
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -351,7 +353,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Notes</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('common.notes')}</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -370,13 +372,13 @@ export default function Customers() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={editingCustomer ? handleUpdateCustomer : handleCreateCustomer}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                {editingCustomer ? 'Update' : 'Create'}
+                {editingCustomer ? t('common.update') : t('common.create')}
               </button>
             </div>
           </div>

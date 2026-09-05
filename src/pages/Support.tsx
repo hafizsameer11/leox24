@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
 import { useAuthStore } from '../stores/authStore';
@@ -61,6 +62,7 @@ interface Company {
 }
 
 export default function Support() {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const isSuperAdmin = user?.role === 'super_admin';
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -157,7 +159,7 @@ export default function Support() {
     try {
       // For super_admin, company_id is required
       if (isSuperAdmin && !formData.company_id) {
-        alert('Please select a company to create the ticket.');
+        alert(t('support.selectCompany', 'Please select a company to create the ticket.'));
         return;
       }
 
@@ -192,7 +194,7 @@ export default function Support() {
       fetchTickets();
     } catch (error: any) {
       console.error('Failed to create ticket:', error);
-      alert(error.response?.data?.message || 'Failed to create ticket. Please try again.');
+      alert(error.response?.data?.message || t('support.createFailed', 'Failed to create ticket. Please try again.'));
     }
   };
 
@@ -227,12 +229,12 @@ export default function Support() {
       fetchTickets();
     } catch (error) {
       console.error('Failed to update ticket:', error);
-      alert('Failed to update ticket. Please try again.');
+      alert(t('support.updateFailed', 'Failed to update ticket. Please try again.'));
     }
   };
 
   const handleDeleteTicket = async (ticketId: number) => {
-    if (!confirm('Are you sure you want to delete this ticket?')) {
+    if (!confirm(t('support.deleteConfirm', 'Are you sure you want to delete this ticket?'))) {
       return;
     }
 
@@ -241,12 +243,12 @@ export default function Support() {
       fetchTickets();
     } catch (error) {
       console.error('Failed to delete ticket:', error);
-      alert('Failed to delete ticket. Please try again.');
+      alert(t('support.deleteFailed', 'Failed to delete ticket. Please try again.'));
     }
   };
 
   const handleCloseTicket = async (ticket: SupportTicket) => {
-    const resolution = prompt('Enter resolution notes (optional):');
+    const resolution = prompt(t('support.resolutionPrompt'));
     if (resolution === null) return;
 
     try {
@@ -254,7 +256,7 @@ export default function Support() {
       fetchTickets();
     } catch (error) {
       console.error('Failed to close ticket:', error);
-      alert('Failed to close ticket. Please try again.');
+      alert(t('support.closeFailed', 'Failed to close ticket. Please try again.'));
     }
   };
 
@@ -329,10 +331,35 @@ export default function Support() {
   };
 
   const formatStatus = (status: string) => {
-    return status
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    const statusKeys: Record<string, string> = {
+      open: 'support.open',
+      in_progress: 'support.inProgress',
+      waiting_customer: 'support.waitingCustomer',
+      resolved: 'support.resolved',
+      closed: 'support.closed',
+    };
+    return t(statusKeys[status] || status);
+  };
+
+  const formatPriority = (priority: string) => {
+    const priorityKeys: Record<string, string> = {
+      low: 'leads.low',
+      medium: 'leads.medium',
+      high: 'leads.high',
+      urgent: 'leads.urgent',
+    };
+    return t(priorityKeys[priority] || priority);
+  };
+
+  const formatType = (type: string) => {
+    const typeKeys: Record<string, string> = {
+      technical: 'support.technical',
+      billing: 'support.billing',
+      feature_request: 'support.featureRequest',
+      bug: 'support.bug',
+      other: 'leads.other',
+    };
+    return t(typeKeys[type] || type);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -361,15 +388,15 @@ export default function Support() {
     return (
       <div className="space-y-6">
         <Topbar
-          title="Support Tickets"
-          subtitle="Manage customer support tickets and SLA tracking"
+          title={t('support.ticketsTitle')}
+          subtitle={t('support.ticketsSubtitle')}
           actions={
             <>
               <button className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium">
-                Refresh
+                {t('common.refresh')}
               </button>
               <button className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold">
-                🛠️ New Ticket
+                🛠️ {t('support.newTicket')}
               </button>
             </>
           }
@@ -384,21 +411,21 @@ export default function Support() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Support Tickets"
-        subtitle="Manage customer support tickets and SLA tracking"
+        title={t('support.ticketsTitle')}
+        subtitle={t('support.ticketsSubtitle')}
         actions={
           <>
             <button
               onClick={fetchTickets}
               className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
             >
-              🔄 Refresh
+              🔄 {t('common.refresh')}
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              🛠️ New Ticket
+              🛠️ {t('support.newTicket')}
             </button>
           </>
         }
@@ -409,7 +436,7 @@ export default function Support() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <input
             type="text"
-            placeholder="Search tickets..."
+            placeholder={t('support.searchPlaceholder')}
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
             className="px-3 py-2 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
@@ -422,12 +449,12 @@ export default function Support() {
             }}
             className="px-3 py-2 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
           >
-            <option value="all">All Status</option>
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="waiting_customer">Waiting Customer</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
+            <option value="all">{t('common.allStatus')}</option>
+            <option value="open">{t('support.open')}</option>
+            <option value="in_progress">{t('support.inProgress')}</option>
+            <option value="waiting_customer">{t('support.waitingCustomer')}</option>
+            <option value="resolved">{t('support.resolved')}</option>
+            <option value="closed">{t('support.closed')}</option>
           </select>
           <select
             value={filters.priority}
@@ -437,11 +464,11 @@ export default function Support() {
             }}
             className="px-3 py-2 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
           >
-            <option value="all">All Priorities</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="urgent">Urgent</option>
+            <option value="all">{t('support.allPriorities', 'All Priorities')}</option>
+            <option value="low">{t('leads.low')}</option>
+            <option value="medium">{t('leads.medium')}</option>
+            <option value="high">{t('leads.high')}</option>
+            <option value="urgent">{t('leads.urgent')}</option>
           </select>
           <select
             value={filters.type}
@@ -451,18 +478,18 @@ export default function Support() {
             }}
             className="px-3 py-2 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
           >
-            <option value="all">All Types</option>
-            <option value="technical">Technical</option>
-            <option value="billing">Billing</option>
-            <option value="feature_request">Feature Request</option>
-            <option value="bug">Bug</option>
-            <option value="other">Other</option>
+            <option value="all">{t('common.allTypes')}</option>
+            <option value="technical">{t('support.technical')}</option>
+            <option value="billing">{t('support.billing')}</option>
+            <option value="feature_request">{t('support.featureRequest')}</option>
+            <option value="bug">{t('support.bug')}</option>
+            <option value="other">{t('leads.other')}</option>
           </select>
           <button
             onClick={clearFilters}
             className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
-            Clear Filters
+            {t('common.clearFilters')}
           </button>
         </div>
       </div>
@@ -475,8 +502,8 @@ export default function Support() {
           </div>
         ) : tickets.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-muted text-lg mb-2">No support tickets found</p>
-            <p className="text-muted text-sm">Create your first ticket to get started</p>
+            <p className="text-muted text-lg mb-2">{t('support.noTickets')}</p>
+            <p className="text-muted text-sm">{t('support.createFirst')}</p>
           </div>
         ) : (
           <>
@@ -484,15 +511,15 @@ export default function Support() {
               <table className="w-full">
                 <thead className="bg-aqua-1/30 border-b border-line">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Ticket #</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Subject</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Customer</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Priority</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Assigned To</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Created</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-muted uppercase">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('support.ticketNumber')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('support.subject')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('sales.customer')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('common.status')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('common.priority')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('common.type')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('support.assignedTo')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('support.createdAt')}</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-muted uppercase">{t('common.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -524,17 +551,14 @@ export default function Support() {
                             ticket.priority
                           )}`}
                         >
-                          {ticket.priority}
+                          {formatPriority(ticket.priority)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted">
-                        {ticket.type
-                          .split('_')
-                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                          .join(' ')}
+                        {formatType(ticket.type)}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted">
-                        {ticket.assignee?.name || 'Unassigned'}
+                        {ticket.assignee?.name || t('support.unassigned', 'Unassigned')}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted">{formatDate(ticket.created_at)}</td>
                       <td className="px-4 py-3">
@@ -542,7 +566,7 @@ export default function Support() {
                           <button
                             onClick={() => openEditModal(ticket)}
                             className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors"
-                            title="Edit"
+                            title={t('common.edit')}
                           >
                             ✏️
                           </button>
@@ -550,7 +574,7 @@ export default function Support() {
                             <button
                               onClick={() => handleCloseTicket(ticket)}
                               className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors text-green-600"
-                              title="Close"
+                              title={t('common.close')}
                             >
                               ✓
                             </button>
@@ -558,7 +582,7 @@ export default function Support() {
                           <button
                             onClick={() => handleDeleteTicket(ticket.id)}
                             className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors text-red-500"
-                            title="Delete"
+                            title={t('common.delete')}
                           >
                             🗑️
                           </button>
@@ -574,9 +598,12 @@ export default function Support() {
             {pagination.last_page > 1 && (
               <div className="px-4 py-3 border-t border-line flex items-center justify-between">
                 <div className="text-sm text-muted">
-                  Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to{' '}
-                  {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total}{' '}
-                  tickets
+                  {t('common.showingRange', {
+                    from: ((pagination.current_page - 1) * pagination.per_page) + 1,
+                    to: Math.min(pagination.current_page * pagination.per_page, pagination.total),
+                    total: pagination.total,
+                    entity: t('support.tickets', 'tickets').toLowerCase(),
+                  })}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -584,14 +611,14 @@ export default function Support() {
                     disabled={pagination.current_page === 1}
                     className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-aqua-1/30 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t('common.previous')}
                   </button>
                   <button
                     onClick={() => handlePageChange(pagination.current_page + 1)}
                     disabled={pagination.current_page === pagination.last_page}
                     className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-aqua-1/30 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('common.next')}
                   </button>
                 </div>
               </div>
@@ -605,21 +632,21 @@ export default function Support() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-ink mb-4">
-              {editingTicket ? 'Edit Support Ticket' : 'Create New Support Ticket'}
+              {editingTicket ? t('support.editTicket') : t('support.createTicket')}
             </h2>
 
             <div className="space-y-4">
               {/* Company Selector for Super Admin - Only when creating */}
               {isSuperAdmin && !editingTicket && (
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Company *</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('users.company')} *</label>
                   <select
                     value={formData.company_id}
                     onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
                     className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                     required
                   >
-                    <option value="">Select a company</option>
+                    <option value="">{t('common.selectCompany')}</option>
                     {companies.map((company) => (
                       <option key={company.id} value={company.id}>
                         {company.name}
@@ -630,7 +657,7 @@ export default function Support() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Subject *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('support.subject')} *</label>
                 <input
                   type="text"
                   value={formData.subject}
@@ -641,7 +668,7 @@ export default function Support() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Description *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('common.description')} *</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -653,59 +680,59 @@ export default function Support() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Priority *</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('common.priority')} *</label>
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
                     className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
+                    <option value="low">{t('leads.low')}</option>
+                    <option value="medium">{t('leads.medium')}</option>
+                    <option value="high">{t('leads.high')}</option>
+                    <option value="urgent">{t('leads.urgent')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Type *</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('common.type')} *</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
                     className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   >
-                    <option value="technical">Technical</option>
-                    <option value="billing">Billing</option>
-                    <option value="feature_request">Feature Request</option>
-                    <option value="bug">Bug</option>
-                    <option value="other">Other</option>
+                    <option value="technical">{t('support.technical')}</option>
+                    <option value="billing">{t('support.billing')}</option>
+                    <option value="feature_request">{t('support.featureRequest')}</option>
+                    <option value="bug">{t('support.bug')}</option>
+                    <option value="other">{t('leads.other')}</option>
                   </select>
                 </div>
               </div>
 
               {editingTicket && (
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Status</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('common.status')}</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                     className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   >
-                    <option value="open">Open</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="waiting_customer">Waiting Customer</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
+                    <option value="open">{t('support.open')}</option>
+                    <option value="in_progress">{t('support.inProgress')}</option>
+                    <option value="waiting_customer">{t('support.waitingCustomer')}</option>
+                    <option value="resolved">{t('support.resolved')}</option>
+                    <option value="closed">{t('support.closed')}</option>
                   </select>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Customer ID (optional)</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('support.customerId', 'Customer ID')} ({t('common.optional')})</label>
                 <input
                   type="number"
                   value={formData.customer_id}
                   onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                  placeholder="Leave empty to enter customer details manually"
+                  placeholder={t('support.customerIdPlaceholder', 'Leave empty to enter customer details manually')}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 />
               </div>
@@ -713,7 +740,7 @@ export default function Support() {
               {!formData.customer_id && (
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-1">Customer Name</label>
+                    <label className="block text-sm font-medium text-ink mb-1">{t('support.customerName', 'Customer Name')}</label>
                     <input
                       type="text"
                       value={formData.customer_name}
@@ -722,7 +749,7 @@ export default function Support() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-1">Customer Email</label>
+                    <label className="block text-sm font-medium text-ink mb-1">{t('support.customerEmail', 'Customer Email')}</label>
                     <input
                       type="email"
                       value={formData.customer_email}
@@ -731,7 +758,7 @@ export default function Support() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-1">Customer Phone</label>
+                    <label className="block text-sm font-medium text-ink mb-1">{t('support.customerPhone', 'Customer Phone')}</label>
                     <input
                       type="tel"
                       value={formData.customer_phone}
@@ -744,27 +771,27 @@ export default function Support() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Source</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('leads.source')}</label>
                   <input
                     type="text"
                     value={formData.source}
                     onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                    placeholder="e.g., email, phone, web"
+                    placeholder={t('support.sourcePlaceholder', 'e.g., email, phone, web')}
                     className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Channel</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('support.channel', 'Channel')}</label>
                   <input
                     type="text"
                     value={formData.channel}
                     onChange={(e) => setFormData({ ...formData, channel: e.target.value })}
-                    placeholder="e.g., support_email, live_chat"
+                    placeholder={t('support.channelPlaceholder', 'e.g., support_email, live_chat')}
                     className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Category</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('common.category')}</label>
                   <input
                     type="text"
                     value={formData.category}
@@ -776,12 +803,12 @@ export default function Support() {
 
               {editingTicket && (
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Resolution</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('support.resolution')}</label>
                   <textarea
                     value={formData.resolution}
                     onChange={(e) => setFormData({ ...formData, resolution: e.target.value })}
                     rows={3}
-                    placeholder="Resolution notes..."
+                    placeholder={t('support.resolutionNotes', 'Resolution notes...')}
                     className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   />
                 </div>
@@ -797,13 +824,13 @@ export default function Support() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={editingTicket ? handleUpdateTicket : handleCreateTicket}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                {editingTicket ? 'Update' : 'Create'}
+                {editingTicket ? t('common.update') : t('common.create')}
               </button>
             </div>
           </div>

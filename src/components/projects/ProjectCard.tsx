@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { Project } from '../../types/project.types';
 
 interface ProjectCardProps {
@@ -8,6 +9,8 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project, onAccess, onShowCredentials, isSuperAdmin }: ProjectCardProps) {
+  const { t } = useTranslation();
+
   const getIntegrationBadge = () => {
     const colors = {
       api: 'bg-aqua-1 text-aqua-5 border-aqua-5/30',
@@ -19,11 +22,11 @@ export default function ProjectCard({ project, onAccess, onShowCredentials, isSu
 
   const getButtonText = () => {
     if (project.integration_type === 'iframe') {
-      return 'Open Admin Panel';
+      return t('projectCard.openAdmin');
     } else if (project.integration_type === 'hybrid') {
-      return 'Open CRM';
+      return t('projectCard.openCrm');
     } else {
-      return 'Access via API';
+      return t('projectCard.accessApi');
     }
   };
 
@@ -46,16 +49,16 @@ export default function ProjectCard({ project, onAccess, onShowCredentials, isSu
       <div className="flex items-center gap-2 mb-4">
         {project.sso_enabled && (
           <span className="text-xs px-2 py-1 rounded-lg bg-aqua-1/50 text-aqua-5 border border-aqua-5/20 font-medium">
-            SSO Enabled
+            {t('projectCard.ssoEnabled')}
           </span>
         )}
         {project.is_active ? (
           <span className="text-xs px-2 py-1 rounded-lg bg-ok/15 text-ok border border-ok/30 font-medium">
-            Active
+            {t('projectCard.active')}
           </span>
         ) : (
           <span className="text-xs px-2 py-1 rounded-lg bg-muted/15 text-muted border border-muted/30 font-medium">
-            Inactive
+            {t('projectCard.inactive')}
           </span>
         )}
       </div>
@@ -72,9 +75,9 @@ export default function ProjectCard({ project, onAccess, onShowCredentials, isSu
           <button
             onClick={() => onShowCredentials(project.id)}
             className="px-4 py-2.5 bg-purple-100 text-purple-600 rounded-xl hover:bg-purple-200 transition-colors font-semibold text-sm border border-purple-300"
-            title="Show project credentials"
+            title={t('projectCard.credentialsTooltip')}
           >
-            🔑 Credentials
+            🔑 {t('projectCard.credentials')}
           </button>
         )}
       </div>

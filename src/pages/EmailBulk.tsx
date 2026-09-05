@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../components/layout/Topbar';
 import api from '../services/api';
@@ -9,6 +10,7 @@ import { useAuthStore } from '../stores/authStore';
 interface EmailRecord {
   id: number;
   category: string;
+  email_address?: string | null;
   headers_json: string[] | null;
   row_data_json: {
     email: string;
@@ -20,7 +22,15 @@ interface EmailRecord {
   created_at: string;
 }
 
+interface EmailSender {
+  id: string;
+  label: string;
+  address: string;
+  name: string;
+}
+
 export default function EmailBulk() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const isSuperAdmin = user?.role === 'super_admin';
@@ -51,12 +61,14 @@ export default function EmailBulk() {
     category: '',
   });
   const [sendAttachments, setSendAttachments] = useState<File[]>([]);
+  const [senders, setSenders] = useState<EmailSender[]>([]);
 
   const [sendFormData, setSendFormData] = useState({
     selection_type: 'first_n' as 'first_n' | 'selected' | 'category',
     first_n: 20,
     selected_ids: [] as number[],
     category_filter: '',
+    sender_id: '',
     subject: '',
     message: '',
   });
@@ -73,7 +85,25 @@ export default function EmailBulk() {
 
   useEffect(() => {
     fetchCategories();
+    fetchSenders();
   }, []);
+
+  const fetchSenders = async () => {
+    try {
+      const response = await api.get('/emails/senders');
+      const list = response.data.senders || [];
+      setSenders(list);
+      if (list.length > 0) {
+        setSendFormData((prev) => ({
+          ...prev,
+          sender_id: prev.sender_id || list[0].id,
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch email senders:', error);
+      setSenders([]);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -113,7 +143,7 @@ export default function EmailBulk() {
       });
     } catch (error: any) {
       console.error('Failed to fetch emails:', error);
-      alert(error.response?.data?.message || 'Failed to fetch emails');
+      alert(error.response?.data?.message || t('emails.fetchFailed'));
     } finally {
       setLoading(false);
     }
@@ -124,7 +154,7 @@ export default function EmailBulk() {
     if (file) {
       const extension = file.name.split('.').pop()?.toLowerCase();
       if (!['csv', 'xlsx', 'xls', 'txt'].includes(extension || '')) {
-        alert('Please select a CSV, XLSX, XLS, or TXT file');
+        alert(t('emails.invalidFileType'));
         return;
       }
       setUploadFormData({ ...uploadFormData, file });
@@ -133,7 +163,7 @@ export default function EmailBulk() {
 
   const handleUpload = async () => {
     if (!uploadFormData.file || !uploadFormData.category) {
-      alert('Please select a file and category');
+      alert(t('emails.selectFileAndCategory'));
       return;
     }
 
@@ -150,31 +180,31 @@ export default function EmailBulk() {
       });
 
       // Build result message
-      let message = `Upload completed!\n\nTotal rows: ${response.data.total_rows || response.data.total}\n`;
-      message += `✅ Successfully uploaded: ${response.data.successful}\n`;
+      let message = `${t('emails.uploadCompleted')}\n\n${t('emails.totalRows', { count: response.data.total_rows || response.data.total })}\n`;
+      message += `✅ ${t('emails.uploadedSuccess', { count: response.data.successful })}\n`;
       if (response.data.skipped > 0) {
-        message += `⏭️ Skipped (already exist): ${response.data.skipped}\n`;
+        message += `⏭️ ${t('emails.skippedExist', { count: response.data.skipped })}\n`;
       }
       if (response.data.failed > 0) {
-        message += `❌ Failed: ${response.data.failed}\n`;
+        message += `❌ ${t('emails.uploadFailed', { count: response.data.failed })}\n`;
       }
 
       // Show skipped emails if any
       if (response.data.skipped_emails && response.data.skipped_emails.length > 0) {
         const skippedList = response.data.skipped_emails.slice(0, 10).join('\n');
         const moreSkipped = response.data.skipped_emails.length > 10 
-          ? `\n... and ${response.data.skipped_emails.length - 10} more` 
+          ? `\n${t('emails.andMore', { count: response.data.skipped_emails.length - 10 })}` 
           : '';
-        message += `\n\nSkipped emails (already exist):\n${skippedList}${moreSkipped}`;
+        message += `\n\n${t('emails.skippedEmailsTitle')}\n${skippedList}${moreSkipped}`;
       }
 
       // Show errors if any
       if (response.data.errors && response.data.errors.length > 0) {
         const errorList = response.data.errors.slice(0, 10).join('\n');
         const moreErrors = response.data.errors.length > 10 
-          ? `\n... and ${response.data.errors.length - 10} more errors` 
+          ? `\n${t('emails.andMoreErrors', { count: response.data.errors.length - 10 })}` 
           : '';
-        message += `\n\nErrors:\n${errorList}${moreErrors}`;
+        message += `\n\n${t('emails.errorsTitle')}\n${errorList}${moreErrors}`;
       }
 
       alert(message);
@@ -187,7 +217,7 @@ export default function EmailBulk() {
       fetchEmails();
     } catch (error: any) {
       console.error('Upload failed:', error);
-      alert(error.response?.data?.message || 'Failed to upload file');
+      alert(error.response?.data?.message || t('emails.uploadFailed'));
     } finally {
       setUploading(false);
     }
@@ -195,7 +225,7 @@ export default function EmailBulk() {
 
   const handleSend = async () => {
     if (!sendFormData.subject || !sendFormData.message) {
-      alert('Please enter subject and message');
+      alert(t('emails.enterSubjectMessage'));
       return;
     }
 
@@ -209,6 +239,9 @@ export default function EmailBulk() {
         formData.append('subject', sendFormData.subject);
         formData.append('message', sendFormData.message);
         formData.append('selection_type', sendFormData.selection_type);
+        if (sendFormData.sender_id) {
+          formData.append('sender_id', sendFormData.sender_id);
+        }
 
         if (sendFormData.selection_type === 'first_n') {
           formData.append('first_n', String(sendFormData.first_n));
@@ -235,6 +268,10 @@ export default function EmailBulk() {
           selection_type: sendFormData.selection_type,
         };
 
+        if (sendFormData.sender_id) {
+          payload.sender_id = sendFormData.sender_id;
+        }
+
         if (sendFormData.selection_type === 'first_n') {
           payload.first_n = sendFormData.first_n;
         } else if (sendFormData.selection_type === 'selected') {
@@ -247,7 +284,11 @@ export default function EmailBulk() {
       }
 
       alert(
-        `Emails queued for sending!\nTotal: ${response.data.total}\nQueued: ${response.data.queued}\nFailed: ${response.data.failed}`
+        t('emails.queuedMessage', {
+          total: response.data.total,
+          queued: response.data.queued,
+          failed: response.data.failed,
+        })
       );
 
       setShowSendModal(false);
@@ -256,6 +297,7 @@ export default function EmailBulk() {
         first_n: 20,
         selected_ids: [],
         category_filter: '',
+        sender_id: senders[0]?.id || '',
         subject: '',
         message: '',
       });
@@ -267,7 +309,7 @@ export default function EmailBulk() {
       fetchEmails();
     } catch (error: any) {
       console.error('Send failed:', error);
-      alert(error.response?.data?.message || 'Failed to send emails');
+      alert(error.response?.data?.message || t('emails.sendFailed'));
     } finally {
       setSending(false);
     }
@@ -296,7 +338,7 @@ export default function EmailBulk() {
     });
 
     if (validFiles.length !== files.length) {
-      alert('Some files were skipped. Allowed: pdf, xls, xlsx, doc, docx, jpg, jpeg, png. Max 100MB each.');
+      alert(t('emails.attachmentsSkipped'));
     }
 
     setSendAttachments(validFiles);
@@ -317,21 +359,21 @@ export default function EmailBulk() {
   };
 
   const getEmailAddress = (email: EmailRecord): string => {
-    return email.row_data_json?.email || 'N/A';
+    return email.email_address || email.row_data_json?.email || 'N/A';
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Topbar
-        title="Email Bulk Management"
-        subtitle="Manage and send bulk emails"
+        title={t('emails.title')}
+        subtitle={t('emails.subtitle')}
         actions={
           <div className="flex gap-2">
             <Button onClick={() => setShowUploadModal(true)} variant="primary">
-              Upload Emails
+              {t('emails.uploadEmails')}
             </Button>
             <Button onClick={() => setShowSendModal(true)} variant="primary">
-              Send Email
+              {t('emails.sendEmail')}
             </Button>
           </div>
         }
@@ -343,7 +385,7 @@ export default function EmailBulk() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
+                {t('common.category')}
               </label>
               <select
                 value={filters.category}
@@ -353,7 +395,7 @@ export default function EmailBulk() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">All Categories</option>
+                <option value="all">{t('emails.allCategories')}</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.name}>
                     {cat.name}
@@ -364,7 +406,7 @@ export default function EmailBulk() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+                {t('common.status')}
               </label>
               <select
                 value={filters.status}
@@ -374,16 +416,16 @@ export default function EmailBulk() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="sent">Sent</option>
-                <option value="failed">Failed</option>
+                <option value="all">{t('emails.allStatuses')}</option>
+                <option value="active">{t('emails.active')}</option>
+                <option value="sent">{t('emails.sent')}</option>
+                <option value="failed">{t('emails.failed')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Search
+                {t('common.search')}
               </label>
               <input
                 type="text"
@@ -392,7 +434,7 @@ export default function EmailBulk() {
                   setFilters({ ...filters, search: e.target.value });
                   setPagination({ ...pagination, current_page: 1 });
                 }}
-                placeholder="Search by email..."
+                placeholder={t('emails.searchPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -406,7 +448,7 @@ export default function EmailBulk() {
                 variant="secondary"
                 size="md"
               >
-                Clear Filters
+                {t('common.clearFilters')}
               </Button>
             </div>
           </div>
@@ -415,9 +457,9 @@ export default function EmailBulk() {
         {/* Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center">Loading...</div>
+            <div className="p-8 text-center">{t('common.loading')}</div>
           ) : emails.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No emails found</div>
+            <div className="p-8 text-center text-gray-500">{t('emails.noEmailsFound')}</div>
           ) : (
             <>
               <div className="overflow-x-auto">
@@ -433,19 +475,19 @@ export default function EmailBulk() {
                         />
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Email
+                        {t('common.email')}
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Category
+                        {t('common.category')}
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Status
+                        {t('common.status')}
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Sent At
+                        {t('emails.sentAt')}
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Created At
+                        {t('emails.createdAt')}
                       </th>
                     </tr>
                   </thead>
@@ -499,7 +541,7 @@ export default function EmailBulk() {
               {/* Pagination */}
               <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing {emails.length} of {pagination.total} emails
+                  {t('emails.showingCount', { count: emails.length, total: pagination.total })}
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -510,10 +552,10 @@ export default function EmailBulk() {
                     variant="secondary"
                     size="sm"
                   >
-                    Previous
+                    {t('common.previous')}
                   </Button>
                   <span className="px-4 py-2 text-sm text-gray-700">
-                    Page {pagination.current_page} of {pagination.last_page}
+                    {pagination.current_page} / {pagination.last_page}
                   </span>
                   <Button
                     onClick={() =>
@@ -523,7 +565,7 @@ export default function EmailBulk() {
                     variant="secondary"
                     size="sm"
                   >
-                    Next
+                    {t('common.next')}
                   </Button>
                 </div>
               </div>
@@ -542,13 +584,13 @@ export default function EmailBulk() {
             fileInputRef.current.value = '';
           }
         }}
-        title="Upload Emails"
+        title={t('emails.uploadModalTitle')}
         size="lg"
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select File (CSV, XLSX, XLS, TXT)
+              {t('emails.selectFile')}
             </label>
             <input
               ref={fileInputRef}
@@ -559,14 +601,14 @@ export default function EmailBulk() {
             />
             {uploadFormData.file && (
               <p className="mt-2 text-sm text-gray-600">
-                Selected: {uploadFormData.file.name}
+                {t('emails.selectedFile', { name: uploadFormData.file.name })}
               </p>
             )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category <span className="text-red-500">*</span>
+              {t('common.category')} <span className="text-red-500">*</span>
             </label>
             <select
               value={uploadFormData.category}
@@ -576,7 +618,7 @@ export default function EmailBulk() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
-              <option value="">Select Category</option>
+              <option value="">{t('emails.selectCategory')}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.name}>
                   {cat.name}
@@ -587,12 +629,12 @@ export default function EmailBulk() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              <strong>File Format:</strong>
+              <strong>{t('emails.fileFormatTitle')}</strong>
             </p>
             <ul className="text-sm text-blue-700 mt-2 list-disc list-inside space-y-1">
-              <li>Files with headers: Must include an "email" column</li>
-              <li>Files without headers: Each row should contain only an email address</li>
-              <li>Invalid rows will be skipped automatically</li>
+              <li>{t('emails.fileFormatHelp')}</li>
+              <li>{t('emails.fileFormatHelpNoHeaders')}</li>
+              <li>{t('emails.invalidRowsSkipped')}</li>
             </ul>
           </div>
 
@@ -607,7 +649,7 @@ export default function EmailBulk() {
               }}
               variant="secondary"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleUpload}
@@ -615,7 +657,7 @@ export default function EmailBulk() {
               isLoading={uploading}
               disabled={!uploadFormData.file || !uploadFormData.category}
             >
-              Upload
+              {t('common.upload')}
             </Button>
           </div>
         </div>
@@ -631,13 +673,13 @@ export default function EmailBulk() {
             sendFileInputRef.current.value = '';
           }
         }}
-        title="Send Bulk Email"
+        title={t('emails.sendModalTitle')}
         size="xl"
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Recipients
+              {t('emails.selectRecipients')}
             </label>
             <select
               value={sendFormData.selection_type}
@@ -649,16 +691,16 @@ export default function EmailBulk() {
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="first_n">First N records</option>
-              <option value="selected">Manually selected rows</option>
-              <option value="category">Filter by category</option>
+              <option value="first_n">{t('emails.firstNRecords')}</option>
+              <option value="selected">{t('emails.manuallySelected')}</option>
+              <option value="category">{t('emails.filterByCategory')}</option>
             </select>
           </div>
 
           {sendFormData.selection_type === 'first_n' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Number of Records
+                {t('emails.numberOfRecords')}
               </label>
               <input
                 type="number"
@@ -678,7 +720,7 @@ export default function EmailBulk() {
           {sendFormData.selection_type === 'category' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                {t('common.category')}
               </label>
               <select
                 value={sendFormData.category_filter || filters.category}
@@ -690,7 +732,7 @@ export default function EmailBulk() {
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Select Category</option>
+                <option value="">{t('emails.selectCategory')}</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.name}>
                     {cat.name}
@@ -704,15 +746,41 @@ export default function EmailBulk() {
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <p className="text-sm text-yellow-800">
                 {selectedIds.length > 0
-                  ? `${selectedIds.length} email(s) selected`
-                  : 'Please select emails from the table first'}
+                  ? t('emails.selectedCount', { count: selectedIds.length })
+                  : t('emails.selectFromTable')}
               </p>
             </div>
           )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Subject <span className="text-red-500">*</span>
+              {t('emails.sender')} <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={sendFormData.sender_id}
+              onChange={(e) =>
+                setSendFormData({ ...sendFormData, sender_id: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              {senders.length === 0 && (
+                <option value="">{t('emails.defaultSender')}</option>
+              )}
+              {senders.map((sender) => (
+                <option key={sender.id} value={sender.id}>
+                  {sender.label} ({sender.address})
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              {t('emails.senderHelp')}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('emails.subject')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -720,7 +788,7 @@ export default function EmailBulk() {
               onChange={(e) =>
                 setSendFormData({ ...sendFormData, subject: e.target.value })
               }
-              placeholder="Email subject"
+              placeholder={t('emails.subjectPlaceholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
@@ -728,14 +796,14 @@ export default function EmailBulk() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Message <span className="text-red-500">*</span>
+              {t('emails.message')} <span className="text-red-500">*</span>
             </label>
             <textarea
               value={sendFormData.message}
               onChange={(e) =>
                 setSendFormData({ ...sendFormData, message: e.target.value })
               }
-              placeholder="Email message content"
+              placeholder={t('emails.messagePlaceholder')}
               rows={8}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
@@ -744,7 +812,7 @@ export default function EmailBulk() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Attachments (optional)
+              {t('emails.attachments')}
             </label>
             <input
               ref={sendFileInputRef}
@@ -755,11 +823,11 @@ export default function EmailBulk() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="mt-2 text-xs text-gray-500">
-              Max 100MB each. Allowed: pdf, xls, xlsx, doc, docx, jpg, jpeg, png.
+              {t('emails.attachmentsHelp')}
             </p>
             {sendAttachments.length > 0 && (
               <div className="mt-2 text-sm text-gray-600">
-                Selected: {sendAttachments.map((file) => file.name).join(', ')}
+                {t('emails.selectedFiles', { files: sendAttachments.map((file) => file.name).join(', ') })}
               </div>
             )}
           </div>
@@ -775,7 +843,7 @@ export default function EmailBulk() {
               }}
               variant="secondary"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSend}
@@ -783,7 +851,7 @@ export default function EmailBulk() {
               isLoading={sending}
               disabled={!sendFormData.subject || !sendFormData.message}
             >
-              Send Emails
+              {t('emails.sendEmails')}
             </Button>
           </div>
         </div>

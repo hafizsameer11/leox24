@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import Button from './ui/Button';
+import i18n from '../config/i18n';
 
 interface Props {
   children: ReactNode;
@@ -55,20 +56,20 @@ export default class ErrorBoundary extends Component<Props, State> {
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Something went wrong
+              {i18n.t('common.somethingWentWrong')}
             </h2>
             <p className="text-gray-600 mb-4">
-              {this.state.error?.message || 'An unexpected error occurred'}
+              {this.state.error?.message || i18n.t('common.unexpectedError')}
             </p>
             <div className="flex gap-3 justify-center">
               <Button onClick={this.handleReset} variant="primary">
-                Try Again
+                {i18n.t('common.tryAgain')}
               </Button>
               <Button
                 onClick={() => (window.location.href = '/')}
                 variant="ghost"
               >
-                Go Home
+                {i18n.t('common.goHome')}
               </Button>
             </div>
           </div>
@@ -79,4 +80,3 @@ export default class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-

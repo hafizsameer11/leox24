@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuthStore } from '../stores/authStore';
@@ -34,6 +35,7 @@ interface SubscriptionPlan {
 }
 
 export default function Settings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -115,7 +117,7 @@ export default function Settings() {
                 });
     } catch (error: any) {
       console.error('Failed to save plan:', error);
-      alert(error.response?.data?.message || 'Failed to save plan');
+      alert(error.response?.data?.message || t('settings.saveFailed'));
     }
   };
 
@@ -134,7 +136,7 @@ export default function Settings() {
   };
 
   const handleDeletePlan = async (plan: SubscriptionPlan) => {
-    if (!confirm(`Are you sure you want to delete "${plan.name}"?`)) {
+    if (!confirm(t('settings.deleteConfirmNamed', { name: plan.name }))) {
       return;
     }
 
@@ -142,7 +144,7 @@ export default function Settings() {
       await api.delete(`/subscription-plans/${plan.id}`);
       await fetchSubscriptionPlans();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to delete plan');
+      alert(error.response?.data?.message || t('settings.deleteFailed'));
     }
   };
 
@@ -154,14 +156,14 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Settings"
-        subtitle="Configure your account and company settings"
+        title={t('settings.title')}
+        subtitle={t('settings.subtitle')}
       />
 
       {/* Subscription Section - Only show for non-super-admin users */}
       {!isSuperAdmin && (
         <div className="bg-white border border-line rounded-2xl p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-ink mb-4">Subscription</h3>
+          <h3 className="text-lg font-semibold text-ink mb-4">{t('settings.subscription')}</h3>
           
           {loading ? (
           <div className="flex items-center justify-center py-8">
@@ -171,10 +173,10 @@ export default function Settings() {
           <div className="space-y-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-sm text-yellow-800 mb-4">
-                Your company has been approved. Please complete your subscription to activate your account.
+                {t('settings.subscriptionRequiredMessage')}
               </p>
               <Button onClick={() => navigate('/subscribe')} variant="primary">
-                Subscribe Now
+                {t('settings.subscribeNow')}
               </Button>
             </div>
           </div>
@@ -192,35 +194,35 @@ export default function Settings() {
                   ? 'bg-green-100 text-green-800' 
                   : 'bg-yellow-100 text-yellow-800'
               }`}>
-                {subscription.status === 'active' ? 'Active' : subscription.status}
+                {subscription.status === 'active' ? t('settings.active') : subscription.status}
               </span>
             </div>
 
             {subscription.current_period_end && (
               <div className="text-sm text-muted">
-                <p>Next billing date: {new Date(subscription.current_period_end).toLocaleDateString()}</p>
+                <p>{t('settings.nextBillingDate', { date: new Date(subscription.current_period_end).toLocaleDateString() })}</p>
               </div>
             )}
 
             {subscription.cancel_at_period_end && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                 <p className="text-sm text-yellow-800">
-                  Your subscription will be canceled at the end of the current billing period.
+                  {t('settings.cancelAtPeriodEnd')}
                 </p>
               </div>
             )}
 
             <div className="flex gap-3">
               <Button onClick={() => navigate('/subscribe')} variant="secondary">
-                View Subscription Details
+                {t('settings.viewSubscriptionDetails')}
               </Button>
             </div>
           </div>
         ) : (
           <div className="text-muted">
-            <p>No active subscription found.</p>
+            <p>{t('settings.noActiveSubscription')}</p>
             <Button onClick={() => navigate('/subscribe')} variant="primary" className="mt-4">
-              Subscribe Now
+              {t('settings.subscribeNow')}
             </Button>
           </div>
         )}
@@ -231,7 +233,7 @@ export default function Settings() {
       {isSuperAdmin && (
         <div className="bg-white border border-line rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-ink">Subscription Plans</h3>
+            <h3 className="text-lg font-semibold text-ink">{t('settings.subscriptionPlans')}</h3>
             <Button 
               onClick={() => {
                 setEditingPlan(null);
@@ -248,7 +250,7 @@ export default function Settings() {
               }}
               variant="primary"
             >
-              + Create Plan
+              {t('settings.createPlan')}
             </Button>
           </div>
 
@@ -258,11 +260,11 @@ export default function Settings() {
             </div>
           ) : showPlanForm ? (
             <div className="space-y-4 border-t border-line pt-4">
-              <h4 className="font-semibold text-ink">{editingPlan ? 'Edit Plan' : 'Create New Plan'}</h4>
+              <h4 className="font-semibold text-ink">{editingPlan ? t('settings.editPlan') : t('settings.createNewPlan')}</h4>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Name *</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('common.name')} *</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -272,7 +274,7 @@ export default function Settings() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Amount (EUR) *</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('settings.amountEur')}</label>
                   <input
                     type="number"
                     step="0.01"
@@ -283,18 +285,18 @@ export default function Settings() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Interval *</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('settings.interval')}</label>
                   <select
                     value={formData.interval}
                     onChange={(e) => setFormData({ ...formData, interval: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg"
                   >
-                    <option value="month">Monthly</option>
-                    <option value="year">Yearly</option>
+                    <option value="month">{t('settings.monthly')}</option>
+                    <option value="year">{t('settings.yearly')}</option>
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-ink mb-1">Description</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('common.description')}</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -303,13 +305,13 @@ export default function Settings() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-ink mb-1">Features (one per line)</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('settings.featuresOnePerLine')}</label>
                   <textarea
                     value={formData.features}
                     onChange={(e) => setFormData({ ...formData, features: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg"
                     rows={4}
-                    placeholder="Feature 1&#10;Feature 2&#10;Feature 3"
+                    placeholder={t('settings.featuresPlaceholder')}
                   />
                 </div>
                 <div className="col-span-2">
@@ -320,20 +322,20 @@ export default function Settings() {
                       onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                       className="rounded"
                     />
-                    <span className="text-sm text-ink">Active</span>
+                    <span className="text-sm text-ink">{t('settings.active')}</span>
                   </label>
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <Button onClick={handleCreatePlan} variant="primary">
-                  {editingPlan ? 'Update Plan' : 'Create Plan'}
+                  {editingPlan ? t('settings.updatePlan') : t('settings.createPlanBtn')}
                 </Button>
                 <Button onClick={() => {
                   setShowPlanForm(false);
                   setEditingPlan(null);
                 }} variant="secondary">
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </div>
             </div>
@@ -347,7 +349,7 @@ export default function Settings() {
                       <span className={`px-2 py-1 rounded text-xs ${
                         plan.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {plan.is_active ? 'Active' : 'Inactive'}
+                        {plan.is_active ? t('settings.active') : t('settings.inactive')}
                       </span>
                     </div>
                     <p className="text-sm text-muted mt-1">
@@ -359,25 +361,25 @@ export default function Settings() {
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={() => handleEditPlan(plan)} variant="secondary" className="text-sm">
-                      Edit
+                      {t('common.edit')}
                     </Button>
                     <Button onClick={() => handleDeletePlan(plan)} variant="secondary" className="text-sm text-red-600">
-                      Delete
+                      {t('common.delete')}
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-muted">No subscription plans found. Create your first plan.</p>
+            <p className="text-muted">{t('settings.noPlansFound')}</p>
           )}
         </div>
       )}
 
       {/* Other Settings */}
       <div className="bg-white border border-line rounded-2xl p-6">
-        <h3 className="text-lg font-semibold text-ink mb-4">Account Settings</h3>
-        <p className="text-muted">More settings coming soon...</p>
+        <h3 className="text-lg font-semibold text-ink mb-4">{t('settings.accountSettings')}</h3>
+        <p className="text-muted">{t('settings.comingSoon')}</p>
       </div>
     </div>
   );

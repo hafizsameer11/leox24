@@ -1,10 +1,12 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Sidebar from './Sidebar';
 import { useAuthStore } from '../../stores/authStore';
 import LanguageSwitcher from '../LanguageSwitcher';
 
 export default function Layout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
@@ -89,15 +91,15 @@ export default function Layout() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div>
-                  <h3 className="font-semibold text-yellow-900">Subscription Required</h3>
-                  <p className="text-sm text-yellow-800">Your company has been approved. Please complete your subscription to activate your account.</p>
+                  <h3 className="font-semibold text-yellow-900">{t('layout.subscriptionRequired')}</h3>
+                  <p className="text-sm text-yellow-800">{t('layout.subscriptionMessage')}</p>
                 </div>
               </div>
               <button
                 onClick={() => navigate('/subscribe')}
                 className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium text-sm"
               >
-                Subscribe Now
+                {t('layout.subscribeNow')}
               </button>
             </div>
           </div>

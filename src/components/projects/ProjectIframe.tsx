@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 
 interface ProjectIframeProps {
@@ -6,6 +7,7 @@ interface ProjectIframeProps {
 }
 
 export default function ProjectIframe({ projectId }: ProjectIframeProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export default function ProjectIframe({ projectId }: ProjectIframeProps) {
           window.location.href = response.data.redirect_url;
         }
       } catch (err: any) {
-        setError(err.response?.data?.error || 'Failed to initiate SSO. Please try again.');
+        setError(err.response?.data?.error || t('projectIframe.ssoFailed'));
         setLoading(false);
       }
     };
@@ -47,7 +49,7 @@ export default function ProjectIframe({ projectId }: ProjectIframeProps) {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-5 mx-auto mb-4"></div>
-          <p className="text-muted">Connecting to project...</p>
+          <p className="text-muted">{t('projectIframe.connecting')}</p>
         </div>
       </div>
     );
@@ -57,13 +59,13 @@ export default function ProjectIframe({ projectId }: ProjectIframeProps) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="bg-card p-6 rounded-xl border border-line max-w-md">
-          <h3 className="text-lg font-semibold text-ink mb-2">Connection Error</h3>
+          <h3 className="text-lg font-semibold text-ink mb-2">{t('projectIframe.connectionError')}</h3>
           <p className="text-muted mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors"
           >
-            Retry
+            {t('projectIframe.retry')}
           </button>
         </div>
       </div>
@@ -83,7 +85,7 @@ export default function ProjectIframe({ projectId }: ProjectIframeProps) {
         sandbox={project?.iframe_sandbox || 'allow-same-origin allow-scripts'}
         frameBorder="0"
         className="w-full h-full"
-        title="Project Admin Panel"
+        title={t('projectIframe.adminPanel')}
       />
     </div>
   );

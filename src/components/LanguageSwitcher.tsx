@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { normalizeLanguageCode } from '../utils/i18n';
 
 export default function LanguageSwitcher() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
-  const currentLanguage = i18n.language || 'en';
+  const currentLanguage = normalizeLanguageCode(i18n.language);
   const languages = [
     { code: 'en', name: 'English', flag: '🇬🇧' },
     { code: 'it', name: 'Italiano', flag: '🇮🇹' },
@@ -25,7 +26,7 @@ export default function LanguageSwitcher() {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="w-14 h-14 rounded-full bg-aqua-5 hover:bg-aqua-6 text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center text-2xl focus:outline-none focus:ring-2 focus:ring-aqua-5 focus:ring-offset-2"
-          aria-label="Switch Language"
+          aria-label={t('language.switchLanguage')}
         >
           {currentLang.flag}
         </button>

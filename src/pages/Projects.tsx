@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ProjectCard from '../components/projects/ProjectCard';
@@ -19,6 +20,7 @@ interface Credential {
 }
 
 export default function Projects() {
+  const { t } = useTranslation();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export default function Projects() {
       setProjects(projectsData);
     } catch (err: any) {
       console.error('Failed to fetch projects:', err);
-      setError(err.response?.data?.message || 'Failed to load projects. Please try again.');
+      setError(err.response?.data?.message || t('projects.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -103,7 +105,7 @@ export default function Projects() {
       }
     } catch (error: any) {
       console.error('Failed to generate SSO URL:', error);
-      alert(error.response?.data?.message || 'Failed to access project. Please try again.');
+      alert(error.response?.data?.message || t('projects.accessFailed'));
     }
   };
 
@@ -129,7 +131,7 @@ export default function Projects() {
       setShowCredentialsModal(true);
     } catch (error: any) {
       console.error('Failed to fetch credentials:', error);
-      alert(error.response?.data?.message || 'Failed to load credentials. Please try again.');
+      alert(error.response?.data?.message || t('projects.credentialsFailed'));
     }
   };
 
@@ -144,7 +146,7 @@ export default function Projects() {
   const handleCreateProject = async () => {
     try {
       if (!formData.name || !formData.slug) {
-        alert('Name and slug are required');
+        alert(t('projects.nameSlugRequired'));
         return;
       }
 
@@ -154,7 +156,7 @@ export default function Projects() {
       fetchProjects();
     } catch (error: any) {
       console.error('Failed to create project:', error);
-      alert(error.response?.data?.message || 'Failed to create project');
+      alert(error.response?.data?.message || t('projects.createFailed'));
     }
   };
 
@@ -169,12 +171,12 @@ export default function Projects() {
       fetchProjects();
     } catch (error: any) {
       console.error('Failed to update project:', error);
-      alert(error.response?.data?.message || 'Failed to update project');
+      alert(error.response?.data?.message || t('projects.updateFailed'));
     }
   };
 
   const handleDeleteProject = async (projectId: number) => {
-    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+    if (!confirm(t('projects.deleteConfirm'))) {
       return;
     }
 
@@ -183,7 +185,7 @@ export default function Projects() {
       fetchProjects();
     } catch (error: any) {
       console.error('Failed to delete project:', error);
-      alert(error.response?.data?.message || 'Failed to delete project');
+      alert(error.response?.data?.message || t('projects.deleteFailed'));
     }
   };
 
@@ -240,14 +242,14 @@ export default function Projects() {
     return (
       <div className="space-y-6">
         <Topbar
-          title="Projects"
-          subtitle="Manage and access integrated projects"
+          title={t('projects.title')}
+          subtitle={t('projects.subtitle')}
         />
         <div className="bg-white border border-bad/30 rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-2xl">⚠️</span>
             <div>
-              <h3 className="text-lg font-semibold text-ink mb-1">Error Loading Projects</h3>
+              <h3 className="text-lg font-semibold text-ink mb-1">{t('projects.errorLoadingTitle')}</h3>
               <p className="text-sm text-muted">{error}</p>
             </div>
           </div>
@@ -255,7 +257,7 @@ export default function Projects() {
             onClick={fetchProjects}
             className="px-4 py-2 bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors font-medium"
           >
-            Retry
+            {t('common.tryAgain')}
           </button>
         </div>
       </div>
@@ -265,15 +267,15 @@ export default function Projects() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Projects"
-        subtitle={isSuperAdmin ? "Manage and configure integrated projects" : "Access your integrated projects"}
+        title={t('projects.title')}
+        subtitle={isSuperAdmin ? t('projects.subtitleAdmin') : t('projects.subtitleUser')}
         actions={
           <>
             <button
               onClick={fetchProjects}
               className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
             >
-              🔄 Refresh
+              🔄 {t('common.refresh')}
             </button>
             {isSuperAdmin && (
               <button
@@ -283,7 +285,7 @@ export default function Projects() {
                 }}
                 className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
               >
-                ➕ New Project
+                ➕ {t('projects.newProject')}
               </button>
             )}
           </>
@@ -293,11 +295,11 @@ export default function Projects() {
       {projects.length === 0 ? (
         <div className="bg-white border border-line rounded-2xl p-12 text-center">
           <div className="text-4xl mb-4">📦</div>
-          <h3 className="text-lg font-semibold text-ink mb-2">No Projects Available</h3>
+          <h3 className="text-lg font-semibold text-ink mb-2">{t('projects.noProjectsTitle')}</h3>
           <p className="text-muted mb-4">
             {isSuperAdmin
-              ? 'Create your first project to get started.'
-              : 'You don\'t have access to any projects yet. Contact your administrator.'}
+              ? t('projects.noProjectsAdmin')
+              : t('projects.noProjectsUser')}
           </p>
         </div>
       ) : (
@@ -316,13 +318,13 @@ export default function Projects() {
                     onClick={() => openEditModal(project)}
                     className="px-2 py-1 text-xs bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors"
                   >
-                    Edit
+                    {t('common.edit')}
                   </button>
                   <button
                     onClick={() => handleDeleteProject(project.id)}
                     className="px-2 py-1 text-xs bg-bad text-white rounded-lg hover:bg-bad/80 transition-colors"
                   >
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </div>
               )}
@@ -337,7 +339,7 @@ export default function Projects() {
           <div className="bg-white rounded-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-ink">
-                {editingProject ? 'Edit Project' : 'New Project'}
+                {editingProject ? t('projects.editProject') : t('projects.newProject')}
               </h2>
               <button
                 onClick={() => {
@@ -353,7 +355,7 @@ export default function Projects() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">Name *</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('common.name')} *</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -362,7 +364,7 @@ export default function Projects() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">Slug *</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('projects.slug')} *</label>
                   <input
                     type="text"
                     value={formData.slug}
@@ -373,7 +375,7 @@ export default function Projects() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-ink mb-2">Description</label>
+                <label className="block text-sm font-semibold text-ink mb-2">{t('projects.description')}</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -384,7 +386,7 @@ export default function Projects() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">Integration Type *</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('projects.integrationType')}</label>
                   <select
                     value={formData.integration_type}
                     onChange={(e) => setFormData({ ...formData, integration_type: e.target.value as any })}
@@ -396,14 +398,14 @@ export default function Projects() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">Status</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('projects.status')}</label>
                   <select
                     value={formData.is_active ? 'active' : 'inactive'}
                     onChange={(e) => setFormData({ ...formData, is_active: e.target.value === 'active' })}
                     className="w-full px-3 py-2 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active">{t('projects.active')}</option>
+                    <option value="inactive">{t('projects.inactive')}</option>
                   </select>
                 </div>
               </div>
@@ -411,7 +413,7 @@ export default function Projects() {
               {(formData.integration_type === 'api' || formData.integration_type === 'hybrid') && (
                 <>
                   <div>
-                    <label className="block text-sm font-semibold text-ink mb-2">API Base URL</label>
+                    <label className="block text-sm font-semibold text-ink mb-2">{t('projects.apiBaseUrl')}</label>
                     <input
                       type="url"
                       value={formData.api_base_url}
@@ -422,20 +424,20 @@ export default function Projects() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-ink mb-2">API Auth Type</label>
+                      <label className="block text-sm font-semibold text-ink mb-2">{t('projects.apiAuthType')}</label>
                       <select
                         value={formData.api_auth_type}
                         onChange={(e) => setFormData({ ...formData, api_auth_type: e.target.value })}
                         className="w-full px-3 py-2 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
                       >
-                        <option value="bearer">Bearer Token</option>
-                        <option value="basic">Basic Auth</option>
-                        <option value="oauth2">OAuth2</option>
-                        <option value="custom">Custom</option>
+                        <option value="bearer">{t('projects.bearerToken')}</option>
+                        <option value="basic">{t('projects.basicAuth')}</option>
+                        <option value="oauth2">{t('projects.oauth2')}</option>
+                        <option value="custom">{t('projects.custom')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-ink mb-2">API Key {editingProject && '(leave blank to keep existing)'}</label>
+                      <label className="block text-sm font-semibold text-ink mb-2">{t('projects.apiKey')} {editingProject && t('common.passwordKeepCurrent')}</label>
                       <input
                         type="password"
                         value={formData.api_key}
@@ -445,7 +447,7 @@ export default function Projects() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-ink mb-2">API Secret {editingProject && '(leave blank to keep existing)'}</label>
+                    <label className="block text-sm font-semibold text-ink mb-2">{t('projects.apiSecret')} {editingProject && t('common.passwordKeepCurrent')}</label>
                     <input
                       type="password"
                       value={formData.api_secret}
@@ -458,7 +460,7 @@ export default function Projects() {
 
               {(formData.integration_type === 'iframe' || formData.integration_type === 'hybrid') && (
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">Admin Panel URL</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('projects.adminPanelUrl')}</label>
                   <input
                     type="url"
                     value={formData.admin_panel_url}
@@ -471,7 +473,7 @@ export default function Projects() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">SSO Redirect URL</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('projects.ssoRedirectUrl')}</label>
                   <input
                     type="url"
                     value={formData.sso_redirect_url}
@@ -480,7 +482,7 @@ export default function Projects() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">SSO Callback URL</label>
+                  <label className="block text-sm font-semibold text-ink mb-2">{t('projects.ssoCallbackUrl')}</label>
                   <input
                     type="url"
                     value={formData.sso_callback_url}
@@ -498,7 +500,7 @@ export default function Projects() {
                   onChange={(e) => setFormData({ ...formData, sso_enabled: e.target.checked })}
                   className="w-4 h-4"
                 />
-                <label htmlFor="sso_enabled" className="text-sm text-ink">SSO Enabled</label>
+                <label htmlFor="sso_enabled" className="text-sm text-ink">{t('projects.ssoEnabled')}</label>
               </div>
             </div>
 
@@ -510,13 +512,13 @@ export default function Projects() {
                 }}
                 className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={editingProject ? handleUpdateProject : handleCreateProject}
                 className="px-4 py-2 text-sm bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                {editingProject ? 'Update' : 'Create'} Project
+                {editingProject ? t('projects.updateProjectBtn') : t('projects.createProject')}
               </button>
             </div>
           </div>
@@ -532,7 +534,7 @@ export default function Projects() {
           setSelectedProjectForCredentials(null);
         }}
         credentials={credentials}
-        projectName={selectedProjectForCredentials?.name || 'Project'}
+        projectName={selectedProjectForCredentials?.name || t('projects.defaultProjectName')}
         externalUrl={
           selectedProjectForCredentials?.slug === 'mydoctor' || 
           selectedProjectForCredentials?.slug === 'tg-calabria'

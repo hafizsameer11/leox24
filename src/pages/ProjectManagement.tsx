@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
 import { useAuthStore } from '../stores/authStore';
@@ -13,13 +14,14 @@ interface ProjectManage {
   id: number;
   project_id: number;
   email: string;
-  password?: string; // Never shown in frontend
+  password?: string;
   project?: Project;
   created_at?: string;
   updated_at?: string;
 }
 
 export default function ProjectManagement() {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const isSuperAdmin = user?.role === 'super_admin';
 
@@ -79,7 +81,7 @@ export default function ProjectManagement() {
       fetchManages();
     } catch (error: any) {
       console.error('Failed to save project manage:', error);
-      alert(error.response?.data?.message || 'Failed to save project manage');
+      alert(error.response?.data?.message || t('projectManagement.saveFailed'));
     }
   };
 
@@ -88,13 +90,13 @@ export default function ProjectManagement() {
     setFormData({
       project_id: manage.project_id.toString(),
       email: manage.email,
-      password: '', // Don't pre-fill password
+      password: '',
     });
     setShowModal(true);
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this project manage entry?')) {
+    if (!confirm(t('projectManagement.deleteConfirm'))) {
       return;
     }
 
@@ -103,7 +105,7 @@ export default function ProjectManagement() {
       fetchManages();
     } catch (error: any) {
       console.error('Failed to delete project manage:', error);
-      alert(error.response?.data?.message || 'Failed to delete project manage');
+      alert(error.response?.data?.message || t('projectManagement.deleteFailed'));
     }
   };
 
@@ -119,8 +121,8 @@ export default function ProjectManagement() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <p className="text-muted text-lg">Access Denied</p>
-          <p className="text-muted text-sm mt-2">Only super admins can access this page.</p>
+          <p className="text-muted text-lg">{t('common.accessDenied')}</p>
+          <p className="text-muted text-sm mt-2">{t('projectManagement.superAdminOnly')}</p>
         </div>
       </div>
     );
@@ -137,15 +139,15 @@ export default function ProjectManagement() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Project Management"
-        subtitle="Manage email and password credentials for projects"
+        title={t('projectManagement.title')}
+        subtitle={t('projectManagement.subtitle')}
         actions={
           <>
             <button
               onClick={fetchManages}
               className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
             >
-              🔄 Refresh
+              🔄 {t('common.refresh')}
             </button>
             <button
               onClick={() => {
@@ -155,23 +157,22 @@ export default function ProjectManagement() {
               }}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              ➕ New Entry
+              ➕ {t('projectManagement.newEntry')}
             </button>
           </>
         }
       />
 
-      {/* Table */}
       <div className="bg-white border border-line rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-aqua-1/30 border-b border-line">
               <tr>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Project</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Email</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Password</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Created</th>
-                <th className="text-right text-xs font-bold text-muted uppercase py-3 px-4">Actions</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('projectManagement.project')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('projectManagement.email')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('projectManagement.password')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('projectManagement.created')}</th>
+                <th className="text-right text-xs font-bold text-muted uppercase py-3 px-4">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -196,14 +197,14 @@ export default function ProjectManagement() {
                       <button
                         onClick={() => handleEdit(manage)}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors"
-                        title="Edit"
+                        title={t('common.edit')}
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => handleDelete(manage.id)}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors text-red-500"
-                        title="Delete"
+                        title={t('common.delete')}
                       >
                         🗑️
                       </button>
@@ -216,22 +217,21 @@ export default function ProjectManagement() {
         </div>
         {manages.length === 0 && !loading && (
           <div className="p-8 text-center text-muted">
-            No project manage entries found. Create your first entry to get started!
+            {t('projectManagement.noEntriesEmpty')}
           </div>
         )}
       </div>
 
-      {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-ink mb-4">
-              {editingManage ? 'Edit Project Manage' : 'New Project Manage'}
+              {editingManage ? t('projectManagement.editTitle') : t('projectManagement.newTitle')}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Project *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('projectManagement.projectRequired')}</label>
                 <select
                   value={formData.project_id}
                   onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
@@ -239,7 +239,7 @@ export default function ProjectManagement() {
                   required
                   disabled={!!editingManage}
                 >
-                  <option value="">Select Project</option>
+                  <option value="">{t('projectManagement.selectProject')}</option>
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name}
@@ -247,12 +247,12 @@ export default function ProjectManagement() {
                   ))}
                 </select>
                 {editingManage && (
-                  <p className="text-xs text-muted mt-1">Project cannot be changed after creation</p>
+                  <p className="text-xs text-muted mt-1">{t('projectManagement.projectCannotChange')}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Email *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('projectManagement.emailRequired')}</label>
                 <input
                   type="email"
                   value={formData.email}
@@ -264,7 +264,7 @@ export default function ProjectManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-ink mb-1">
-                  Password {editingManage ? '(leave blank to keep current)' : '*'}
+                  {t('projectManagement.password')} {editingManage ? t('common.passwordKeepCurrent') : '*'}
                 </label>
                 <input
                   type="password"
@@ -273,10 +273,10 @@ export default function ProjectManagement() {
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   required={!editingManage}
                   minLength={8}
-                  placeholder={editingManage ? 'Enter new password to update' : 'Enter password'}
+                  placeholder={editingManage ? t('projectManagement.passwordNewPlaceholder') : t('projectManagement.passwordPlaceholder')}
                 />
                 {!editingManage && (
-                  <p className="text-xs text-muted mt-1">Minimum 8 characters</p>
+                  <p className="text-xs text-muted mt-1">{t('common.minPassword')}</p>
                 )}
               </div>
             </div>
@@ -290,13 +290,13 @@ export default function ProjectManagement() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleSubmit}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                {editingManage ? 'Update' : 'Create'}
+                {editingManage ? t('common.update') : t('common.create')}
               </button>
             </div>
           </div>

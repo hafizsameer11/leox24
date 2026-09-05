@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import Topbar from '../components/layout/Topbar';
 import api from '../services/api';
 import { useAuthStore } from '../stores/authStore';
@@ -80,6 +81,7 @@ interface PaginatedCalls {
 }
 
 export default function Calls() {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const isSuperAdmin = user?.role === 'super_admin';
   
@@ -267,36 +269,36 @@ export default function Calls() {
       Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
 
       await api.put(`/calls/${editingCall.id}`, payload);
-      alert('Call updated successfully!');
+      alert(t('calls.updateSuccess', 'Call updated successfully!'));
       setShowEditModal(false);
       setEditingCall(null);
       fetchAllCalls();
       fetchData();
     } catch (error: any) {
       console.error('Failed to update call:', error);
-      alert(error.response?.data?.message || 'Failed to update call. Please try again.');
+      alert(error.response?.data?.message || t('calls.updateFailed', 'Failed to update call. Please try again.'));
     }
   };
 
   const handleDelete = async (callId: number) => {
-    if (!confirm('Are you sure you want to delete this call? This action cannot be undone.')) {
+    if (!confirm(t('calls.deleteConfirm'))) {
       return;
     }
 
     try {
       await api.delete(`/calls/${callId}`);
-      alert('Call deleted successfully!');
+      alert(t('calls.deleteSuccess', 'Call deleted successfully!'));
       fetchAllCalls();
       fetchData();
     } catch (error: any) {
       console.error('Failed to delete call:', error);
-      alert(error.response?.data?.message || 'Failed to delete call. Please try again.');
+      alert(error.response?.data?.message || t('calls.deleteFailed', 'Failed to delete call. Please try again.'));
     }
   };
 
   const handleSendSMS = async () => {
     if (!selectedCallForMessage || !smsMessage.trim()) {
-      alert('Please enter a message');
+      alert(t('calls.enterMessage', 'Please enter a message'));
       return;
     }
 
@@ -312,7 +314,7 @@ export default function Calls() {
       }
 
       await api.post(`/calls/${selectedCallForMessage.id}/sms`, payload);
-      alert('SMS sent successfully!');
+      alert(t('calls.smsSent'));
       setShowSMSModal(false);
       setSmsMessage('');
       setSmsMediaUrls([]);
@@ -321,7 +323,7 @@ export default function Calls() {
       fetchData();
     } catch (error: any) {
       console.error('Failed to send SMS:', error);
-      alert(error.response?.data?.message || 'Failed to send SMS. Please check Twilio configuration.');
+      alert(error.response?.data?.message || t('calls.smsFailed'));
     } finally {
       setSendingSMS(false);
     }
@@ -329,7 +331,7 @@ export default function Calls() {
 
   const handleSendWhatsApp = async () => {
     if (!selectedCallForMessage || !whatsAppMessage.trim()) {
-      alert('Please enter a message');
+      alert(t('calls.enterMessage', 'Please enter a message'));
       return;
     }
 
@@ -345,7 +347,7 @@ export default function Calls() {
       }
 
       await api.post(`/calls/${selectedCallForMessage.id}/whatsapp`, payload);
-      alert('WhatsApp message sent successfully!');
+      alert(t('calls.whatsAppSent'));
       setShowWhatsAppModal(false);
       setWhatsAppMessage('');
       setWhatsAppMediaUrls([]);
@@ -354,7 +356,7 @@ export default function Calls() {
       fetchData();
     } catch (error: any) {
       console.error('Failed to send WhatsApp:', error);
-      alert(error.response?.data?.message || 'Failed to send WhatsApp message. Please check Twilio configuration.');
+      alert(error.response?.data?.message || t('calls.whatsAppFailed'));
     } finally {
       setSendingWhatsApp(false);
     }
@@ -386,7 +388,7 @@ export default function Calls() {
       window.URL.revokeObjectURL(url);
     } catch (error: any) {
       console.error('Failed to export template:', error);
-      alert(error.response?.data?.message || 'Failed to export template. Please try again.');
+      alert(error.response?.data?.message || t('calls.exportTemplateFailed', 'Failed to export template. Please try again.'));
     }
   };
 
@@ -394,7 +396,7 @@ export default function Calls() {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
-        alert('Please select a CSV file.');
+        alert(t('calls.selectCsvFile', 'Please select a CSV file.'));
         return;
       }
       setImportFile(file);
@@ -403,7 +405,7 @@ export default function Calls() {
 
   const handleImport = async () => {
     if (!importFile) {
-      alert('Please select a file to import.');
+      alert(t('calls.selectImportFile', 'Please select a file to import.'));
       return;
     }
 
@@ -420,7 +422,7 @@ export default function Calls() {
       setImportResult(response.data);
       
       if (response.data.error_count === 0) {
-        alert(`Successfully imported ${response.data.success_count} call(s)!`);
+        alert(t('calls.importSuccessCount', 'Successfully imported {{count}} call(s)!', { count: response.data.success_count }));
         setShowStartCallingModal(false);
         setImportFile(null);
         setImportMode(false);
@@ -429,14 +431,17 @@ export default function Calls() {
         }
         fetchData();
       } else {
-        alert(`Imported ${response.data.success_count} call(s) with ${response.data.error_count} error(s). Check the error list below.`);
+        alert(t('calls.importPartialSuccess', 'Imported {{success}} call(s) with {{errors}} error(s). Check the error list below.', { success: response.data.success_count, errors: response.data.error_count }));
       }
     } catch (error: any) {
       console.error('Failed to import calls:', error);
-      const errorMsg = error.response?.data?.message || 'Failed to import calls. Please check the file format and try again.';
+      const errorMsg = error.response?.data?.message || t('calls.importFailed');
       alert(errorMsg);
       if (error.response?.data?.expected_headers) {
-        alert(`Expected headers: ${error.response.data.expected_headers.join(', ')}\nFound headers: ${error.response.data.found_headers?.join(', ') || 'none'}`);
+        alert(t('calls.importHeadersMismatch', 'Expected headers: {{expected}}\nFound headers: {{found}}', {
+          expected: error.response.data.expected_headers.join(', '),
+          found: error.response.data.found_headers?.join(', ') || t('common.none', 'none'),
+        }));
       }
     } finally {
       setImporting(false);
@@ -463,7 +468,7 @@ export default function Calls() {
       Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
 
       await api.post('/calls', payload);
-      alert('Call created successfully!');
+      alert(t('calls.createSuccess', 'Call created successfully!'));
       setShowStartCallingModal(false);
       setCallFormData({
         contact_name: '',
@@ -481,7 +486,7 @@ export default function Calls() {
       fetchData();
     } catch (error: any) {
       console.error('Failed to create call:', error);
-      alert(error.response?.data?.message || 'Failed to create call. Please try again.');
+      alert(error.response?.data?.message || t('calls.createFailed', 'Failed to create call. Please try again.'));
     }
   };
 
@@ -508,7 +513,7 @@ export default function Calls() {
         setShowViewModal(true);
       } catch (error) {
         console.error('Failed to fetch call details:', error);
-        alert('Failed to load call details. Please try again.');
+        alert(t('calls.loadDetailsFailed', 'Failed to load call details. Please try again.'));
       }
     }
   };
@@ -546,7 +551,7 @@ export default function Calls() {
       fetchData(); // Refresh data
     } catch (error) {
       console.error('Failed to complete call:', error);
-      alert('Failed to complete call. Please try again.');
+      alert(t('calls.completeFailed', 'Failed to complete call. Please try again.'));
     }
   };
 
@@ -562,6 +567,61 @@ export default function Calls() {
     return <span className={`w-1.5 h-1.5 rounded-full ${color}`}></span>;
   };
 
+  const formatPriority = (priority: string) => {
+    const normalized = priority.toLowerCase();
+    const aliasMap: Record<string, string> = {
+      alta: 'high',
+      media: 'medium',
+      bassa: 'low',
+    };
+    const key = aliasMap[normalized] || normalized;
+    const priorityKeys: Record<string, string> = {
+      low: 'leads.low',
+      medium: 'leads.medium',
+      high: 'leads.high',
+      urgent: 'leads.urgent',
+    };
+    return t(priorityKeys[key] || priority);
+  };
+
+  const formatCallStatus = (status: string) => {
+    const statusKeys: Record<string, string> = {
+      scheduled: 'calls.scheduled',
+      in_progress: 'calls.inProgress',
+      completed: 'calls.completed',
+      no_answer: 'calls.noAnswer',
+      busy: 'calls.busy',
+      cancelled: 'calls.cancelled',
+    };
+    return t(statusKeys[status] || status);
+  };
+
+  const formatOutcome = (outcome: string) => {
+    const outcomeKeys: Record<string, string> = {
+      successful: 'calls.outcomeSuccessful',
+      no_answer: 'calls.noAnswer',
+      busy: 'calls.busy',
+      voicemail: 'calls.outcomeVoicemail',
+      callback_requested: 'calls.outcomeCallbackRequested',
+      not_interested: 'calls.outcomeNotInterested',
+      other: 'leads.other',
+    };
+    return t(outcomeKeys[outcome] || outcome, outcome);
+  };
+
+  const formatStage = (stage: string) => {
+    const stageKeys: Record<string, string> = {
+      prospecting: 'sales.prospecting',
+      qualification: 'sales.qualification',
+      proposal: 'sales.proposal',
+      negotiation: 'sales.negotiation',
+      closed_won: 'sales.closedWon',
+      closed_lost: 'sales.closedLost',
+      on_hold: 'sales.onHold',
+    };
+    return t(stageKeys[stage] || stage);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -573,15 +633,15 @@ export default function Calls() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Call Center"
-        subtitle="Manage calls, callbacks, and operator performance"
+        title={t('calls.centerTitle')}
+        subtitle={t('calls.centerSubtitle')}
         actions={
           <>
             <button
               onClick={fetchData}
               className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
             >
-              Refresh
+              {t('calls.refresh')}
             </button>
             <button
               onClick={() => {
@@ -595,7 +655,7 @@ export default function Calls() {
               }}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              📞 Start Calling
+              📞 {t('calls.startCalling')}
             </button>
           </>
         }
@@ -604,34 +664,34 @@ export default function Calls() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Calls to Do</h3>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('calls.callsToDo')}</h3>
           <div className="flex items-end justify-between">
             <div className="text-3xl font-extrabold text-ink">{stats?.calls_to_do ?? 0}</div>
-            <div className="text-sm font-semibold mb-1 text-muted">today</div>
+            <div className="text-sm font-semibold mb-1 text-muted">{t('common.today')}</div>
           </div>
         </div>
 
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Callbacks</h3>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('calls.callbacks')}</h3>
           <div className="flex items-end justify-between">
             <div className="text-3xl font-extrabold text-ink">{stats?.callbacks ?? 0}</div>
-            <div className="text-sm font-semibold mb-1 text-muted">within 24h</div>
+            <div className="text-sm font-semibold mb-1 text-muted">{t('common.within24h')}</div>
           </div>
         </div>
 
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Calls Done</h3>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('calls.callsDone')}</h3>
           <div className="flex items-end justify-between">
             <div className="text-3xl font-extrabold text-ink">{stats?.calls_done ?? 0}</div>
-            <div className="text-sm font-semibold mb-1 text-muted">today</div>
+            <div className="text-sm font-semibold mb-1 text-muted">{t('common.today')}</div>
           </div>
         </div>
 
         <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Conversion</h3>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">{t('calls.conversion')}</h3>
           <div className="flex items-end justify-between">
             <div className="text-3xl font-extrabold text-ink">{stats?.conversion_rate ?? '0%'}</div>
-            <div className="text-sm font-semibold mb-1 text-muted">sales/calls</div>
+            <div className="text-sm font-semibold mb-1 text-muted">{t('common.salesPerCalls')}</div>
           </div>
         </div>
       </div>
@@ -640,17 +700,17 @@ export default function Calls() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Calls Table */}
         <div className="lg:col-span-2 bg-white border border-line rounded-2xl p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-ink mb-4">Today's Calls</h3>
+          <h3 className="text-lg font-bold text-ink mb-4">{t('calls.todaysCalls')}</h3>
           {callsToday.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-line">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Time</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Contact</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Source</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Priority</th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-muted">Action</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('common.time')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('common.contact')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('leads.source')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('common.priority')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-semibold text-muted">{t('common.action')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -664,7 +724,7 @@ export default function Calls() {
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-aqua-1/20 text-xs font-medium">
                           {getPriorityDot(call.prio)}
-                          {call.prio}
+                          {formatPriority(call.prio)}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
@@ -691,13 +751,13 @@ export default function Calls() {
                                     phone_number: call.phone,
                                   });
                                   console.log('Call initiated successfully:', response.data);
-                                  alert('Call initiated! The phone will ring shortly.');
+                                  alert(t('calls.callInitiated'));
                                   setTimeout(() => {
                                     fetchData(); // Refresh to update status
                                   }, 1000);
                                 } catch (error: any) {
                                   console.error('Failed to initiate call:', error);
-                                  const errorMsg = error.response?.data?.message || error.message || 'Failed to initiate call. Please check Twilio configuration.';
+                                  const errorMsg = error.response?.data?.message || error.message || t('calls.callInitiateFailed');
                                   alert(errorMsg);
                                 } finally {
                                   setInitiatingCallId(null);
@@ -708,9 +768,9 @@ export default function Calls() {
                                   ? 'bg-gray-400 text-white cursor-not-allowed'
                                   : 'bg-green-500 text-white hover:bg-green-600 cursor-pointer'
                               }`}
-                              title={initiatingCallId === call.id ? 'Initiating call...' : `Start Phone Call to ${call.phone}`}
+                              title={initiatingCallId === call.id ? t('calls.initiatingCall') : t('calls.startPhoneCall', { phone: call.phone })}
                             >
-                              {initiatingCallId === call.id ? '⏳ Calling...' : '📞 Call Now'}
+                              {initiatingCallId === call.id ? `⏳ ${t('calls.calling')}` : `📞 ${t('calls.callNow')}`}
                             </button>
                           )}
                           <button
@@ -723,8 +783,8 @@ export default function Calls() {
                             className="px-3 py-1.5 text-xs border border-line rounded-lg hover:bg-aqua-1/30 transition-colors text-ink font-medium"
                           >
                             {isSuperAdmin 
-                              ? (call.status === 'completed' ? 'VIEW' : 'COMPLETE')
-                              : 'VIEW'
+                              ? (call.status === 'completed' ? t('common.view').toUpperCase() : t('common.complete').toUpperCase())
+                              : t('common.view').toUpperCase()
                             }
                           </button>
                         </div>
@@ -736,23 +796,23 @@ export default function Calls() {
             </div>
           ) : (
             <div className="text-center py-12 text-muted">
-              <p>No calls scheduled for today.</p>
+              <p>{t('calls.noCallsToday')}</p>
             </div>
           )}
         </div>
 
         {/* Operator Performance */}
         <div className="bg-white border border-line rounded-2xl p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-ink mb-4">Operator Performance</h3>
+          <h3 className="text-lg font-bold text-ink mb-4">{t('calls.operatorPerformance')}</h3>
           {operators.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-line">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Operator</th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted">Calls</th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted">Sales</th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted">Avg</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('calls.operator')}</th>
+                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted">{t('calls.title')}</th>
+                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted">{t('sales.title')}</th>
+                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted">{t('common.avg')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -763,7 +823,7 @@ export default function Calls() {
                       </td>
                       <td className="py-3 px-4 text-center text-ink">{op.calls}</td>
                       <td className="py-3 px-4 text-center text-ink">{op.sales}</td>
-                      <td className="py-3 px-4 text-center text-muted">{op.avg} min</td>
+                      <td className="py-3 px-4 text-center text-muted">{op.avg} {t('calls.minutes', 'min')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -771,7 +831,7 @@ export default function Calls() {
             </div>
           ) : (
             <div className="text-center py-12 text-muted">
-              <p>No operator data available.</p>
+              <p>{t('calls.noOperatorData', 'No operator data available.')}</p>
             </div>
           )}
         </div>
@@ -780,11 +840,11 @@ export default function Calls() {
       {/* All Calls Table */}
       <div className="bg-white border border-line rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-ink">All Calls</h3>
+          <h3 className="text-lg font-bold text-ink">{t('calls.allCalls', 'All Calls')}</h3>
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search calls..."
+              placeholder={t('calls.searchPlaceholder')}
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               className="px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5 text-sm"
@@ -794,24 +854,24 @@ export default function Calls() {
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               className="px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5 text-sm"
             >
-              <option value="">All Status</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="no_answer">No Answer</option>
-              <option value="busy">Busy</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="">{t('calls.allStatus')}</option>
+              <option value="scheduled">{t('calls.scheduled')}</option>
+              <option value="in_progress">{t('calls.inProgress')}</option>
+              <option value="completed">{t('calls.completed')}</option>
+              <option value="no_answer">{t('calls.noAnswer')}</option>
+              <option value="busy">{t('calls.busy')}</option>
+              <option value="cancelled">{t('calls.cancelled')}</option>
             </select>
             <select
               value={filters.priority}
               onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
               className="px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5 text-sm"
             >
-              <option value="">All Priority</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
+              <option value="">{t('calls.allPriority')}</option>
+              <option value="low">{t('leads.low')}</option>
+              <option value="medium">{t('leads.medium')}</option>
+              <option value="high">{t('leads.high')}</option>
+              <option value="urgent">{t('leads.urgent')}</option>
             </select>
           </div>
         </div>
@@ -826,14 +886,14 @@ export default function Calls() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-line">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Contact</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Phone</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Source</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Priority</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Status</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">Scheduled</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">User</th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-muted">Actions</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('common.contact')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('common.phone')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('leads.source')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('common.priority')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('common.status')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('calls.scheduled')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted">{t('calls.user', 'User')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-semibold text-muted">{t('common.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -841,7 +901,7 @@ export default function Calls() {
                     <tr key={call.id} className="border-b border-line hover:bg-aqua-1/10 transition-colors">
                       <td className="py-3 px-4">
                         <span className="font-semibold text-ink">
-                          {call.contact_name || call.customer?.first_name || 'Unknown'}
+                          {call.contact_name || call.customer?.first_name || t('calls.unknown', 'Unknown')}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-ink">{call.contact_phone || call.customer?.phone || '-'}</td>
@@ -855,7 +915,7 @@ export default function Calls() {
                             : 'bg-green-100 text-green-800'
                         }`}>
                           {getPriorityDot(call.priority === 'urgent' || call.priority === 'high' ? 'Alta' : call.priority === 'medium' ? 'Media' : 'Bassa')}
-                          {call.priority}
+                          {formatPriority(call.priority)}
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -868,7 +928,7 @@ export default function Calls() {
                             ? 'bg-gray-100 text-gray-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {call.status}
+                          {formatCallStatus(call.status)}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-muted">
@@ -887,7 +947,7 @@ export default function Calls() {
                                   setShowSMSModal(true);
                                 }}
                                 className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
-                                title="Send SMS"
+                                title={t('calls.sendSms')}
                               >
                                 💬
                               </button>
@@ -899,7 +959,7 @@ export default function Calls() {
                                   setShowWhatsAppModal(true);
                                 }}
                                 className="p-1.5 hover:bg-green-100 rounded-lg transition-colors text-green-600"
-                                title="Send WhatsApp"
+                                title={t('calls.sendWhatsApp')}
                               >
                                 📱
                               </button>
@@ -910,7 +970,7 @@ export default function Calls() {
                               onClick={() => handleEdit(call)}
                               className="px-3 py-1.5 text-xs border border-line rounded-lg hover:bg-aqua-1/30 transition-colors text-ink font-medium"
                             >
-                              Edit
+                              {t('common.edit')}
                             </button>
                           )}
                           {isSuperAdmin && (
@@ -918,7 +978,7 @@ export default function Calls() {
                               onClick={() => handleDelete(call.id)}
                               className="px-3 py-1.5 text-xs border border-red-300 rounded-lg hover:bg-red-50 transition-colors text-red-600 font-medium"
                             >
-                              Delete
+                              {t('common.delete')}
                             </button>
                           )}
                         </div>
@@ -933,7 +993,12 @@ export default function Calls() {
             {allCalls.last_page > 1 && (
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-line">
                 <div className="text-sm text-muted">
-                  Showing {((allCalls.current_page - 1) * allCalls.per_page) + 1} to {Math.min(allCalls.current_page * allCalls.per_page, allCalls.total)} of {allCalls.total} calls
+                  {t('common.showingRange', {
+                    from: ((allCalls.current_page - 1) * allCalls.per_page) + 1,
+                    to: Math.min(allCalls.current_page * allCalls.per_page, allCalls.total),
+                    total: allCalls.total,
+                    entity: t('calls.title').toLowerCase(),
+                  })}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -941,17 +1006,17 @@ export default function Calls() {
                     disabled={allCalls.current_page === 1}
                     className="px-3 py-1.5 text-sm border border-line rounded-lg hover:bg-aqua-1/30 transition-colors text-ink font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t('common.previous')}
                   </button>
                   <span className="px-3 py-1.5 text-sm text-ink">
-                    Page {allCalls.current_page} of {allCalls.last_page}
+                    {t('common.pageOf', { current: allCalls.current_page, last: allCalls.last_page })}
                   </span>
                   <button
                     onClick={() => setCurrentPage(p => Math.min(allCalls.last_page, p + 1))}
                     disabled={allCalls.current_page === allCalls.last_page}
                     className="px-3 py-1.5 text-sm border border-line rounded-lg hover:bg-aqua-1/30 transition-colors text-ink font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('common.next')}
                   </button>
                 </div>
               </div>
@@ -959,7 +1024,7 @@ export default function Calls() {
           </>
         ) : (
           <div className="text-center py-12 text-muted">
-            <p>No calls found.</p>
+            <p>{t('calls.noCallsFound')}</p>
           </div>
         )}
       </div>
@@ -969,7 +1034,7 @@ export default function Calls() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-ink">Edit Call</h2>
+              <h2 className="text-xl font-bold text-ink">{t('calls.editCall')}</h2>
               <button
                 onClick={() => {
                   setShowEditModal(false);
@@ -985,76 +1050,76 @@ export default function Calls() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-ink mb-2">
-                    Contact Name
+                    {t('calls.contactName')}
                   </label>
                   <input
                     type="text"
                     value={callFormData.contact_name}
                     onChange={(e) => setCallFormData({ ...callFormData, contact_name: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                    placeholder="John Doe"
+                    placeholder={t('calls.contactNamePlaceholder', 'John Doe')}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-ink mb-2">
-                    Contact Phone
+                    {t('calls.contactPhone')}
                   </label>
                   <input
                     type="tel"
                     value={callFormData.contact_phone}
                     onChange={(e) => setCallFormData({ ...callFormData, contact_phone: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                    placeholder="+1234567890"
+                    placeholder={t('calls.phonePlaceholder', '+1234567890')}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Source</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('leads.source')}</label>
                   <input
                     type="text"
                     value={callFormData.source}
                     onChange={(e) => setCallFormData({ ...callFormData, source: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                    placeholder="Website, Referral, etc."
+                    placeholder={t('calls.sourcePlaceholder', 'Website, Referral, etc.')}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Priority *</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('common.priority')} *</label>
                   <select
                     value={callFormData.priority}
                     onChange={(e) => setCallFormData({ ...callFormData, priority: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                     required
                   >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
+                    <option value="low">{t('leads.low')}</option>
+                    <option value="medium">{t('leads.medium')}</option>
+                    <option value="high">{t('leads.high')}</option>
+                    <option value="urgent">{t('leads.urgent')}</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Status *</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('common.status')} *</label>
                   <select
                     value={callFormData.status}
                     onChange={(e) => setCallFormData({ ...callFormData, status: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                     required
                   >
-                    <option value="scheduled">Scheduled</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="no_answer">No Answer</option>
-                    <option value="busy">Busy</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="scheduled">{t('calls.scheduled')}</option>
+                    <option value="in_progress">{t('calls.inProgress')}</option>
+                    <option value="completed">{t('calls.completed')}</option>
+                    <option value="no_answer">{t('calls.noAnswer')}</option>
+                    <option value="busy">{t('calls.busy')}</option>
+                    <option value="cancelled">{t('calls.cancelled')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Scheduled At</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('calls.scheduledAt')}</label>
                   <input
                     type="datetime-local"
                     value={callFormData.scheduled_at}
@@ -1066,18 +1131,18 @@ export default function Calls() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Customer (Optional)</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('calls.customer')} ({t('common.optional')})</label>
                   <select
                     value={callFormData.customer_id}
                     onChange={(e) => setCallFormData({ ...callFormData, customer_id: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                   >
-                    <option value="">Select Customer</option>
+                    <option value="">{t('sales.selectCustomer')}</option>
                     {customers.map((customer) => {
                       const name = customer.company_name || 
                         `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 
                         customer.email || 
-                        'Unknown';
+                        t('calls.unknown', 'Unknown');
                       return (
                         <option key={customer.id} value={customer.id}>
                           {name}
@@ -1087,16 +1152,16 @@ export default function Calls() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Opportunity (Optional)</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('sales.opportunity')} ({t('common.optional')})</label>
                   <select
                     value={callFormData.opportunity_id}
                     onChange={(e) => setCallFormData({ ...callFormData, opportunity_id: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                   >
-                    <option value="">Select Opportunity</option>
+                    <option value="">{t('calls.selectOpportunity', 'Select Opportunity')}</option>
                     {opportunities.map((opp) => (
                       <option key={opp.id} value={opp.id}>
-                        {opp.name} ({opp.stage})
+                        {opp.name} ({formatStage(opp.stage)})
                       </option>
                     ))}
                   </select>
@@ -1104,29 +1169,29 @@ export default function Calls() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Notes</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.notes')}</label>
                 <textarea
                   value={callFormData.notes}
                   onChange={(e) => setCallFormData({ ...callFormData, notes: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                  placeholder="Add call notes..."
+                  placeholder={t('calls.notesPlaceholder', 'Add call notes...')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Next Action</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.nextAction', 'Next Action')}</label>
                 <input
                   type="text"
                   value={callFormData.next_action}
                   onChange={(e) => setCallFormData({ ...callFormData, next_action: e.target.value })}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                  placeholder="What to do next..."
+                  placeholder={t('calls.nextActionPlaceholder', 'What to do next...')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Callback At</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.callbackAt', 'Callback At')}</label>
                 <input
                   type="datetime-local"
                   value={callFormData.callback_at}
@@ -1144,13 +1209,13 @@ export default function Calls() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleUpdateCall}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                Update Call
+                {t('calls.updateCall', 'Update Call')}
               </button>
             </div>
           </div>
@@ -1162,7 +1227,7 @@ export default function Calls() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-ink">Start Calling</h2>
+              <h2 className="text-xl font-bold text-ink">{t('calls.startCallingModal')}</h2>
               <button
                 onClick={() => {
                   setShowStartCallingModal(false);
@@ -1196,7 +1261,7 @@ export default function Calls() {
                     : 'bg-aqua-1/30 text-ink border border-line'
                 }`}
               >
-                Manual Entry
+                {t('calls.manualEntry', 'Manual Entry')}
               </button>
               <button
                 onClick={() => {
@@ -1213,7 +1278,7 @@ export default function Calls() {
                     : 'bg-aqua-1/30 text-ink border border-line'
                 }`}
               >
-                Import from CSV
+                {t('calls.importFromCsv', 'Import from CSV')}
               </button>
             </div>
 
@@ -1223,27 +1288,27 @@ export default function Calls() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-ink mb-2">
-                      Contact Name *
+                      {t('calls.contactName')} *
                     </label>
                     <input
                       type="text"
                       value={callFormData.contact_name}
                       onChange={(e) => setCallFormData({ ...callFormData, contact_name: e.target.value })}
                       className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                      placeholder="John Doe"
+                      placeholder={t('calls.contactNamePlaceholder', 'John Doe')}
                       required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-ink mb-2">
-                      Contact Phone *
+                      {t('calls.contactPhone')} *
                     </label>
                     <input
                       type="tel"
                       value={callFormData.contact_phone}
                       onChange={(e) => setCallFormData({ ...callFormData, contact_phone: e.target.value })}
                       className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                      placeholder="+1234567890"
+                      placeholder={t('calls.phonePlaceholder', '+1234567890')}
                       required
                     />
                   </div>
@@ -1251,50 +1316,50 @@ export default function Calls() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-2">Source</label>
+                    <label className="block text-sm font-medium text-ink mb-2">{t('leads.source')}</label>
                     <input
                       type="text"
                       value={callFormData.source}
                       onChange={(e) => setCallFormData({ ...callFormData, source: e.target.value })}
                       className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                      placeholder="Website, Referral, etc."
+                      placeholder={t('calls.sourcePlaceholder', 'Website, Referral, etc.')}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-2">Priority *</label>
+                    <label className="block text-sm font-medium text-ink mb-2">{t('common.priority')} *</label>
                     <select
                       value={callFormData.priority}
                       onChange={(e) => setCallFormData({ ...callFormData, priority: e.target.value })}
                       className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                       required
                     >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
+                      <option value="low">{t('leads.low')}</option>
+                      <option value="medium">{t('leads.medium')}</option>
+                      <option value="high">{t('leads.high')}</option>
+                      <option value="urgent">{t('leads.urgent')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-2">Status *</label>
+                    <label className="block text-sm font-medium text-ink mb-2">{t('common.status')} *</label>
                     <select
                       value={callFormData.status}
                       onChange={(e) => setCallFormData({ ...callFormData, status: e.target.value })}
                       className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                       required
                     >
-                      <option value="scheduled">Scheduled</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="no_answer">No Answer</option>
-                      <option value="busy">Busy</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="scheduled">{t('calls.scheduled')}</option>
+                      <option value="in_progress">{t('calls.inProgress')}</option>
+                      <option value="completed">{t('calls.completed')}</option>
+                      <option value="no_answer">{t('calls.noAnswer')}</option>
+                      <option value="busy">{t('calls.busy')}</option>
+                      <option value="cancelled">{t('calls.cancelled')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-2">Scheduled At</label>
+                    <label className="block text-sm font-medium text-ink mb-2">{t('calls.scheduledAt')}</label>
                     <input
                       type="datetime-local"
                       value={callFormData.scheduled_at}
@@ -1306,18 +1371,18 @@ export default function Calls() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-2">Customer (Optional)</label>
+                    <label className="block text-sm font-medium text-ink mb-2">{t('calls.customer')} ({t('common.optional')})</label>
                     <select
                       value={callFormData.customer_id}
                       onChange={(e) => setCallFormData({ ...callFormData, customer_id: e.target.value })}
                       className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                     >
-                      <option value="">Select Customer</option>
+                      <option value="">{t('sales.selectCustomer')}</option>
                       {customers.map((customer) => {
                         const name = customer.company_name || 
                           `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 
                           customer.email || 
-                          'Unknown';
+                          t('calls.unknown', 'Unknown');
                         return (
                           <option key={customer.id} value={customer.id}>
                             {name}
@@ -1327,16 +1392,16 @@ export default function Calls() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-2">Opportunity (Optional)</label>
+                    <label className="block text-sm font-medium text-ink mb-2">{t('sales.opportunity')} ({t('common.optional')})</label>
                     <select
                       value={callFormData.opportunity_id}
                       onChange={(e) => setCallFormData({ ...callFormData, opportunity_id: e.target.value })}
                       className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                     >
-                      <option value="">Select Opportunity</option>
+                      <option value="">{t('calls.selectOpportunity', 'Select Opportunity')}</option>
                       {opportunities.map((opp) => (
                         <option key={opp.id} value={opp.id}>
-                          {opp.name} ({opp.stage})
+                          {opp.name} ({formatStage(opp.stage)})
                         </option>
                       ))}
                     </select>
@@ -1344,29 +1409,29 @@ export default function Calls() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Notes</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('calls.notes')}</label>
                   <textarea
                     value={callFormData.notes}
                     onChange={(e) => setCallFormData({ ...callFormData, notes: e.target.value })}
                     rows={3}
                     className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                    placeholder="Add call notes..."
+                    placeholder={t('calls.notesPlaceholder', 'Add call notes...')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Next Action</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('calls.nextAction', 'Next Action')}</label>
                   <input
                     type="text"
                     value={callFormData.next_action}
                     onChange={(e) => setCallFormData({ ...callFormData, next_action: e.target.value })}
                     className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                    placeholder="What to do next..."
+                    placeholder={t('calls.nextActionPlaceholder', 'What to do next...')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Callback At</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('calls.callbackAt', 'Callback At')}</label>
                   <input
                     type="datetime-local"
                     value={callFormData.callback_at}
@@ -1388,14 +1453,14 @@ export default function Calls() {
                     }}
                     className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={handleSubmitCall}
                     disabled={!callFormData.contact_name && !callFormData.contact_phone}
                     className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Create Call
+                    {t('calls.createCall')}
                   </button>
                 </div>
               </div>
@@ -1403,12 +1468,12 @@ export default function Calls() {
               /* Import Mode */
               <div className="space-y-4">
                 <div className="bg-aqua-1/20 border border-aqua-5/30 rounded-lg p-4">
-                  <h3 className="font-semibold text-ink mb-2">Import Instructions</h3>
+                  <h3 className="font-semibold text-ink mb-2">{t('calls.importInstructions', 'Import Instructions')}</h3>
                   <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
-                    <li>Click "Export Template" to download the CSV template</li>
-                    <li>Fill in the template with your call data</li>
-                    <li>Click "Choose File" and select your filled CSV file</li>
-                    <li>Click "Import" to upload and validate your data</li>
+                    <li>{t('calls.importStep1', 'Click "Export Template" to download the CSV template')}</li>
+                    <li>{t('calls.importStep2', 'Fill in the template with your call data')}</li>
+                    <li>{t('calls.importStep3', 'Click "Choose File" and select your filled CSV file')}</li>
+                    <li>{t('calls.importStep4', 'Click "Import" to upload and validate your data')}</li>
                   </ol>
                 </div>
 
@@ -1417,7 +1482,7 @@ export default function Calls() {
                     onClick={handleExportTemplate}
                     className="px-4 py-2 border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
                   >
-                    📥 Export Template
+                    📥 {t('calls.exportTemplate', 'Export Template')}
                   </button>
                   <div className="flex-1">
                     <input
@@ -1432,7 +1497,7 @@ export default function Calls() {
                       htmlFor="csv-file-input"
                       className="block w-full px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium text-center cursor-pointer"
                     >
-                      {importFile ? importFile.name : 'Choose File'}
+                      {importFile ? importFile.name : t('calls.chooseFile', 'Choose File')}
                     </label>
                   </div>
                   <button
@@ -1440,7 +1505,7 @@ export default function Calls() {
                     disabled={!importFile || importing}
                     className="px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {importing ? 'Importing...' : '📤 Import'}
+                    {importing ? t('calls.importing', 'Importing...') : `📤 ${t('calls.import', 'Import')}`}
                   </button>
                 </div>
 
@@ -1451,7 +1516,7 @@ export default function Calls() {
                       : 'bg-yellow-50 border-yellow-200'
                   }`}>
                     <h4 className="font-semibold text-ink mb-2">
-                      Import Results: {importResult.success_count} successful, {importResult.error_count} errors
+                      {t('calls.importResults', 'Import Results')}: {importResult.success_count} {t('calls.successful', 'successful')}, {importResult.error_count} {t('calls.errors', 'errors')}
                     </h4>
                     {importResult.errors && importResult.errors.length > 0 && (
                       <div className="mt-2 max-h-40 overflow-y-auto">
@@ -1474,43 +1539,43 @@ export default function Calls() {
       {showViewModal && viewCallDetails && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-ink mb-4">Call Details</h2>
+            <h2 className="text-xl font-bold text-ink mb-4">{t('calls.callDetails')}</h2>
             <p className="text-muted mb-6">
-              Call with <strong>{viewCallDetails.contact_name || viewCallDetails.customer?.first_name || 'Unknown'}</strong> ({viewCallDetails.contact_phone || viewCallDetails.customer?.phone || 'No phone'})
+              {t('calls.callWith', 'Call with')} <strong>{viewCallDetails.contact_name || viewCallDetails.customer?.first_name || t('calls.unknown', 'Unknown')}</strong> ({viewCallDetails.contact_phone || viewCallDetails.customer?.phone || t('calls.noPhone', 'No phone')})
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Status</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('common.status')}</label>
                 <div className="px-3 py-2 border border-line rounded-lg bg-gray-50 text-ink">
-                  {viewCallDetails.status}
+                  {formatCallStatus(viewCallDetails.status)}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Outcome</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.outcome')}</label>
                 <div className="px-3 py-2 border border-line rounded-lg bg-gray-50 text-ink">
-                  {viewCallDetails.outcome || 'N/A'}
+                  {viewCallDetails.outcome ? formatOutcome(viewCallDetails.outcome) : t('calls.notAvailable', 'N/A')}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Notes</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.notes')}</label>
                 <div className="px-3 py-2 border border-line rounded-lg bg-gray-50 text-ink min-h-[60px]">
-                  {viewCallDetails.notes || 'No notes'}
+                  {viewCallDetails.notes || t('calls.noNotes', 'No notes')}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Next Action</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.nextAction', 'Next Action')}</label>
                 <div className="px-3 py-2 border border-line rounded-lg bg-gray-50 text-ink">
-                  {viewCallDetails.next_action || 'N/A'}
+                  {viewCallDetails.next_action || t('calls.notAvailable', 'N/A')}
                 </div>
               </div>
 
               {viewCallDetails.callback_at && (
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Callback Date/Time</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('calls.callbackDateTime', 'Callback Date/Time')}</label>
                   <div className="px-3 py-2 border border-line rounded-lg bg-gray-50 text-ink">
                     {new Date(viewCallDetails.callback_at).toLocaleString()}
                   </div>
@@ -1519,23 +1584,23 @@ export default function Calls() {
 
               {viewCallDetails.duration_seconds && (
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Duration</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('calls.duration')}</label>
                   <div className="px-3 py-2 border border-line rounded-lg bg-gray-50 text-ink">
-                    {viewCallDetails.duration_seconds} seconds
+                    {viewCallDetails.duration_seconds} {t('calls.seconds', 'seconds')}
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Converted to Opportunity</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.convertedToOpportunity', 'Converted to Opportunity')}</label>
                 <div className="px-3 py-2 border border-line rounded-lg bg-gray-50 text-ink">
-                  {viewCallDetails.converted_to_opportunity ? 'Yes' : 'No'}
+                  {viewCallDetails.converted_to_opportunity ? t('common.yes') : t('common.no')}
                 </div>
               </div>
 
               {viewCallDetails.value && (
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Value</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('common.value')}</label>
                   <div className="px-3 py-2 border border-line rounded-lg bg-gray-50 text-ink">
                     €{viewCallDetails.value.toFixed(2)}
                   </div>
@@ -1551,7 +1616,7 @@ export default function Calls() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Close
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -1562,53 +1627,53 @@ export default function Calls() {
       {showCallModal && selectedCall && isSuperAdmin && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-ink mb-4">Complete Call</h2>
+            <h2 className="text-xl font-bold text-ink mb-4">{t('calls.completeCall')}</h2>
             <p className="text-muted mb-6">
-              Call with <strong>{selectedCall.who}</strong> ({selectedCall.phone || 'No phone'})
+              {t('calls.callWith', 'Call with')} <strong>{selectedCall.who}</strong> ({selectedCall.phone || t('calls.noPhone', 'No phone')})
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Outcome</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.outcome')}</label>
                 <select
                   value={callFormDataComplete.outcome}
                   onChange={(e) => setCallFormDataComplete({ ...callFormDataComplete, outcome: e.target.value })}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
                 >
-                  <option value="successful">Successful</option>
-                  <option value="no_answer">No Answer</option>
-                  <option value="busy">Busy</option>
-                  <option value="voicemail">Voicemail</option>
-                  <option value="callback_requested">Callback Requested</option>
-                  <option value="not_interested">Not Interested</option>
-                  <option value="other">Other</option>
+                  <option value="successful">{formatOutcome('successful')}</option>
+                  <option value="no_answer">{formatOutcome('no_answer')}</option>
+                  <option value="busy">{formatOutcome('busy')}</option>
+                  <option value="voicemail">{formatOutcome('voicemail')}</option>
+                  <option value="callback_requested">{formatOutcome('callback_requested')}</option>
+                  <option value="not_interested">{formatOutcome('not_interested')}</option>
+                  <option value="other">{formatOutcome('other')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Notes</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.notes')}</label>
                 <textarea
                   value={callFormDataComplete.notes}
                   onChange={(e) => setCallFormDataComplete({ ...callFormDataComplete, notes: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                  placeholder="Add call notes..."
+                  placeholder={t('calls.notesPlaceholder', 'Add call notes...')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Next Action</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.nextAction', 'Next Action')}</label>
                 <input
                   type="text"
                   value={callFormDataComplete.next_action}
                   onChange={(e) => setCallFormDataComplete({ ...callFormDataComplete, next_action: e.target.value })}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                  placeholder="What to do next..."
+                  placeholder={t('calls.nextActionPlaceholder', 'What to do next...')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Callback Date/Time</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.callbackDateTime', 'Callback Date/Time')}</label>
                 <input
                   type="datetime-local"
                   value={callFormDataComplete.callback_at}
@@ -1618,13 +1683,13 @@ export default function Calls() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-2">Duration (seconds)</label>
+                <label className="block text-sm font-medium text-ink mb-2">{t('calls.duration')} ({t('calls.seconds', 'seconds')})</label>
                 <input
                   type="number"
                   value={callFormDataComplete.duration_seconds}
                   onChange={(e) => setCallFormDataComplete({ ...callFormDataComplete, duration_seconds: e.target.value })}
                   className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                  placeholder="Call duration in seconds"
+                  placeholder={t('calls.durationPlaceholder', 'Call duration in seconds')}
                 />
               </div>
 
@@ -1637,13 +1702,13 @@ export default function Calls() {
                   className="w-4 h-4 text-aqua-5 border-line rounded focus:ring-aqua-5"
                 />
                 <label htmlFor="converted" className="text-sm font-medium text-ink">
-                  Converted to Opportunity
+                  {t('calls.convertedToOpportunity', 'Converted to Opportunity')}
                 </label>
               </div>
 
               {callFormDataComplete.converted_to_opportunity && (
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-2">Value (€)</label>
+                  <label className="block text-sm font-medium text-ink mb-2">{t('common.value')} (€)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1664,13 +1729,13 @@ export default function Calls() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleCompleteCall}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                Complete Call
+                {t('calls.completeCall')}
               </button>
             </div>
           </div>
@@ -1686,34 +1751,34 @@ export default function Calls() {
           setSmsMediaUrls([]);
           setSelectedCallForMessage(null);
         }}
-        title="Send SMS"
+        title={t('calls.sendSms')}
         size="md"
       >
         {selectedCallForMessage && (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-ink mb-2">
-                To: {selectedCallForMessage.contact_name || 'Unknown'} ({selectedCallForMessage.contact_phone})
+                {t('calls.to', 'To')}: {selectedCallForMessage.contact_name || t('calls.unknown', 'Unknown')} ({selectedCallForMessage.contact_phone})
               </label>
             </div>
             <div>
               <label className="block text-sm font-medium text-ink mb-2">
-                Message *
+                {t('leads.message')} *
               </label>
               <textarea
                 value={smsMessage}
                 onChange={(e) => setSmsMessage(e.target.value)}
                 rows={6}
                 className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                placeholder="Enter your SMS message..."
+                placeholder={t('calls.smsPlaceholder')}
               />
               <p className="text-xs text-muted mt-1">
-                {smsMessage.length} / 1600 characters
+                {t('calls.characterCount', '{{count}} / 1600 characters', { count: smsMessage.length })}
               </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-ink mb-2">
-                Images/Media
+                {t('calls.imagesMedia', 'Images/Media')}
               </label>
               {smsMediaUrls.length > 0 && (
                 <div className="mb-2 space-y-2">
@@ -1737,7 +1802,7 @@ export default function Calls() {
                 }}
                 className="px-3 py-2 text-sm border border-line rounded-lg hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                📷 Add Image/Video
+                📷 {t('calls.addImageVideo', 'Add Image/Video')}
               </button>
             </div>
             <div className="flex gap-2 justify-end">
@@ -1750,14 +1815,14 @@ export default function Calls() {
                 }}
                 className="px-4 py-2 text-sm border border-line rounded-lg hover:bg-gray-50 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleSendSMS}
                 disabled={sendingSMS || !smsMessage.trim()}
                 className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {sendingSMS ? 'Sending...' : 'Send SMS'}
+                {sendingSMS ? t('calls.sendingSms') : t('calls.sendSms')}
               </button>
             </div>
           </div>
@@ -1773,34 +1838,34 @@ export default function Calls() {
           setWhatsAppMediaUrls([]);
           setSelectedCallForMessage(null);
         }}
-        title="Send WhatsApp Message"
+        title={t('calls.sendWhatsApp')}
         size="md"
       >
         {selectedCallForMessage && (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-ink mb-2">
-                To: {selectedCallForMessage.contact_name || 'Unknown'} ({selectedCallForMessage.contact_phone})
+                {t('calls.to', 'To')}: {selectedCallForMessage.contact_name || t('calls.unknown', 'Unknown')} ({selectedCallForMessage.contact_phone})
               </label>
             </div>
             <div>
               <label className="block text-sm font-medium text-ink mb-2">
-                Message *
+                {t('leads.message')} *
               </label>
               <textarea
                 value={whatsAppMessage}
                 onChange={(e) => setWhatsAppMessage(e.target.value)}
                 rows={6}
                 className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
-                placeholder="Enter your WhatsApp message..."
+                placeholder={t('calls.whatsAppPlaceholder')}
               />
               <p className="text-xs text-muted mt-1">
-                {whatsAppMessage.length} / 1600 characters
+                {t('calls.characterCount', '{{count}} / 1600 characters', { count: whatsAppMessage.length })}
               </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-ink mb-2">
-                Images/Media
+                {t('calls.imagesMedia', 'Images/Media')}
               </label>
               {whatsAppMediaUrls.length > 0 && (
                 <div className="mb-2 space-y-2">
@@ -1824,7 +1889,7 @@ export default function Calls() {
                 }}
                 className="px-3 py-2 text-sm border border-line rounded-lg hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                📷 Add Image/Video
+                📷 {t('calls.addImageVideo', 'Add Image/Video')}
               </button>
             </div>
             <div className="flex gap-2 justify-end">
@@ -1837,14 +1902,14 @@ export default function Calls() {
                 }}
                 className="px-4 py-2 text-sm border border-line rounded-lg hover:bg-gray-50 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleSendWhatsApp}
                 disabled={sendingWhatsApp || !whatsAppMessage.trim()}
                 className="px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {sendingWhatsApp ? 'Sending...' : 'Send WhatsApp'}
+                {sendingWhatsApp ? t('calls.sendingSms') : t('calls.sendWhatsApp')}
               </button>
             </div>
           </div>

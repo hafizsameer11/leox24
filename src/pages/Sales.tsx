@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
 import Modal from '../components/ui/Modal';
@@ -52,6 +53,7 @@ interface PaginatedResponse {
 }
 
 export default function Sales() {
+  const { t } = useTranslation();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -188,7 +190,7 @@ export default function Sales() {
       fetchOpportunities(); 
     } catch (error: any) {
       console.error('Failed to create opportunity:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to create opportunity. Please try again.';
+      const errorMessage = error.response?.data?.message || t('sales.createFailed', 'Failed to create opportunity. Please try again.');
       alert(errorMessage);
     }
   };
@@ -229,10 +231,16 @@ export default function Sales() {
   };
 
   const formatStage = (stage: string) => {
-    return stage
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    const stageKeys: Record<string, string> = {
+      prospecting: 'sales.prospecting',
+      qualification: 'sales.qualification',
+      proposal: 'sales.proposal',
+      negotiation: 'sales.negotiation',
+      closed_won: 'sales.closedWon',
+      closed_lost: 'sales.closedLost',
+      on_hold: 'sales.onHold',
+    };
+    return t(stageKeys[stage] || stage);
   };
 
   const formatCurrency = (value: number | null, currency: string = 'EUR') => {
@@ -272,18 +280,18 @@ export default function Sales() {
     return (
       <div className="space-y-6">
         <Topbar
-          title="Sales Pipeline"
-          subtitle="Manage opportunities, deals, and sales stages"
+          title={t('sales.pipelineTitle')}
+          subtitle={t('sales.pipelineSubtitle')}
           actions={
             <>
               <button className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium">
-                Export
+                {t('common.export')}
               </button>
             <button
               onClick={() => setShowCreateModal(true)}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              ➕ New Opportunity
+              ➕ {t('sales.newOpportunity')}
             </button>
             </>
           }
@@ -298,18 +306,18 @@ export default function Sales() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="Sales Pipeline"
-        subtitle="Manage opportunities, deals, and sales stages"
+        title={t('sales.pipelineTitle')}
+        subtitle={t('sales.pipelineSubtitle')}
         actions={
           <>
             <button className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium">
-              Export
+              {t('common.export')}
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              ➕ New Opportunity
+              ➕ {t('sales.newOpportunity')}
             </button>
           </>
         }
@@ -319,30 +327,30 @@ export default function Sales() {
       <div className="bg-white border border-line rounded-2xl p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-muted mb-2">Search</label>
+            <label className="block text-xs font-semibold text-muted mb-2">{t('common.search')}</label>
             <input
               type="text"
-              placeholder="Search opportunities..."
+              placeholder={t('sales.searchPlaceholder')}
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="w-full px-3 py-2 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted mb-2">Stage</label>
+            <label className="block text-xs font-semibold text-muted mb-2">{t('sales.stage')}</label>
             <select
               value={filters.stage}
               onChange={(e) => handleFilterChange('stage', e.target.value)}
               className="w-full px-3 py-2 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
             >
-              <option value="all">All Stages</option>
-              <option value="prospecting">Prospecting</option>
-              <option value="qualification">Qualification</option>
-              <option value="proposal">Proposal</option>
-              <option value="negotiation">Negotiation</option>
-              <option value="closed_won">Closed Won</option>
-              <option value="closed_lost">Closed Lost</option>
-              <option value="on_hold">On Hold</option>
+              <option value="all">{t('common.allStages')}</option>
+              <option value="prospecting">{t('sales.prospecting')}</option>
+              <option value="qualification">{t('sales.qualification')}</option>
+              <option value="proposal">{t('sales.proposal')}</option>
+              <option value="negotiation">{t('sales.negotiation')}</option>
+              <option value="closed_won">{t('sales.closedWon')}</option>
+              <option value="closed_lost">{t('sales.closedLost')}</option>
+              <option value="on_hold">{t('sales.onHold')}</option>
             </select>
           </div>
           <div className="flex items-end">
@@ -350,7 +358,7 @@ export default function Sales() {
               onClick={fetchOpportunities}
               className="w-full px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              🔄 Refresh
+              🔄 {t('common.refresh')}
             </button>
           </div>
         </div>
@@ -364,8 +372,8 @@ export default function Sales() {
           </div>
         ) : opportunities.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-muted text-lg mb-2">No opportunities found</p>
-            <p className="text-muted text-sm">Create your first opportunity to get started</p>
+            <p className="text-muted text-lg mb-2">{t('sales.noOpportunities')}</p>
+            <p className="text-muted text-sm">{t('sales.createFirst')}</p>
           </div>
         ) : (
           <>
@@ -373,15 +381,15 @@ export default function Sales() {
               <table className="w-full">
                 <thead className="bg-aqua-1/30 border-b border-line">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Opportunity</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Customer</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Stage</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-muted uppercase">Value</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-muted uppercase">Probability</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Expected Close</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Source</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Assigned To</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('sales.opportunity')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('sales.customer')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('sales.stage')}</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-muted uppercase">{t('common.value')}</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-muted uppercase">{t('sales.probability')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('sales.expectedClose')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('leads.source')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('sales.assignedTo')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase">{t('common.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -422,7 +430,7 @@ export default function Sales() {
                           onClick={() => handleViewOpportunity(opportunity)}
                           className="text-sm text-aqua-5 hover:text-aqua-4 font-medium"
                         >
-                          View
+                          {t('common.view')}
                         </button>
                       </td>
                     </tr>
@@ -435,9 +443,12 @@ export default function Sales() {
             {pagination.last_page > 1 && (
               <div className="px-4 py-3 border-t border-line flex items-center justify-between">
                 <div className="text-sm text-muted">
-                  Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to{' '}
-                  {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total}{' '}
-                  opportunities
+                  {t('common.showingRange', {
+                    from: ((pagination.current_page - 1) * pagination.per_page) + 1,
+                    to: Math.min(pagination.current_page * pagination.per_page, pagination.total),
+                    total: pagination.total,
+                    entity: t('sales.opportunities').toLowerCase(),
+                  })}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -445,14 +456,14 @@ export default function Sales() {
                     disabled={pagination.current_page === 1}
                     className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-aqua-1/30 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t('common.previous')}
                   </button>
                   <button
                     onClick={() => handlePageChange(pagination.current_page + 1)}
                     disabled={pagination.current_page === pagination.last_page}
                     className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-aqua-1/30 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('common.next')}
                   </button>
                 </div>
               </div>
@@ -465,7 +476,7 @@ export default function Sales() {
       {showCreateModal && (
         <Modal
           isOpen={true}
-          title="Create New Opportunity"
+          title={t('sales.createNew')}
           onClose={() => {
             setShowCreateModal(false);
             resetForm();
@@ -473,55 +484,55 @@ export default function Sales() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-ink mb-1">Opportunity Name *</label>
+              <label className="block text-sm font-medium text-ink mb-1">{t('sales.opportunityName')} *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 required
-                placeholder="e.g., New Client Deal"
+                placeholder={t('sales.opportunityNamePlaceholder', 'e.g., New Client Deal')}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink mb-1">Description</label>
+              <label className="block text-sm font-medium text-ink mb-1">{t('sales.description')}</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
                 className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                placeholder="Describe the opportunity..."
+                placeholder={t('sales.descriptionPlaceholder', 'Describe the opportunity...')}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Stage *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.stage')} *</label>
                 <select
                   value={formData.stage}
                   onChange={(e) => setFormData({ ...formData, stage: e.target.value as any })}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   required
                 >
-                  <option value="prospecting">Prospecting</option>
-                  <option value="qualification">Qualification</option>
-                  <option value="proposal">Proposal</option>
-                  <option value="negotiation">Negotiation</option>
-                  <option value="closed_won">Closed Won</option>
-                  <option value="closed_lost">Closed Lost</option>
-                  <option value="on_hold">On Hold</option>
+                  <option value="prospecting">{t('sales.prospecting')}</option>
+                  <option value="qualification">{t('sales.qualification')}</option>
+                  <option value="proposal">{t('sales.proposal')}</option>
+                  <option value="negotiation">{t('sales.negotiation')}</option>
+                  <option value="closed_won">{t('sales.closedWon')}</option>
+                  <option value="closed_lost">{t('sales.closedLost')}</option>
+                  <option value="on_hold">{t('sales.onHold')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Customer</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.customer')}</label>
                 <select
                   value={formData.customer_id}
                   onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 >
-                  <option value="">Select Customer (Optional)</option>
+                  <option value="">{t('sales.selectCustomer')} ({t('common.optional')})</option>
                   {customers.map((customer) => {
                     const name = customer.company_name || 
                       `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 
@@ -538,13 +549,13 @@ export default function Sales() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Project</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.project')}</label>
                 <select
                   value={formData.project_id}
                   onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 >
-                  <option value="">Select Project (Optional)</option>
+                  <option value="">{t('sales.selectProject')} ({t('common.optional')})</option>
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name}
@@ -554,13 +565,13 @@ export default function Sales() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Assign To</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.assignedTo')}</label>
                 <select
                   value={formData.assigned_to}
                   onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 >
-                  <option value="">Select User (Optional)</option>
+                  <option value="">{t('sales.selectAssignee')} ({t('common.optional')})</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.name}
@@ -572,7 +583,7 @@ export default function Sales() {
 
             <div className="grid grid-cols-2 gap-4">
                <div>
-                <label className="block text-sm font-medium text-ink mb-1">Expected Close Date</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.expectedCloseDate')}</label>
                 <input
                   type="date"
                   value={formData.expected_close_date}
@@ -582,7 +593,7 @@ export default function Sales() {
               </div>
 
                <div>
-                <label className="block text-sm font-medium text-ink mb-1">Value (€)</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('common.value')} (€)</label>
                 <input
                   type="number"
                   value={formData.value}
@@ -597,7 +608,7 @@ export default function Sales() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Currency</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.currency')}</label>
                 <select
                   value={formData.currency}
                   onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
@@ -611,7 +622,7 @@ export default function Sales() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Probability (%)</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.probability')} (%)</label>
                 <input
                   type="number"
                   value={formData.probability}
@@ -626,23 +637,23 @@ export default function Sales() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Source</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('leads.source')}</label>
                 <input
                   type="text"
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  placeholder="e.g., website, referral, cold_call"
+                  placeholder={t('sales.sourcePlaceholder', 'e.g., website, referral, cold_call')}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Campaign</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('sales.campaign')}</label>
                 <input
                   type="text"
                   value={formData.campaign}
                   onChange={(e) => setFormData({ ...formData, campaign: e.target.value })}
-                  placeholder="Campaign name"
+                  placeholder={t('sales.campaignPlaceholder', 'Campaign name')}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                 />
               </div>
@@ -656,13 +667,13 @@ export default function Sales() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleCreateOpportunity}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                Create Opportunity
+                {t('sales.createOpportunityBtn')}
               </button>
             </div>
           </div>
@@ -673,7 +684,7 @@ export default function Sales() {
       {showDetailModal && selectedOpportunity && (
         <Modal
           isOpen={true}
-          title="Opportunity Details"
+          title={t('sales.details')}
           onClose={() => {
             setShowDetailModal(false);
             setSelectedOpportunity(null);
@@ -684,7 +695,7 @@ export default function Sales() {
               <div>
                 <h3 className="text-xl font-bold text-ink">{selectedOpportunity.name}</h3>
                 <p className="text-sm text-muted mt-1">
-                  Created on {formatDate(selectedOpportunity.created_at)}
+                  {t('sales.createdOn', 'Created on')} {formatDate(selectedOpportunity.created_at)}
                 </p>
               </div>
               <span
@@ -698,23 +709,23 @@ export default function Sales() {
 
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <h4 className="text-sm font-semibold text-muted mb-2 uppercase">Financials</h4>
+                <h4 className="text-sm font-semibold text-muted mb-2 uppercase">{t('common.financials')}</h4>
                 <div className="bg-aqua-1/10 p-4 rounded-xl space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted">Value:</span>
+                    <span className="text-sm text-muted">{t('common.value')}:</span>
                     <span className="font-semibold text-ink">
                       {formatCurrency(selectedOpportunity.value, selectedOpportunity.currency)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted">Probability:</span>
+                    <span className="text-sm text-muted">{t('sales.probability')}:</span>
                     <span className="font-semibold text-ink">
                       {selectedOpportunity.probability ? `${selectedOpportunity.probability}%` : '-'}
                     </span>
                   </div>
                   {selectedOpportunity.weighted_value && (
                      <div className="flex justify-between pt-2 border-t border-aqua-2">
-                       <span className="text-sm text-muted">Weighted:</span>
+                       <span className="text-sm text-muted">{t('sales.weightedValue')}:</span>
                        <span className="font-semibold text-ink">
                          {formatCurrency(selectedOpportunity.weighted_value, selectedOpportunity.currency)}
                        </span>
@@ -724,28 +735,28 @@ export default function Sales() {
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold text-muted mb-2 uppercase">Details</h4>
+                <h4 className="text-sm font-semibold text-muted mb-2 uppercase">{t('common.details')}</h4>
                 <div className="space-y-2">
                   <div className="flex flex-col">
-                    <span className="text-xs text-muted">Customer</span>
+                    <span className="text-xs text-muted">{t('sales.customer')}</span>
                     <span className="font-medium text-ink">
                       {getCustomerName(selectedOpportunity.customer)}
                     </span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs text-muted">Assigned To</span>
+                    <span className="text-xs text-muted">{t('sales.assignedTo')}</span>
                     <span className="font-medium text-ink">
                       {selectedOpportunity.assignee?.name || '-'}
                     </span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs text-muted">Expected Close</span>
+                    <span className="text-xs text-muted">{t('sales.expectedClose')}</span>
                     <span className="font-medium text-ink">
                       {formatDate(selectedOpportunity.expected_close_date)}
                     </span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs text-muted">Source</span>
+                    <span className="text-xs text-muted">{t('leads.source')}</span>
                     <span className="font-medium text-ink">
                       {selectedOpportunity.source || '-'}
                     </span>
@@ -756,7 +767,7 @@ export default function Sales() {
 
             {selectedOpportunity.description && (
               <div>
-                <h4 className="text-sm font-semibold text-muted mb-2 uppercase">Description</h4>
+                <h4 className="text-sm font-semibold text-muted mb-2 uppercase">{t('sales.description')}</h4>
                 <div className="bg-gray-50 p-4 rounded-xl text-sm text-ink border border-line">
                   {selectedOpportunity.description}
                 </div>
@@ -771,7 +782,7 @@ export default function Sales() {
                 }}
                 className="px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Close
+                {t('common.close')}
               </button>
             </div>
           </div>

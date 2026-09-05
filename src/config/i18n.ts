@@ -4,6 +4,12 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import enTranslations from '../locales/en.json';
 import itTranslations from '../locales/it.json';
+import enExt from '../locales/en-ext.json';
+import itExt from '../locales/it-ext.json';
+import { mergeTranslations } from '../utils/mergeTranslations';
+
+const enMerged = mergeTranslations(enTranslations, enExt) as typeof enTranslations;
+const itMerged = mergeTranslations(itTranslations, itExt) as typeof itTranslations;
 
 i18n
   .use(LanguageDetector)
@@ -11,13 +17,16 @@ i18n
   .init({
     resources: {
       en: {
-        translation: enTranslations,
+        translation: enMerged,
       },
       it: {
-        translation: itTranslations,
+        translation: itMerged,
       },
     },
     fallbackLng: 'en',
+    supportedLngs: ['en', 'it'],
+    nonExplicitSupportedLngs: true,
+    load: 'languageOnly',
     debug: false,
     interpolation: {
       escapeValue: false,
@@ -25,6 +34,7 @@ i18n
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
+      convertDetectedLanguage: (lng: string) => lng.split('-')[0],
     },
   });
 

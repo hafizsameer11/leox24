@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Credential {
   id: number;
@@ -28,6 +29,7 @@ export default function CredentialsModal({
   externalUrl,
   onOpenExternal,
 }: CredentialsModalProps) {
+  const { t } = useTranslation();
   const [copiedEmail, setCopiedEmail] = useState<number | null>(null);
   const [copiedPassword, setCopiedPassword] = useState<number | null>(null);
 
@@ -48,7 +50,7 @@ export default function CredentialsModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-lg max-w-lg w-full p-6 max-h-96 overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-ink">Project Credentials</h2>
+          <h2 className="text-xl font-bold text-ink">{t('credentialsModal.projectCredentials')}</h2>
           <button
             onClick={onClose}
             className="text-muted hover:text-ink text-2xl leading-none"
@@ -64,9 +66,8 @@ export default function CredentialsModal({
             <div className="space-y-4">
               {credentials.map((cred) => (
                 <div key={cred.id} className="bg-gray-50 rounded-lg p-4 border border-line">
-                  {/* Email Field */}
                   <div className="mb-3">
-                    <label className="text-xs font-semibold text-muted uppercase">Email</label>
+                    <label className="text-xs font-semibold text-muted uppercase">{t('credentialsModal.email')}</label>
                     <div className="flex items-center gap-2 mt-1">
                       <input
                         type="text"
@@ -82,14 +83,13 @@ export default function CredentialsModal({
                             : 'bg-aqua-1/30 text-aqua-5 hover:bg-aqua-1/50'
                         }`}
                       >
-                        {copiedEmail === cred.id ? '✓ Copied' : 'Copy'}
+                        {copiedEmail === cred.id ? t('credentialsModal.copiedCheck') : t('common.copy')}
                       </button>
                     </div>
                   </div>
 
-                  {/* Password Field */}
                   <div>
-                    <label className="text-xs font-semibold text-muted uppercase">Password</label>
+                    <label className="text-xs font-semibold text-muted uppercase">{t('credentialsModal.password')}</label>
                     <div className="flex items-center gap-2 mt-1">
                       <input
                         type="password"
@@ -105,7 +105,7 @@ export default function CredentialsModal({
                             : 'bg-aqua-1/30 text-aqua-5 hover:bg-aqua-1/50'
                         }`}
                       >
-                        {copiedPassword === cred.id ? '✓ Copied' : 'Copy'}
+                        {copiedPassword === cred.id ? t('credentialsModal.copiedCheck') : t('common.copy')}
                       </button>
                     </div>
                   </div>
@@ -114,29 +114,27 @@ export default function CredentialsModal({
             </div>
           ) : (
             <div className="text-center py-8 text-muted">
-              <p>No credentials found for this project</p>
+              <p>{t('credentialsModal.noCredentialsFound')}</p>
             </div>
           )}
         </div>
 
-        {/* External URL Button */}
         {externalUrl && onOpenExternal && (
           <div className="mb-4">
             <button
               onClick={onOpenExternal}
               className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
             >
-              🔗 Open Login Page
+              🔗 {t('common.openLoginPage')}
             </button>
           </div>
         )}
 
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="w-full px-4 py-2 border border-line text-ink rounded-lg font-medium hover:bg-gray-50 transition-colors"
         >
-          Close
+          {t('common.close')}
         </button>
       </div>
     </div>

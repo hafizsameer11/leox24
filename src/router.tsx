@@ -3,7 +3,9 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Leads from './pages/Leads';
+import TGLeads from './pages/TGLeads';
 import EmailBulk from './pages/EmailBulk';
+import Sms from './pages/Sms';
 import Calls from './pages/Calls';
 import Support from './pages/Support';
 import Marketing from './pages/Marketing';
@@ -75,8 +77,16 @@ export const router = createBrowserRouter([
         element: <Leads />,
       },
       {
+        path: 'tg-leads',
+        element: <TGLeads />,
+      },
+      {
         path: 'emails',
         element: <EmailBulk />,
+      },
+      {
+        path: 'sms',
+        element: <Sms />,
       },
       {
         path: 'calls',

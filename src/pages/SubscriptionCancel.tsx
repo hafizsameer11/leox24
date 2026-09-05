@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Button from '../components/ui/Button';
 
 export default function SubscriptionCancel() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1">
@@ -22,20 +24,19 @@ export default function SubscriptionCancel() {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-ink mb-2">Checkout Canceled</h1>
+        <h1 className="text-2xl font-bold text-ink mb-2">{t('subscriptionCancel.title')}</h1>
         <p className="text-muted mb-6">
-          Your checkout was canceled. No charges were made. You can try subscribing again anytime.
+          {t('subscriptionCancel.message')}
         </p>
         <div className="space-y-3">
           <Button onClick={() => navigate('/subscribe')} variant="primary" className="w-full">
-            Try Again
+            {t('common.tryAgain')}
           </Button>
           <Button onClick={() => navigate('/dashboard')} variant="secondary" className="w-full">
-            Go to Dashboard
+            {t('subscriptionCancel.goToDashboard')}
           </Button>
         </div>
       </div>
     </div>
   );
 }
-

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuthStore } from '../stores/authStore';
@@ -57,6 +58,7 @@ interface DoctorData {
 }
 
 export default function DoctorProject() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -94,11 +96,11 @@ export default function DoctorProject() {
       } else if (response.data?.data) {
         setDoctorData(response.data.data);
       } else {
-        setError('Failed to load doctor data');
+        setError(t('doctor.loadError'));
       }
     } catch (err: any) {
       console.error('Failed to login & fetch doctor data:', err);
-      setError(err.response?.data?.message || 'Failed to access doctor project');
+      setError(err.response?.data?.message || t('doctor.accessFailed'));
     } finally {
       setLoading(false);
     }
@@ -120,11 +122,11 @@ export default function DoctorProject() {
       const response = await api.get(`/users/${user.id}/plain-password`);
       setPlainPassword(response.data?.plain_password || null);
       if (!response.data?.plain_password) {
-        setCredentialsError('Plain password not available');
+        setCredentialsError(t('doctor.plainPasswordUnavailable'));
       }
     } catch (err: any) {
       setPlainPassword(null);
-      setCredentialsError(err.response?.data?.message || 'Failed to load credentials');
+      setCredentialsError(err.response?.data?.message || t('doctor.credentialsFailed'));
     } finally {
       setCredentialsLoading(false);
     }
@@ -147,13 +149,13 @@ export default function DoctorProject() {
             onClick={() => navigate('/projects')}
             className="px-3 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
-            ← Back to Projects
+            {t('doctor.back')}
           </button>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-5 mx-auto mb-4"></div>
-            <p className="text-muted">Loading doctor data...</p>
+            <p className="text-muted">{t('doctor.loading')}</p>
           </div>
         </div>
       </div>
@@ -169,18 +171,18 @@ export default function DoctorProject() {
             onClick={() => navigate('/projects')}
             className="px-3 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
-            ← Back to Projects
+            {t('doctor.back')}
           </button>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="bg-white rounded-xl p-8 border border-bad/30 max-w-md text-center">
-            <h3 className="text-lg font-semibold text-ink mb-2">⚠️ Error</h3>
-            <p className="text-muted text-sm mb-4">{error || 'Unable to load doctor data'}</p>
+            <h3 className="text-lg font-semibold text-ink mb-2">{t('doctor.error')}</h3>
+            <p className="text-muted text-sm mb-4">{error || t('doctor.unableToLoad')}</p>
             <button
               onClick={fetchDoctorData}
               className="px-4 py-2 bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors font-medium"
             >
-              Try Again
+              {t('common.tryAgain')}
             </button>
           </div>
         </div>
@@ -197,16 +199,16 @@ export default function DoctorProject() {
             onClick={() => navigate('/projects')}
             className="px-3 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
-            ← Back to Projects
+            {t('doctor.back')}
           </button>
-          <h1 className="text-xl font-bold text-ink">Doctor Project</h1>
+          <h1 className="text-xl font-bold text-ink">{t('doctor.title')}</h1>
         </div>
         {!isSuperAdmin && (
         <button
           onClick={handleTryNow}
           className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
         >
-          Want to Try
+          {t('doctor.wantToTry')}
         </button>
         )}
       </div>
@@ -238,15 +240,15 @@ export default function DoctorProject() {
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="px-4">
               <div className="text-2xl font-bold text-ink">{doctorData.stats?.totalPatients || 0}</div>
-              <div className="text-xs text-muted">Patients</div>
+              <div className="text-xs text-muted">{t('doctor.patients')}</div>
             </div>
             <div className="px-4">
               <div className="text-2xl font-bold text-ink">{doctorData.stats?.totalAppointments || 0}</div>
-              <div className="text-xs text-muted">Appointments</div>
+              <div className="text-xs text-muted">{t('doctor.appointments')}</div>
             </div>
             <div className="px-4">
               <div className="text-2xl font-bold text-ink">${(doctorData.stats?.totalRevenue || 0).toFixed(2)}</div>
-              <div className="text-xs text-muted">Revenue</div>
+              <div className="text-xs text-muted">{t('doctor.revenue')}</div>
             </div>
           </div>
         </div>
@@ -256,10 +258,10 @@ export default function DoctorProject() {
       <div className="px-6 mb-4">
         <div className="bg-white rounded-xl border border-line p-1 flex gap-1 inline-flex">
           {[
-            { id: 'patients', label: '👥 Patients', count: doctorData.patients?.length || 0 },
-            { id: 'appointments', label: '📅 Appointments', count: doctorData.appointments?.length || 0 },
-            { id: 'orders', label: '📦 Orders', count: doctorData.orders?.length || 0 },
-            { id: 'stats', label: '📊 Stats', count: null },
+            { id: 'patients', label: `👥 ${t('doctor.patients')}`, count: doctorData.patients?.length || 0 },
+            { id: 'appointments', label: `📅 ${t('doctor.appointments')}`, count: doctorData.appointments?.length || 0 },
+            { id: 'orders', label: `📦 ${t('doctor.orders')}`, count: doctorData.orders?.length || 0 },
+            { id: 'stats', label: `📊 ${t('doctor.stats')}`, count: null },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -320,7 +322,7 @@ export default function DoctorProject() {
                   </div>
                 ))
               ) : (
-                <div className="col-span-full text-center py-12 text-muted">No patients found</div>
+                <div className="col-span-full text-center py-12 text-muted">{t('doctor.noPatients')}</div>
               )}
             </div>
           )}
@@ -333,7 +335,7 @@ export default function DoctorProject() {
                   <div key={appointment._id} className="bg-white rounded-xl border border-line p-5 flex items-center justify-between hover:shadow-md transition-shadow">
                     <div className="flex-1">
                       <div className="font-semibold text-ink mb-1">
-                        {appointment.patientId?.fullName || 'Unknown Patient'}
+                        {appointment.patientId?.fullName || t('doctor.unknownPatient')}
                       </div>
                       <div className="text-sm text-muted mb-2">
                         {new Date(appointment.appointmentDate).toLocaleDateString()} at {appointment.appointmentTime}
@@ -369,7 +371,7 @@ export default function DoctorProject() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-12 text-muted">No appointments found</div>
+                <div className="text-center py-12 text-muted">{t('doctor.noAppointments')}</div>
               )}
             </div>
           )}
@@ -383,11 +385,11 @@ export default function DoctorProject() {
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <div className="font-semibold text-ink">{order.orderNumber}</div>
-                        <div className="text-sm text-muted">Patient: {order.patientId?.fullName || 'N/A'}</div>
+                        <div className="text-sm text-muted">{t('doctor.patient')}: {order.patientId?.fullName || 'N/A'}</div>
                       </div>
                       <div className="text-right">
                         <div className="font-bold text-aqua-5">${order.total?.toFixed(2) || '0.00'}</div>
-                        <div className="text-xs text-muted">{order.items?.length || 0} items</div>
+                        <div className="text-xs text-muted">{order.items?.length || 0} {t('doctor.items')}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -419,7 +421,7 @@ export default function DoctorProject() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-12 text-muted">No orders found</div>
+                <div className="text-center py-12 text-muted">{t('doctor.noOrders')}</div>
               )}
             </div>
           )}
@@ -429,43 +431,43 @@ export default function DoctorProject() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-white rounded-xl border border-line p-6">
                 <div className="text-3xl font-bold text-aqua-5 mb-2">{doctorData.stats?.totalPatients || 0}</div>
-                <div className="text-sm text-muted">Total Patients</div>
+                <div className="text-sm text-muted">{t('doctor.totalPatients')}</div>
               </div>
               <div className="bg-white rounded-xl border border-line p-6">
                 <div className="text-3xl font-bold text-aqua-5 mb-2">{doctorData.stats?.totalAppointments || 0}</div>
-                <div className="text-sm text-muted">Total Appointments</div>
+                <div className="text-sm text-muted">{t('doctor.totalAppointments')}</div>
               </div>
               <div className="bg-white rounded-xl border border-line p-6">
                 <div className="text-3xl font-bold text-aqua-5 mb-2">${(doctorData.stats?.totalRevenue || 0).toFixed(2)}</div>
-                <div className="text-sm text-muted">Total Revenue</div>
+                <div className="text-sm text-muted">{t('doctor.totalRevenue')}</div>
               </div>
               <div className="bg-white rounded-xl border border-line p-6">
                 <div className="text-3xl font-bold text-green-600 mb-2">
                   {doctorData.stats?.appointmentsByStatus?.['CONFIRMED'] || 0}
                 </div>
-                <div className="text-sm text-muted">Confirmed Appointments</div>
+                <div className="text-sm text-muted">{t('doctor.confirmedAppointments')}</div>
               </div>
               <div className="bg-white rounded-xl border border-line p-6">
                 <div className="text-3xl font-bold text-blue-600 mb-2">
                   {doctorData.stats?.appointmentsByStatus?.['COMPLETED'] || 0}
                 </div>
-                <div className="text-sm text-muted">Completed Appointments</div>
+                <div className="text-sm text-muted">{t('doctor.completedAppointments')}</div>
               </div>
               <div className="bg-white rounded-xl border border-line p-6">
                 <div className="text-3xl font-bold text-orange-600 mb-2">
                   {doctorData.stats?.appointmentsByStatus?.['CANCELLED'] || 0}
                 </div>
-                <div className="text-sm text-muted">Cancelled Appointments</div>
+                <div className="text-sm text-muted">{t('doctor.cancelledAppointments')}</div>
               </div>
               <div className="bg-white rounded-xl border border-line p-6">
                 <div className="text-3xl font-bold text-red-600 mb-2">
                   {doctorData.stats?.appointmentsByStatus?.['NO_SHOW'] || 0}
                 </div>
-                <div className="text-sm text-muted">No-Show Appointments</div>
+                <div className="text-sm text-muted">{t('doctor.noShowAppointments')}</div>
               </div>
               <div className="bg-white rounded-xl border border-line p-6">
                 <div className="text-3xl font-bold text-aqua-5 mb-2">{doctorData.stats?.totalOrders || 0}</div>
-                <div className="text-sm text-muted">Total Orders</div>
+                <div className="text-sm text-muted">{t('doctor.totalOrders')}</div>
               </div>
             </div>
           )}
@@ -480,18 +482,18 @@ export default function DoctorProject() {
           setPlainPassword(null);
           setCredentialsError(null);
         }}
-        title="Doctor Project Login Credentials"
+        title={t('doctor.credentialsTitle')}
         size="md"
       >
         <div className="space-y-4">
           <div className="bg-aqua-1/10 border border-aqua-5/20 rounded-lg p-4">
             <p className="text-sm text-muted mb-4">
-              The login page has been opened in a new tab. Use the credentials below to sign in:
+              {t('doctor.loginHelp')}
             </p>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-muted mb-1">Email Address</label>
+                <label className="block text-sm font-medium text-muted mb-1">{t('doctor.emailAddress')}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -507,7 +509,7 @@ export default function DoctorProject() {
                       }
                     }}
                     className="px-3 py-2 text-sm border border-line rounded-lg hover:bg-gray-50 transition-colors"
-                    title="Copy to clipboard"
+                    title={t('doctor.copyToClipboard')}
                   >
                     📋
                   </button>
@@ -515,11 +517,11 @@ export default function DoctorProject() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-muted mb-1">Password</label>
+                <label className="block text-sm font-medium text-muted mb-1">{t('doctor.password')}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
-                    value={credentialsLoading ? 'Loading...' : plainPassword || 'Not available'}
+                    value={credentialsLoading ? t('common.loading') : plainPassword || t('doctor.notAvailable')}
                     readOnly
                     className="flex-1 px-3 py-2 bg-white border border-line rounded-lg text-ink font-mono text-sm"
                   />
@@ -529,7 +531,7 @@ export default function DoctorProject() {
                         copyToClipboard(plainPassword);
                       }}
                       className="px-3 py-2 text-sm border border-line rounded-lg hover:bg-gray-50 transition-colors"
-                      title="Copy to clipboard"
+                      title={t('doctor.copyToClipboard')}
                     >
                       📋
                     </button>
@@ -547,7 +549,7 @@ export default function DoctorProject() {
             {credentialsLoading && (
               <div className="mt-3 text-center">
                 <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-aqua-5"></div>
-                <p className="text-sm text-muted mt-2">Loading credentials...</p>
+                <p className="text-sm text-muted mt-2">{t('doctor.loadingCredentials')}</p>
               </div>
             )}
           </div>
@@ -559,7 +561,7 @@ export default function DoctorProject() {
               }}
               className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors font-medium"
             >
-              Open Login Page Again
+              {t('doctor.openLoginAgain')}
             </button>
             <button
               onClick={() => {
@@ -569,7 +571,7 @@ export default function DoctorProject() {
               }}
               className="px-4 py-2 border border-line text-ink rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
 import { useAuthStore } from '../stores/authStore';
@@ -25,6 +26,7 @@ interface Company {
 }
 
 export default function Users() {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const isSuperAdmin = user?.role === 'super_admin';
   const isCompanyAdmin = user?.role === 'company_admin';
@@ -138,7 +140,7 @@ export default function Users() {
       fetchUsers();
     } catch (error: any) {
       console.error('Failed to create user:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to create user. Please try again.';
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || t('users.createFailed');
       alert(errorMessage);
     }
   };
@@ -178,13 +180,13 @@ export default function Users() {
       fetchUsers();
     } catch (error: any) {
       console.error('Failed to update user:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update user. Please try again.';
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || t('users.updateFailed');
       alert(errorMessage);
     }
   };
 
   const handleDeleteUser = async (userId: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) {
+    if (!confirm(t('users.deleteConfirm'))) {
       return;
     }
 
@@ -193,7 +195,7 @@ export default function Users() {
       fetchUsers();
     } catch (error: any) {
       console.error('Failed to delete user:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to delete user. Please try again.';
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || t('users.deleteFailed');
       alert(errorMessage);
     }
   };
@@ -254,12 +256,12 @@ export default function Users() {
   return (
     <div className="space-y-6">
       <Topbar
-        title="User Management"
-        subtitle="Manage users, roles, and permissions"
+        title={t('users.managementTitle')}
+        subtitle={t('users.managementSubtitle')}
         actions={
           <>
             <button className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium">
-              Export
+              {t('common.export')}
             </button>
             <button 
               onClick={() => {
@@ -268,7 +270,7 @@ export default function Users() {
               }}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
-              ➕ Invite User
+              ➕ {t('users.inviteUser')}
             </button>
           </>
         }
@@ -279,7 +281,7 @@ export default function Users() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder={t('users.searchPlaceholder')}
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
             className="px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
@@ -289,28 +291,28 @@ export default function Users() {
             onChange={(e) => setFilters({ ...filters, role: e.target.value })}
             className="px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
           >
-            <option value="all">All Roles</option>
-            <option value="super_admin">Super Admin</option>
-            <option value="company_admin">Company Admin</option>
-            <option value="manager">Manager</option>
-            <option value="staff">Staff</option>
-            <option value="readonly">Read Only</option>
+            <option value="all">{t('users.allRoles')}</option>
+            <option value="super_admin">{t('users.superAdmin')}</option>
+            <option value="company_admin">{t('users.companyAdmin')}</option>
+            <option value="manager">{t('users.manager')}</option>
+            <option value="staff">{t('users.staff')}</option>
+            <option value="readonly">{t('users.readonly')}</option>
           </select>
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             className="px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="suspended">Suspended</option>
+            <option value="all">{t('users.allStatus')}</option>
+            <option value="active">{t('users.active')}</option>
+            <option value="inactive">{t('users.inactive')}</option>
+            <option value="suspended">{t('users.suspended')}</option>
           </select>
           <button 
             onClick={() => setFilters({ search: '', role: 'all', status: 'all' })}
             className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
-            Clear Filters
+            {t('common.clearFilters')}
           </button>
         </div>
       </div>
@@ -321,12 +323,12 @@ export default function Users() {
           <table className="w-full">
             <thead className="bg-aqua-1/30 border-b border-line">
               <tr>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Name</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Email</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Role</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Status</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">Company</th>
-                <th className="text-right text-xs font-bold text-muted uppercase py-3 px-4">Actions</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.name')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.email')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('users.role')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.status')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('users.company')}</th>
+                <th className="text-right text-xs font-bold text-muted uppercase py-3 px-4">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -356,14 +358,14 @@ export default function Users() {
                       <button 
                         onClick={() => openEditModal(user)}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors" 
-                        title="Edit"
+                        title={t('common.edit')}
                       >
                         ✏️
                       </button>
                       <button 
                         onClick={() => handleDeleteUser(user.id)}
                         className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors text-red-500" 
-                        title="Delete"
+                        title={t('common.delete')}
                       >
                         🗑️
                       </button>
@@ -376,7 +378,7 @@ export default function Users() {
         </div>
         {users.length === 0 && !loading && (
           <div className="p-8 text-center text-muted">
-            No users found. Create your first user to get started!
+            {t('users.noUsersFound')}
           </div>
         )}
       </div>
@@ -386,12 +388,12 @@ export default function Users() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-ink mb-4">
-              {editingUser ? 'Edit User' : 'Invite New User'}
+              {editingUser ? t('users.editUser') : t('users.inviteUser')}
             </h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Name *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('users.nameRequired')}</label>
                 <input
                   type="text"
                   value={formData.name}
@@ -402,7 +404,7 @@ export default function Users() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Email *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('users.emailRequired')}</label>
                 <input
                   type="email"
                   value={formData.email}
@@ -414,7 +416,7 @@ export default function Users() {
 
               <div>
                 <label className="block text-sm font-medium text-ink mb-1">
-                  Password {editingUser ? '(leave blank to keep current)' : '*'}
+                  {t('common.password')} {editingUser ? t('common.passwordKeepCurrent') : '*'}
                 </label>
                 <input
                   type="password"
@@ -425,13 +427,13 @@ export default function Users() {
                   minLength={8}
                 />
                 {!editingUser && (
-                  <p className="text-xs text-muted mt-1">Minimum 8 characters</p>
+                  <p className="text-xs text-muted mt-1">{t('common.minPassword')}</p>
                 )}
               </div>
 
               {(isSuperAdmin || isCompanyAdmin) && (
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Company *</label>
+                  <label className="block text-sm font-medium text-ink mb-1">{t('users.companyRequired')}</label>
                   <select
                     value={formData.company_id || ''}
                     onChange={(e) => setFormData({ ...formData, company_id: e.target.value ? parseInt(e.target.value) : null })}
@@ -439,7 +441,7 @@ export default function Users() {
                     required
                     disabled={isCompanyAdmin && !isSuperAdmin}
                   >
-                    <option value="">Select Company</option>
+                    <option value="">{t('common.selectCompany')}</option>
                     {companies.map((company) => (
                       <option key={company.id} value={company.id}>
                         {company.name}
@@ -447,38 +449,38 @@ export default function Users() {
                     ))}
                   </select>
                   {isCompanyAdmin && !isSuperAdmin && (
-                    <p className="text-xs text-muted mt-1">Your company is automatically assigned</p>
+                    <p className="text-xs text-muted mt-1">{t('common.companyAutoAssigned')}</p>
                   )}
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Role *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('users.role')} *</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value as User['role'] })}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   required
                 >
-                  <option value="staff">Staff</option>
-                  <option value="manager">Manager</option>
-                  <option value="company_admin">Company Admin</option>
-                  <option value="readonly">Read Only</option>
-                  {isSuperAdmin && <option value="super_admin">Super Admin</option>}
+                  <option value="staff">{t('users.staff')}</option>
+                  <option value="manager">{t('users.manager')}</option>
+                  <option value="company_admin">{t('users.companyAdmin')}</option>
+                  <option value="readonly">{t('users.readonly')}</option>
+                  {isSuperAdmin && <option value="super_admin">{t('users.superAdmin')}</option>}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Status *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t('common.status')} *</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as User['status'] })}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
                   required
                 >
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="suspended">Suspended</option>
+                  <option value="active">{t('users.active')}</option>
+                  <option value="pending">{t('common.pending')}</option>
+                  <option value="suspended">{t('users.suspended')}</option>
                 </select>
               </div>
             </div>
@@ -492,13 +494,13 @@ export default function Users() {
                 }}
                 className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={editingUser ? handleUpdateUser : handleCreateUser}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
-                {editingUser ? 'Update' : 'Create'}
+                {editingUser ? t('common.update') : t('common.create')}
               </button>
             </div>
           </div>
