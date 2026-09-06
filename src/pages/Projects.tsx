@@ -136,11 +136,8 @@ export default function Projects() {
   };
 
   const handleOpenExternalLogin = () => {
-    if (selectedProjectForCredentials?.slug === 'mydoctor') {
-      window.open('https://mydoctoradmin.mydoctorplus.it/login', '_blank');
-    } else if (selectedProjectForCredentials?.slug === 'tg-calabria') {
-      window.open('https://tgcalabriareport.com/login', '_blank');
-    }
+    const adminPanelUrl = selectedProjectForCredentials?.admin_panel_url;
+    if (adminPanelUrl) window.open(adminPanelUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleCreateProject = async () => {
@@ -458,18 +455,17 @@ export default function Projects() {
                 </>
               )}
 
-              {(formData.integration_type === 'iframe' || formData.integration_type === 'hybrid') && (
-                <div>
-                  <label className="block text-sm font-semibold text-ink mb-2">{t('projects.adminPanelUrl')}</label>
-                  <input
-                    type="url"
-                    value={formData.admin_panel_url}
-                    onChange={(e) => setFormData({ ...formData, admin_panel_url: e.target.value })}
-                    placeholder="https://admin.example.com"
-                    className="w-full px-3 py-2 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-semibold text-ink mb-2">{t('projects.adminPanelUrl')}</label>
+                <p className="mb-2 text-xs text-muted">Optional direct link shown with this project’s stored credentials. It is available for API, iframe, and hybrid integrations.</p>
+                <input
+                  type="url"
+                  value={formData.admin_panel_url}
+                  onChange={(e) => setFormData({ ...formData, admin_panel_url: e.target.value })}
+                  placeholder="https://admin.example.com/login"
+                  className="w-full px-3 py-2 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-aqua-5/20"
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -535,18 +531,9 @@ export default function Projects() {
         }}
         credentials={credentials}
         projectName={selectedProjectForCredentials?.name || t('projects.defaultProjectName')}
-        externalUrl={
-          selectedProjectForCredentials?.slug === 'mydoctor' || 
-          selectedProjectForCredentials?.slug === 'tg-calabria'
-            ? 'https://mydoctoradmin.mydoctorplus.it/login'
-            : undefined
-        }
-        onOpenExternal={
-          (selectedProjectForCredentials?.slug === 'mydoctor' || 
-           selectedProjectForCredentials?.slug === 'tg-calabria')
-            ? handleOpenExternalLogin
-            : undefined
-        }
+        externalUrl={selectedProjectForCredentials?.admin_panel_url || undefined}
+        onOpenExternal={selectedProjectForCredentials?.admin_panel_url ? handleOpenExternalLogin : undefined}
+        externalButtonLabel="Open Admin Panel"
       />
     </div>
   );

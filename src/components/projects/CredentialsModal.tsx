@@ -19,6 +19,7 @@ interface CredentialsModalProps {
   projectName: string;
   externalUrl?: string;
   onOpenExternal?: () => void;
+  externalButtonLabel?: string;
 }
 
 export default function CredentialsModal({
@@ -28,6 +29,7 @@ export default function CredentialsModal({
   projectName,
   externalUrl,
   onOpenExternal,
+  externalButtonLabel,
 }: CredentialsModalProps) {
   const { t } = useTranslation();
   const [copiedEmail, setCopiedEmail] = useState<number | null>(null);
@@ -125,7 +127,7 @@ export default function CredentialsModal({
               onClick={onOpenExternal}
               className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
             >
-              🔗 {t('common.openLoginPage')}
+              🔗 {externalButtonLabel || t('common.openLoginPage')}
             </button>
           </div>
         )}

@@ -3,7 +3,9 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Leads from './pages/Leads';
+import Categories from './pages/Categories';
 import TGLeads from './pages/TGLeads';
+import MyPetPlusLeads from './pages/MyPetPlusLeads';
 import EmailBulk from './pages/EmailBulk';
 import Sms from './pages/Sms';
 import Calls from './pages/Calls';
@@ -77,8 +79,16 @@ export const router = createBrowserRouter([
         element: <Leads />,
       },
       {
+        path: 'categories',
+        element: <Categories />,
+      },
+      {
         path: 'tg-leads',
         element: <TGLeads />,
+      },
+      {
+        path: 'mypetplus-leads',
+        element: <MyPetPlusLeads />,
       },
       {
         path: 'emails',
