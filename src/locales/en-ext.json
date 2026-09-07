@@ -754,5 +754,31 @@
     "generalInformation": "General information", "branch": "Branch", "dateAdded": "Date added", "taxCode": "Tax code", "vatNumber": "VAT number", "taxCodeFe": "Tax code (e-invoice)", "privacyDate": "Privacy date", "privacyGdpr": "Privacy / GDPR", "processingConsent": "Consent to processing", "marketingConsent": "Marketing consent", "profilingConsent": "Profiling consent", "communicationPreferences": "Communication preferences", "sendSms": "Send SMS", "sendMail": "Send email", "sendNewsletter": "Send newsletter",
     "billingInformation": "Billing information", "billingAddress": "Billing address", "billingCity": "Billing city", "billingZipCode": "Billing ZIP code", "billingState": "Billing state", "billingCountry": "Billing country",
     "additionalInformation": "Additional information", "familyMembers": "Family members", "occupation": "Occupation", "visionProblem": "Vision problem", "hobbies": "Hobbies", "acquiredBy": "Acquired by", "promotion": "Promotion", "referredBy": "Referred by", "notes": "Notes", "privateNotes": "Private notes"
+  },
+  "dashboard": {
+    "workspaceSubtitle": "A live overview of CRM performance and connected projects",
+    "periodToday": "Today",
+    "periodWeek": "This week",
+    "periodMonth": "This month",
+    "periodYear": "This year",
+    "selectedPeriod": "Selected period",
+    "currentPipeline": "Current pipeline",
+    "projectPulse": "Connected project overview",
+    "projectPulseSubtitle": "Live figures from the projects currently available in CRM",
+    "tgLeadsProject": "TG Leads",
+    "myPetPlusProject": "MyPet Plus",
+    "liveProjectData": "Live project data",
+    "viewLeads": "View leads",
+    "totalRegistrations": "Total registrations",
+    "subscriptionRevenue": "Subscription revenue",
+    "subscriptionPayments": "subscription payments",
+    "projectDataUnavailable": "Live project data is currently unavailable.",
+    "lastThirtyDays": "Last 30 days",
+    "crmWorkload": "CRM workload",
+    "currentCrmData": "Current CRM data",
+    "weightedPipeline": "Weighted pipeline",
+    "pendingTasks": "Pending tasks",
+    "overdueTasks": "Overdue tasks",
+    "recentCrmLeads": "Recent CRM leads"
   }
 }

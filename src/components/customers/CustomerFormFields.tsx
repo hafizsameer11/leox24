@@ -86,6 +86,27 @@ interface Props {
   onChange: (value: CustomerFormData) => void;
 }
 
+type ConsentField = keyof Pick<CustomerFormData, 'privacy_consent_processing' | 'marketing_consent' | 'profiling_consent' | 'send_sms' | 'send_mail' | 'send_newsletter'>;
+
+/** These must be module-level components so inputs are not remounted on each keystroke. */
+function Field({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-ink hover:bg-aqua-1/20">
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 rounded border-line text-aqua-5 focus:ring-aqua-5" />
+      {label}
+    </label>
+  );
+}
+
 export default function CustomerFormFields({ value, onChange }: Props) {
   const { t } = useTranslation();
   const age = useMemo(() => {
@@ -102,18 +123,7 @@ export default function CustomerFormFields({ value, onChange }: Props) {
   const inputClass = 'w-full rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20';
   const update = <K extends keyof CustomerFormData>(key: K, fieldValue: CustomerFormData[K]) => onChange({ ...value, [key]: fieldValue });
 
-  const Field = ({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }) => (
-    <label className={`block ${className}`}>
-      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">{label}</span>
-      {children}
-    </label>
-  );
-  const Toggle = ({ field, label }: { field: keyof Pick<CustomerFormData, 'privacy_consent_processing' | 'marketing_consent' | 'profiling_consent' | 'send_sms' | 'send_mail' | 'send_newsletter'>; label: string }) => (
-    <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-ink hover:bg-aqua-1/20">
-      <input type="checkbox" checked={Boolean(value[field])} onChange={(event) => update(field, event.target.checked)} className="h-4 w-4 rounded border-line text-aqua-5 focus:ring-aqua-5" />
-      {label}
-    </label>
-  );
+  const updateConsent = (field: ConsentField, checked: boolean) => update(field, checked);
 
   return (
     <div className="space-y-6">
@@ -162,15 +172,15 @@ export default function CustomerFormFields({ value, onChange }: Props) {
           <Field label={t('customerForm.privacyDate')}><input type="date" className={inputClass} value={value.privacy_date} onChange={(event) => update('privacy_date', event.target.value)} /></Field>
           <div className="rounded-xl border border-line bg-gray-50 p-2 sm:col-span-2">
             <p className="mb-1 px-2 text-xs font-bold uppercase tracking-wide text-muted">{t('customerForm.privacyGdpr')}</p>
-            <Toggle field="privacy_consent_processing" label={t('customerForm.processingConsent')} />
-            <Toggle field="marketing_consent" label={t('customerForm.marketingConsent')} />
-            <Toggle field="profiling_consent" label={t('customerForm.profilingConsent')} />
+            <Toggle checked={value.privacy_consent_processing} onChange={(checked) => updateConsent('privacy_consent_processing', checked)} label={t('customerForm.processingConsent')} />
+            <Toggle checked={value.marketing_consent} onChange={(checked) => updateConsent('marketing_consent', checked)} label={t('customerForm.marketingConsent')} />
+            <Toggle checked={value.profiling_consent} onChange={(checked) => updateConsent('profiling_consent', checked)} label={t('customerForm.profilingConsent')} />
           </div>
           <div className="rounded-xl border border-line bg-gray-50 p-2 sm:col-span-2">
             <p className="mb-1 px-2 text-xs font-bold uppercase tracking-wide text-muted">{t('customerForm.communicationPreferences')}</p>
-            <Toggle field="send_sms" label={t('customerForm.sendSms')} />
-            <Toggle field="send_mail" label={t('customerForm.sendMail')} />
-            <Toggle field="send_newsletter" label={t('customerForm.sendNewsletter')} />
+            <Toggle checked={value.send_sms} onChange={(checked) => updateConsent('send_sms', checked)} label={t('customerForm.sendSms')} />
+            <Toggle checked={value.send_mail} onChange={(checked) => updateConsent('send_mail', checked)} label={t('customerForm.sendMail')} />
+            <Toggle checked={value.send_newsletter} onChange={(checked) => updateConsent('send_newsletter', checked)} label={t('customerForm.sendNewsletter')} />
           </div>
         </div>
       </section>

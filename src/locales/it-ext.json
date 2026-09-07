@@ -754,5 +754,31 @@
     "generalInformation": "Informazioni generali", "branch": "Filiale", "dateAdded": "Data inserimento", "taxCode": "Codice fiscale", "vatNumber": "Partita IVA", "taxCodeFe": "Codice fiscale (fattura elettronica)", "privacyDate": "Data privacy", "privacyGdpr": "Privacy / GDPR", "processingConsent": "Consenso al trattamento", "marketingConsent": "Consenso marketing", "profilingConsent": "Consenso alla profilazione", "communicationPreferences": "Preferenze di comunicazione", "sendSms": "Invia SMS", "sendMail": "Invia email", "sendNewsletter": "Invia newsletter",
     "billingInformation": "Informazioni di fatturazione", "billingAddress": "Indirizzo di fatturazione", "billingCity": "Città di fatturazione", "billingZipCode": "CAP fatturazione", "billingState": "Provincia fatturazione", "billingCountry": "Paese fatturazione",
     "additionalInformation": "Informazioni aggiuntive", "familyMembers": "Membri della famiglia", "occupation": "Occupazione", "visionProblem": "Problema di vista", "hobbies": "Hobby", "acquiredBy": "Acquisito da", "promotion": "Promozione", "referredBy": "Segnalato da", "notes": "Note", "privateNotes": "Note private"
+  },
+  "dashboard": {
+    "workspaceSubtitle": "Panoramica in tempo reale delle prestazioni CRM e dei progetti collegati",
+    "periodToday": "Oggi",
+    "periodWeek": "Questa settimana",
+    "periodMonth": "Questo mese",
+    "periodYear": "Quest'anno",
+    "selectedPeriod": "Periodo selezionato",
+    "currentPipeline": "Pipeline corrente",
+    "projectPulse": "Panoramica progetti collegati",
+    "projectPulseSubtitle": "Dati in tempo reale dai progetti attualmente disponibili nel CRM",
+    "tgLeadsProject": "TG Leads",
+    "myPetPlusProject": "MyPet Plus",
+    "liveProjectData": "Dati progetto in tempo reale",
+    "viewLeads": "Visualizza lead",
+    "totalRegistrations": "Registrazioni totali",
+    "subscriptionRevenue": "Ricavi da abbonamenti",
+    "subscriptionPayments": "pagamenti abbonamenti",
+    "projectDataUnavailable": "I dati live del progetto non sono al momento disponibili.",
+    "lastThirtyDays": "Ultimi 30 giorni",
+    "crmWorkload": "Carico di lavoro CRM",
+    "currentCrmData": "Dati CRM correnti",
+    "weightedPipeline": "Pipeline ponderata",
+    "pendingTasks": "Compiti in attesa",
+    "overdueTasks": "Compiti scaduti",
+    "recentCrmLeads": "Lead CRM recenti"
   }
 }
