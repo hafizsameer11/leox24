@@ -1,20 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
+import Modal from '../components/ui/Modal';
+import CustomerFormFields, { createEmptyCustomerForm, customerToForm, type CustomerFormData } from '../components/customers/CustomerFormFields';
 
-interface Customer {
+interface Customer extends Omit<Partial<CustomerFormData>, 'email' | 'phone' | 'first_name' | 'last_name' | 'second_last_name'> {
   id: number;
   email: string;
   phone: string;
   first_name: string | null;
   last_name: string | null;
-  vat: string | null;
-  address?: string | null;
-  notes?: string | null;
+  second_last_name?: string | null;
+  city?: string | null;
+  customer_code?: string | null;
+  customer_group?: string | null;
+  mobile?: string | null;
   created_at?: string;
-  updated_at?: string;
 }
 
 export default function Customers() {
@@ -22,35 +25,22 @@ export default function Customers() {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [formData, setFormData] = useState({
-    email: '',
-    phone: '',
-    first_name: '',
-    last_name: '',
-    vat: '',
-    address: '',
-    notes: '',
-  });
+  const [formData, setFormData] = useState<CustomerFormData>(createEmptyCustomerForm());
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchCustomers();
+    const timeout = window.setTimeout(() => void fetchCustomers(), 250);
+    return () => window.clearTimeout(timeout);
   }, [searchTerm]);
 
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const params: any = {};
-      
-      if (searchTerm) {
-        params.search = searchTerm;
-      }
-
-      const response = await api.get('/customers', { params });
-      // Handle paginated response
-      const data = response.data.data || response.data || [];
+      const response = await api.get('/customers', { params: searchTerm ? { search: searchTerm } : undefined });
+      const data = response.data?.data || response.data || [];
       setCustomers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch customers:', error);
@@ -60,132 +50,61 @@ export default function Customers() {
     }
   };
 
-  const handleCreateCustomer = async () => {
-    try {
-      const payload: any = {
-        email: formData.email,
-        phone: formData.phone,
-      };
-
-      if (formData.first_name) {
-        payload.first_name = formData.first_name;
-      }
-      if (formData.last_name) {
-        payload.last_name = formData.last_name;
-      }
-      if (formData.vat) {
-        payload.vat = formData.vat;
-      }
-      if (formData.address) {
-        payload.address = formData.address;
-      }
-      if (formData.notes) {
-        payload.notes = formData.notes;
-      }
-
-      await api.post('/customers', payload);
-      setShowCreateModal(false);
-      resetForm();
-      fetchCustomers();
-    } catch (error: any) {
-      console.error('Failed to create customer:', error);
-      const errorMessage = error.response?.data?.message || t('customers.createFailed');
-      alert(errorMessage);
-    }
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingCustomer(null);
+    setFormData(createEmptyCustomerForm());
   };
 
-  const handleUpdateCustomer = async () => {
-    if (!editingCustomer) return;
+  const openCreateForm = () => {
+    setEditingCustomer(null);
+    setFormData(createEmptyCustomerForm());
+    setShowForm(true);
+  };
 
+  const openEditForm = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setFormData(customerToForm(customer as unknown as Record<string, unknown>));
+    setShowForm(true);
+  };
+
+  const saveCustomer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     try {
-      const payload: any = {};
-
-      if (formData.email !== editingCustomer.email) {
-        payload.email = formData.email;
+      setSaving(true);
+      if (editingCustomer) {
+        await api.put(`/customers/${editingCustomer.id}`, formData);
+      } else {
+        await api.post('/customers', formData);
       }
-      if (formData.phone !== editingCustomer.phone) {
-        payload.phone = formData.phone;
-      }
-      if (formData.first_name !== (editingCustomer.first_name || '')) {
-        payload.first_name = formData.first_name || null;
-      }
-      if (formData.last_name !== (editingCustomer.last_name || '')) {
-        payload.last_name = formData.last_name || null;
-      }
-      if (formData.vat !== (editingCustomer.vat || '')) {
-        payload.vat = formData.vat || null;
-      }
-      if (formData.address !== (editingCustomer.address || '')) {
-        payload.address = formData.address || null;
-      }
-      if (formData.notes !== (editingCustomer.notes || '')) {
-        payload.notes = formData.notes || null;
-      }
-
-      await api.put(`/customers/${editingCustomer.id}`, payload);
-      setEditingCustomer(null);
-      resetForm();
-      fetchCustomers();
+      closeForm();
+      await fetchCustomers();
     } catch (error: any) {
-      console.error('Failed to update customer:', error);
-      const errorMessage = error.response?.data?.message || t('customers.updateFailed');
-      alert(errorMessage);
+      console.error('Failed to save customer:', error);
+      alert(error.response?.data?.message || (editingCustomer ? t('customers.updateFailed') : t('customers.createFailed')));
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDeleteCustomer = async (customerId: number) => {
-    if (!confirm(t('customers.deleteConfirm'))) {
-      return;
-    }
-
+    if (!confirm(t('customers.deleteConfirm'))) return;
     try {
       await api.delete(`/customers/${customerId}`);
-      fetchCustomers();
+      await fetchCustomers();
     } catch (error: any) {
       console.error('Failed to delete customer:', error);
-      const errorMessage = error.response?.data?.message || t('customers.deleteFailed');
-      alert(errorMessage);
+      alert(error.response?.data?.message || t('customers.deleteFailed'));
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      email: '',
-      phone: '',
-      first_name: '',
-      last_name: '',
-      vat: '',
-      address: '',
-      notes: '',
-    });
+  const getCustomerName = (customer: Customer) => {
+    const name = [customer.first_name, customer.last_name, customer.second_last_name].filter(Boolean).join(' ').trim();
+    return name || customer.email;
   };
 
-  const openEditModal = (customer: Customer) => {
-    setEditingCustomer(customer);
-    setFormData({
-      email: customer.email,
-      phone: customer.phone,
-      first_name: customer.first_name || '',
-      last_name: customer.last_name || '',
-      vat: customer.vat || '',
-      address: customer.address || '',
-      notes: customer.notes || '',
-    });
-  };
-
-  const getCustomerName = (customer: Customer): string => {
-    if (customer.first_name || customer.last_name) {
-      return `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
-    }
-    return customer.email;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-5"></div>
-      </div>
-    );
+  if (loading && customers.length === 0) {
+    return <div className="flex h-64 items-center justify-center"><div className="h-12 w-12 animate-spin rounded-full border-b-2 border-aqua-5" /></div>;
   }
 
   return (
@@ -193,197 +112,48 @@ export default function Customers() {
       <Topbar
         title={t('customers.title')}
         subtitle={t('customers.subtitle')}
-        actions={
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
-          >
-            + {t('customers.newCustomer')}
-          </button>
-        }
+        actions={<button type="button" onClick={openCreateForm} className="rounded-xl border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 px-4 py-2 text-sm font-semibold text-ink transition-all hover:shadow-lg hover:shadow-aqua-5/10">+ {t('customers.newCustomer')}</button>}
       />
 
-      {/* Search */}
-      <div className="bg-white border border-line rounded-2xl p-4">
-        <input
-          type="text"
-          placeholder={t('customers.searchPlaceholder')}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
-        />
+      <div className="rounded-2xl border border-line bg-white p-4">
+        <input type="search" placeholder={t('customers.searchPlaceholder')} value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="w-full rounded-xl border border-line px-4 py-2 text-sm outline-none focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20" />
       </div>
 
-      {/* Customers Table */}
-      <div className="bg-white border border-line rounded-2xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-aqua-1/30 border-b border-line">
-              <tr>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.name')}</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.email')}</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.phone')}</th>
-                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.vatNumber')}</th>
-                <th className="text-right text-xs font-bold text-muted uppercase py-3 px-4">{t('common.actions')}</th>
+      <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+        <table className="w-full table-fixed">
+          <thead className="border-b border-line bg-aqua-1/30">
+            <tr>
+              <th className="w-[32%] px-4 py-3 text-left text-xs font-bold uppercase text-muted">{t('customers.customer')}</th>
+              <th className="w-[22%] px-3 py-3 text-left text-xs font-bold uppercase text-muted">{t('customers.contact')}</th>
+              <th className="hidden w-[18%] px-3 py-3 text-left text-xs font-bold uppercase text-muted md:table-cell">{t('customers.location')}</th>
+              <th className="hidden w-[16%] px-3 py-3 text-left text-xs font-bold uppercase text-muted lg:table-cell">{t('customers.groupCode')}</th>
+              <th className="w-[12%] px-3 py-3 text-right text-xs font-bold uppercase text-muted">{t('common.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {customers.map((customer) => (
+              <tr key={customer.id} className="border-b border-line/50 transition-colors hover:bg-aqua-1/10">
+                <td className="px-4 py-3 align-top"><p className="truncate font-semibold text-ink" title={getCustomerName(customer)}>{getCustomerName(customer)}</p><p className="truncate text-sm text-muted" title={customer.email}>{customer.email}</p></td>
+                <td className="px-3 py-3 align-top"><p className="truncate text-sm text-ink">{customer.phone}</p>{customer.mobile && <p className="truncate text-xs text-muted">{customer.mobile}</p>}</td>
+                <td className="hidden px-3 py-3 align-top text-sm text-muted md:table-cell"><span className="truncate">{customer.city || '—'}</span></td>
+                <td className="hidden px-3 py-3 align-top text-sm text-muted lg:table-cell"><p className="truncate">{customer.customer_group || '—'}</p><p className="truncate text-xs">{customer.customer_code || '—'}</p></td>
+                <td className="px-3 py-3 text-right align-top"><div className="flex justify-end gap-1"><button type="button" onClick={() => navigate(`/customers/${customer.id}`)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-aqua-5 hover:bg-aqua-1/50">{t('common.view')}</button><button type="button" onClick={() => openEditForm(customer)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-ink hover:bg-aqua-1/50">{t('common.edit')}</button><button type="button" onClick={() => void handleDeleteCustomer(customer.id)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-bad hover:bg-red-50">{t('common.delete')}</button></div></td>
               </tr>
-            </thead>
-            <tbody>
-              {customers.map((customer) => (
-                <tr key={customer.id} className="border-b border-line/50 hover:bg-aqua-1/10 transition-colors">
-                  <td className="py-3 px-4">
-                    <div className="font-semibold text-ink">{getCustomerName(customer)}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="text-sm text-ink">{customer.email}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="text-sm text-muted">{customer.phone}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="text-sm text-muted">{customer.vat || '-'}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => navigate(`/customers/${customer.id}`)}
-                        className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors" 
-                        title={t('customers.viewDetails')}
-                      >
-                        👁️
-                      </button>
-                      <button 
-                        onClick={() => openEditModal(customer)}
-                        className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors" 
-                        title={t('common.edit')}
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteCustomer(customer.id)}
-                        className="p-1.5 hover:bg-aqua-1 rounded-lg transition-colors text-red-500" 
-                        title={t('common.delete')}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {customers.length === 0 && !loading && (
-          <div className="p-8 text-center text-muted">
-            {t('customers.noCustomersFound')}
-          </div>
-        )}
+            ))}
+          </tbody>
+        </table>
+        {customers.length === 0 && <div className="p-10 text-center text-muted">{t('customers.noCustomersFound')}</div>}
       </div>
 
-      {/* Create/Edit Modal */}
-      {(showCreateModal || editingCustomer) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-ink mb-4">
-              {editingCustomer ? t('customers.editCustomer') : t('customers.createNewCustomer')}
-            </h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('common.email')} *</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('common.phone')} *</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1">{t('common.firstName')}</label>
-                  <input
-                    type="text"
-                    value={formData.first_name}
-                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                    className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1">{t('common.lastName')}</label>
-                  <input
-                    type="text"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                    className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('common.vatNumber')}</label>
-                <input
-                  type="text"
-                  value={formData.vat}
-                  onChange={(e) => setFormData({ ...formData, vat: e.target.value })}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('common.address')}</label>
-                <textarea
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('common.notes')}</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setEditingCustomer(null);
-                  resetForm();
-                }}
-                className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={editingCustomer ? handleUpdateCustomer : handleCreateCustomer}
-                className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
-              >
-                {editingCustomer ? t('common.update') : t('common.create')}
-              </button>
-            </div>
+      <Modal isOpen={showForm} onClose={closeForm} title={editingCustomer ? t('customers.editCustomer') : t('customers.createNewCustomer')} size="xl">
+        <form onSubmit={saveCustomer} className="space-y-5">
+          <CustomerFormFields value={formData} onChange={setFormData} />
+          <div className="sticky bottom-0 flex gap-3 border-t border-line bg-white pt-4">
+            <button type="button" onClick={closeForm} className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-ink hover:bg-aqua-1/30">{t('common.cancel')}</button>
+            <button type="submit" disabled={saving} className="flex-1 rounded-xl bg-aqua-5 px-4 py-2.5 text-sm font-semibold text-white hover:bg-aqua-4 disabled:opacity-50">{saving ? t('customers.saving') : (editingCustomer ? t('common.update') : t('common.create'))}</button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }

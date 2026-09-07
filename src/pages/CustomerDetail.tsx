@@ -1,104 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
 import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import CustomerFormFields, { customerToForm, type CustomerFormData } from '../components/customers/CustomerFormFields';
 
-interface Customer {
-  id: number;
-  email: string;
-  phone: string;
-  first_name: string | null;
-  last_name: string | null;
-  vat: string | null;
-  address: string | null;
-  notes_text: string | null;
-  created_at: string;
-  updated_at: string;
-  opportunities?: Opportunity[];
-  tasks?: Task[];
-  notes?: Note[];
-  documents?: Document[];
-}
-
-interface Opportunity {
-  id: number;
-  name: string;
-  description: string | null;
-  stage: string;
-  value: number | null;
-  currency: string;
-  probability: number | null;
-  expected_close_date: string | null;
-  source: string | null;
-  assignee: User | null;
-  created_at: string;
-}
-
-interface Task {
-  id: number;
-  title: string;
-  description: string | null;
-  priority: string;
-  status: string;
-  due_date: string | null;
-  assignee: User | null;
-  creator: User | null;
-  created_at: string;
-}
-
-interface Note {
-  id: number;
-  title: string | null;
-  content: string;
-  type: string;
-  is_pinned: boolean;
-  is_important: boolean;
-  user: User | null;
-  created_at: string;
-}
-
-interface Document {
-  id: number;
-  name: string;
-  original_name: string;
-  category: string | null;
-  size: number;
-  mime_type: string | null;
-  created_at: string;
-}
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-interface ActivityLog {
-  id: number;
-  action: string;
-  description: string;
-  user: User | null;
-  created_at: string;
-}
-
-interface CustomerStats {
-  opportunities_count: number;
-  open_opportunities_count: number;
-  total_opportunities_value: number;
-  tasks_count: number;
-  pending_tasks_count: number;
-  completed_tasks_count: number;
-  notes_count: number;
-  documents_count: number;
-  activity_logs_count: number;
-}
-
+interface User { id: number; name: string; email: string; }
+interface Opportunity { id: number; name: string; description: string | null; stage: string; value: number | null; currency: string; probability: number | null; expected_close_date: string | null; assignee: User | null; }
+interface Task { id: number; title: string; description: string | null; priority: string; status: string; due_date: string | null; assignee: User | null; }
+interface Note { id: number; title: string | null; content: string; type: string; is_pinned: boolean; is_important: boolean; user: User | null; created_at: string; }
+interface CustomerDocument { id: number; name: string; original_name: string; category: string | null; size: number; mime_type: string | null; created_at: string; }
+interface ActivityLog { id: number; action: string; description: string; severity: string; user: User | null; created_at: string; }
+interface Customer extends Omit<Partial<CustomerFormData>, 'email' | 'phone' | 'first_name' | 'last_name' | 'second_last_name' | 'notes'> { id: number; email: string; phone: string; first_name: string | null; last_name: string | null; second_last_name?: string | null; notes_text?: string | null; created_at: string; updated_at: string; created_by?: User | null; opportunities: Opportunity[]; tasks: Task[]; notes: Note[]; documents: CustomerDocument[]; }
+interface CustomerStats { opportunities_count: number; open_opportunities_count: number; tasks_count: number; pending_tasks_count: number; notes_count: number; documents_count: number; activity_logs_count: number; }
 type Tab = 'overview' | 'opportunities' | 'tasks' | 'notes' | 'documents' | 'activity';
+
+const emptyOpportunity = { name: '', description: '', stage: 'prospecting', assigned_to: '', value: '', currency: 'EUR', probability: '', expected_close_date: '', source: '', campaign: '' };
+const emptyTask = { title: '', description: '', priority: 'medium', status: 'pending', assigned_to: '', due_date: '' };
+const emptyNote = { title: '', content: '', type: 'note', is_private: false, is_pinned: false, is_important: false };
+const emptyDocument = { file: null as File | null, name: '', category: '', description: '', is_public: false };
+const emptyActivity = { action: 'note', description: '', severity: 'info' };
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return <label className="block"><span className="mb-1 block text-sm font-medium text-ink">{label}</span>{children}</label>;
+}
 
 export default function CustomerDetail() {
   const { t } = useTranslation();
@@ -108,65 +36,37 @@ export default function CustomerDetail() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [stats, setStats] = useState<CustomerStats | null>(null);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showOpportunityModal, setShowOpportunityModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
-  const [formData, setFormData] = useState({
-    email: '',
-    phone: '',
-    first_name: '',
-    last_name: '',
-    vat: '',
-    address: '',
-    notes: '',
-  });
-  const [opportunityFormData, setOpportunityFormData] = useState({
-    name: '',
-    description: '',
-    stage: 'prospecting' as 'prospecting' | 'qualification' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost' | 'on_hold',
-    assigned_to: '',
-    value: '',
-    currency: 'EUR',
-    probability: '',
-    expected_close_date: '',
-    source: '',
-    campaign: '',
-  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [showOpportunityForm, setShowOpportunityForm] = useState(false);
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [showNoteForm, setShowNoteForm] = useState(false);
+  const [showDocumentForm, setShowDocumentForm] = useState(false);
+  const [showActivityForm, setShowActivityForm] = useState(false);
+  const [customerForm, setCustomerForm] = useState<CustomerFormData>(customerToForm(null));
+  const [opportunityForm, setOpportunityForm] = useState(emptyOpportunity);
+  const [taskForm, setTaskForm] = useState(emptyTask);
+  const [noteForm, setNoteForm] = useState(emptyNote);
+  const [documentForm, setDocumentForm] = useState(emptyDocument);
+  const [activityForm, setActivityForm] = useState(emptyActivity);
+  const inputClass = 'w-full rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20';
 
+  useEffect(() => { if (id) void fetchCustomerDetail(); }, [id]);
   useEffect(() => {
-    if (id) {
-      fetchCustomerDetail();
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (showOpportunityModal) {
-      fetchUsers();
-    }
-  }, [showOpportunityModal]);
+    if (showOpportunityForm || showTaskForm) void fetchUsers();
+  }, [showOpportunityForm, showTaskForm]);
 
   const fetchCustomerDetail = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/customers/${id}`);
-      const data = response.data;
-      
-      setCustomer(data.customer || data);
+      const { data } = await api.get(`/customers/${id}`);
+      const loadedCustomer = data.customer || data;
+      setCustomer(loadedCustomer);
+      setCustomerForm(customerToForm({ ...loadedCustomer, notes: loadedCustomer.notes_text ?? '' } as Record<string, unknown>));
       setStats(data.stats || null);
       setActivityLogs(data.activity_logs || []);
-      
-      if (data.customer) {
-        setFormData({
-          email: data.customer.email,
-          phone: data.customer.phone,
-          first_name: data.customer.first_name || '',
-          last_name: data.customer.last_name || '',
-          vat: data.customer.vat || '',
-          address: data.customer.address || '',
-          notes: data.customer.notes_text || '',
-        });
-      }
     } catch (error) {
       console.error('Failed to fetch customer:', error);
       alert(t('customerDetail.loadError'));
@@ -178,719 +78,181 @@ export default function CustomerDetail() {
 
   const fetchUsers = async () => {
     try {
-      const response = await api.get('/users', { params: { per_page: 100, status: 'active' } });
-      const data = response.data.data || response.data || [];
-      setUsers(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
+      const { data } = await api.get('/users', { params: { per_page: 100, status: 'active' } });
+      const items = data.data || data || [];
+      setUsers(Array.isArray(items) ? items : []);
+    } catch {
       setUsers([]);
     }
   };
 
-  const handleUpdateCustomer = async () => {
-    if (!customer) return;
-
+  const runAction = async (action: () => Promise<void>, fallbackKey: string) => {
     try {
-      await api.put(`/customers/${customer.id}`, formData);
-      setShowEditModal(false);
-      fetchCustomerDetail();
+      setSaving(true);
+      await action();
+      await fetchCustomerDetail();
     } catch (error: any) {
-      console.error('Failed to update customer:', error);
-      alert(error.response?.data?.message || t('customerDetail.updateFailed'));
+      console.error('Customer detail action failed:', error);
+      alert(error.response?.data?.message || t(fallbackKey));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleCreateOpportunity = async () => {
+  const updateCustomer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!customer) return;
+    await runAction(async () => {
+      await api.put(`/customers/${customer.id}`, customerForm);
+      setShowCustomerForm(false);
+    }, 'customerDetail.updateFailed');
+  };
 
+  const createOpportunity = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!customer) return;
+    await runAction(async () => {
+      await api.post('/opportunities', {
+        ...opportunityForm,
+        customer_id: customer.id,
+        assigned_to: opportunityForm.assigned_to ? Number(opportunityForm.assigned_to) : null,
+        value: opportunityForm.value ? Number(opportunityForm.value) : null,
+        probability: opportunityForm.probability ? Number(opportunityForm.probability) : null,
+      });
+      setShowOpportunityForm(false);
+      setOpportunityForm(emptyOpportunity);
+    }, 'customerDetail.createOpportunityFailed');
+  };
+
+  const createTask = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!customer) return;
+    await runAction(async () => {
+      await api.post('/tasks', {
+        ...taskForm,
+        taskable_type: 'Customer',
+        taskable_id: customer.id,
+        assigned_to: taskForm.assigned_to ? Number(taskForm.assigned_to) : null,
+        due_date: taskForm.due_date || null,
+      });
+      setShowTaskForm(false);
+      setTaskForm(emptyTask);
+    }, 'customerDetail.createTaskFailed');
+  };
+
+  const createNote = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!customer) return;
+    await runAction(async () => {
+      await api.post('/notes', { ...noteForm, noteable_type: 'Customer', noteable_id: customer.id });
+      setShowNoteForm(false);
+      setNoteForm(emptyNote);
+    }, 'customerDetail.createNoteFailed');
+  };
+
+  const uploadDocument = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!customer || !documentForm.file) return;
+    await runAction(async () => {
+      const payload = new FormData();
+      payload.append('file', documentForm.file);
+      payload.append('documentable_type', 'Customer');
+      payload.append('documentable_id', String(customer.id));
+      if (documentForm.name) payload.append('name', documentForm.name);
+      if (documentForm.category) payload.append('category', documentForm.category);
+      if (documentForm.description) payload.append('description', documentForm.description);
+      payload.append('is_public', String(documentForm.is_public));
+      await api.post('/documents/upload', payload);
+      setShowDocumentForm(false);
+      setDocumentForm(emptyDocument);
+    }, 'customerDetail.uploadDocumentFailed');
+  };
+
+  const createActivity = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!customer) return;
+    await runAction(async () => {
+      await api.post(`/customers/${customer.id}/activities`, activityForm);
+      setShowActivityForm(false);
+      setActivityForm(emptyActivity);
+    }, 'customerDetail.createActivityFailed');
+  };
+
+  const downloadDocument = async (document: CustomerDocument) => {
     try {
-      const payload: any = {
-        name: opportunityFormData.name,
-        stage: opportunityFormData.stage,
-        customer_id: customer.id, // Pre-fill with current customer
-      };
-
-      if (opportunityFormData.description) payload.description = opportunityFormData.description;
-      if (opportunityFormData.assigned_to) payload.assigned_to = parseInt(opportunityFormData.assigned_to);
-      if (opportunityFormData.value) payload.value = parseFloat(opportunityFormData.value);
-      if (opportunityFormData.currency) payload.currency = opportunityFormData.currency;
-      if (opportunityFormData.probability) payload.probability = parseInt(opportunityFormData.probability);
-      if (opportunityFormData.expected_close_date) payload.expected_close_date = opportunityFormData.expected_close_date;
-      if (opportunityFormData.source) payload.source = opportunityFormData.source;
-      if (opportunityFormData.campaign) payload.campaign = opportunityFormData.campaign;
-
-      await api.post('/opportunities', payload);
-      setShowOpportunityModal(false);
-      resetOpportunityForm();
-      fetchCustomerDetail(); // Refresh customer data to show new opportunity
+      const response = await api.get(`/documents/${document.id}/download`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([response.data]));
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = document.original_name || document.name;
+      link.click();
+      URL.revokeObjectURL(url);
     } catch (error: any) {
-      console.error('Failed to create opportunity:', error);
-      alert(error.response?.data?.message || t('customerDetail.createOpportunityFailed'));
+      alert(error.response?.data?.message || t('customerDetail.downloadFailed'));
     }
   };
 
-  const resetOpportunityForm = () => {
-    setOpportunityFormData({
-      name: '',
-      description: '',
-      stage: 'prospecting',
-      assigned_to: '',
-      value: '',
-      currency: 'EUR',
-      probability: '',
-      expected_close_date: '',
-      source: '',
-      campaign: '',
-    });
-  };
+  const name = (current: Customer) => [current.first_name, current.last_name, current.second_last_name].filter(Boolean).join(' ') || current.email;
+  const formatDate = (value?: string | null) => value ? new Date(value).toLocaleDateString() : '—';
+  const formatDateTime = (value?: string | null) => value ? new Date(value).toLocaleString() : '—';
+  const formatMoney = (value: number | null, currency = 'EUR') => value === null ? '—' : new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value);
+  const formatFileSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
-  const getCustomerName = (customer: Customer): string => {
-    if (customer.first_name || customer.last_name) {
-      return `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
-    }
-    return customer.email;
-  };
+  if (loading) return <div className="flex h-64 items-center justify-center"><LoadingSpinner /></div>;
+  if (!customer) return <div className="p-8 text-center text-muted">{t('customerDetail.notFound')}</div>;
 
-  const formatCurrency = (value: number | null, currency: string = 'EUR') => {
-    if (value === null) return '-';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(value);
-  };
-
-  const formatDate = (date: string | null) => {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString();
-  };
-
-  const formatDateTime = (date: string | null) => {
-    if (!date) return '-';
-    return new Date(date).toLocaleString();
-  };
-
-  const getStageBadge = (stage: string) => {
-    const styles: Record<string, string> = {
-      prospecting: 'bg-blue-100 text-blue-800 border-blue-200',
-      qualification: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      proposal: 'bg-purple-100 text-purple-800 border-purple-200',
-      negotiation: 'bg-orange-100 text-orange-800 border-orange-200',
-      closed_won: 'bg-green-100 text-green-800 border-green-200',
-      closed_lost: 'bg-red-100 text-red-800 border-red-200',
-      on_hold: 'bg-gray-100 text-gray-800 border-gray-200',
-    };
-    return styles[stage] || 'bg-gray-100 text-gray-800 border-gray-200';
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    const styles: Record<string, string> = {
-      low: 'bg-gray-100 text-gray-800 border-gray-200',
-      medium: 'bg-blue-100 text-blue-800 border-blue-200',
-      high: 'bg-orange-100 text-orange-800 border-orange-200',
-      urgent: 'bg-red-100 text-red-800 border-red-200',
-    };
-    return styles[priority] || 'bg-gray-100 text-gray-800 border-gray-200';
-  };
-
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      in_progress: 'bg-blue-100 text-blue-800 border-blue-200',
-      completed: 'bg-green-100 text-green-800 border-green-200',
-      cancelled: 'bg-red-100 text-red-800 border-red-200',
-    };
-    return styles[status] || 'bg-gray-100 text-gray-800 border-gray-200';
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if (!customer) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted">{t('customerDetail.notFound')}</p>
-        <button
-          onClick={() => navigate('/customers')}
-          className="mt-4 px-4 py-2 bg-aqua-5 text-white rounded-xl"
-        >
-          {t('customerDetail.backToCustomers')}
-        </button>
-      </div>
-    );
-  }
+  const tabs: Array<{ id: Tab; label: string }> = [
+    { id: 'overview', label: t('customerDetail.overview') }, { id: 'opportunities', label: t('customerDetail.opportunities') },
+    { id: 'tasks', label: t('customerDetail.tasks') }, { id: 'notes', label: t('customerDetail.notes') },
+    { id: 'documents', label: t('customerDetail.documents') }, { id: 'activity', label: t('customerDetail.activity') },
+  ];
 
   return (
     <div className="space-y-6">
-      <Topbar
-        title={getCustomerName(customer)}
-        subtitle={t('customerDetail.title')}
-        actions={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/customers')}
-            >
-              ← {t('customerDetail.back')}
-            </Button>
-            <Button
-              onClick={() => setShowEditModal(true)}
-            >
-              {t('customerDetail.editCustomer')}
-            </Button>
-          </>
-        }
-      />
+      <Topbar title={name(customer)} subtitle={t('customerDetail.title')} actions={<><Button variant="ghost" onClick={() => navigate('/customers')}>← {t('customerDetail.back')}</Button><Button onClick={() => setShowCustomerForm(true)}>{t('customerDetail.editCustomer')}</Button></>} />
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-sm text-muted">{t('customerDetail.opportunities')}</div>
-            <div className="text-2xl font-bold text-ink mt-1">{stats.opportunities_count}</div>
-            <div className="text-xs text-muted mt-1">{t('customerDetail.openCount', { count: stats.open_opportunities_count })}</div>
-          </div>
-          <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-sm text-muted">{t('customerDetail.tasks')}</div>
-            <div className="text-2xl font-bold text-ink mt-1">{stats.tasks_count}</div>
-            <div className="text-xs text-muted mt-1">{t('customerDetail.pendingCount', { count: stats.pending_tasks_count })}</div>
-          </div>
-          <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-sm text-muted">{t('customerDetail.notes')}</div>
-            <div className="text-2xl font-bold text-ink mt-1">{stats.notes_count}</div>
-          </div>
-          <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-sm text-muted">{t('customerDetail.documents')}</div>
-            <div className="text-2xl font-bold text-ink mt-1">{stats.documents_count}</div>
-          </div>
-        </div>
-      )}
+      {stats && <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <Stat label={t('customerDetail.opportunities')} value={stats.opportunities_count} detail={t('customerDetail.openCount', { count: stats.open_opportunities_count })} />
+        <Stat label={t('customerDetail.tasks')} value={stats.tasks_count} detail={t('customerDetail.pendingCount', { count: stats.pending_tasks_count })} />
+        <Stat label={t('customerDetail.notes')} value={stats.notes_count} />
+        <Stat label={t('customerDetail.documents')} value={stats.documents_count} />
+        <Stat label={t('customerDetail.activity')} value={stats.activity_logs_count} />
+      </div>}
 
-      {/* Tabs */}
-      <div className="bg-white border border-line rounded-xl">
-        <div className="border-b border-line">
-          <nav className="flex -mb-px">
-            {(['overview', 'opportunities', 'tasks', 'notes', 'documents', 'activity'] as Tab[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab
-                    ? 'border-aqua-5 text-aqua-5'
-                    : 'border-transparent text-muted hover:text-ink hover:border-line'
-                }`}
-              >
-                {t(`customerDetail.${tab}`)}
-              </button>
-            ))}
-          </nav>
-        </div>
+      <div className="rounded-2xl border border-line bg-white">
+        <nav className="flex flex-wrap gap-1 border-b border-line p-2">
+          {tabs.map((tab) => <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${activeTab === tab.id ? 'bg-aqua-5 text-white' : 'text-muted hover:bg-aqua-1/40 hover:text-ink'}`}>{tab.label}</button>)}
+        </nav>
+        <div className="p-5">
+          {activeTab === 'overview' && <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <DetailSection title={t('customerDetail.contactInformation')}><Detail label={t('customerForm.email')} value={customer.email} /><Detail label={t('customerForm.phone')} value={customer.phone} /><Detail label={t('customerForm.mobile')} value={customer.mobile} /><Detail label={t('customerForm.address')} value={[customer.address, customer.city, customer.state_province, customer.country].filter(Boolean).join(', ') || '—'} /><Detail label={t('customerForm.pecEmail')} value={customer.pec_email} /></DetailSection>
+            <DetailSection title={t('customerDetail.additionalInformation')}><Detail label={t('customerForm.code')} value={customer.customer_code} /><Detail label={t('customerForm.group')} value={customer.customer_group} /><Detail label={t('customerForm.taxCode')} value={customer.tax_code} /><Detail label={t('customerForm.vatNumber')} value={customer.vat} /><Detail label={t('customerForm.dateAdded')} value={formatDate(customer.date_added)} /><Detail label={t('customerDetail.created')} value={formatDateTime(customer.created_at)} /><Detail label={t('customerDetail.operator')} value={customer.created_by?.name} /></DetailSection>
+            <DetailSection title={t('customerDetail.preferences')}><Detail label={t('customerForm.processingConsent')} value={customer.privacy_consent_processing ? t('customerDetail.yes') : t('customerDetail.no')} /><Detail label={t('customerForm.marketingConsent')} value={customer.marketing_consent ? t('customerDetail.yes') : t('customerDetail.no')} /><Detail label={t('customerForm.profilingConsent')} value={customer.profiling_consent ? t('customerDetail.yes') : t('customerDetail.no')} /><Detail label={t('customerForm.language')} value={customer.language} /></DetailSection>
+            <DetailSection title={t('customerDetail.notes')}><Detail label={t('customerForm.notes')} value={customer.notes_text} /><Detail label={t('customerForm.privateNotes')} value={customer.private_notes} /></DetailSection>
+          </div>}
 
-        <div className="p-6">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-ink mb-4">{t('customerDetail.contactInformation')}</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="text-sm text-muted">{t('common.email')}</div>
-                      <div className="text-ink">{customer.email}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted">{t('common.phone')}</div>
-                      <div className="text-ink">{customer.phone}</div>
-                    </div>
-                    {customer.vat && (
-                      <div>
-                        <div className="text-sm text-muted">{t('common.vatNumber')}</div>
-                        <div className="text-ink">{customer.vat}</div>
-                      </div>
-                    )}
-                    {customer.address && (
-                      <div>
-                        <div className="text-sm text-muted">{t('common.address')}</div>
-                        <div className="text-ink">{customer.address}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-ink mb-4">{t('customerDetail.additionalInformation')}</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="text-sm text-muted">{t('customerDetail.created')}</div>
-                      <div className="text-ink">{formatDateTime(customer.created_at)}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted">{t('customerDetail.lastUpdated')}</div>
-                      <div className="text-ink">{formatDateTime(customer.updated_at)}</div>
-                    </div>
-                    {customer.notes_text && (
-                      <div>
-                        <div className="text-sm text-muted">{t('common.notes')}</div>
-                        <div className="text-ink whitespace-pre-wrap">{customer.notes_text}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Opportunities Tab */}
-          {activeTab === 'opportunities' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-ink">{t('customerDetail.opportunities')}</h3>
-                <Button onClick={() => setShowOpportunityModal(true)}>
-                  {t('customerDetail.newOpportunity')}
-                </Button>
-              </div>
-              {customer.opportunities && customer.opportunities.length > 0 ? (
-                <div className="space-y-3">
-                  {customer.opportunities.map((opp) => (
-                    <div key={opp.id} className="border border-line rounded-lg p-4 hover:bg-aqua-1/10 transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="font-semibold text-ink">{opp.name}</div>
-                          {opp.description && (
-                            <div className="text-sm text-muted mt-1">{opp.description}</div>
-                          )}
-                          <div className="flex gap-4 mt-3 text-sm text-muted">
-                            <span>{t('customerDetail.valueLabel', { value: formatCurrency(opp.value, opp.currency) })}</span>
-                            {opp.probability !== null && <span>{t('customerDetail.probabilityLabel', { value: opp.probability })}</span>}
-                            {opp.expected_close_date && <span>{t('customerDetail.closeLabel', { date: formatDate(opp.expected_close_date) })}</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStageBadge(opp.stage)}`}>
-                            {opp.stage.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted">
-                  {t('customerDetail.noOpportunities')}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tasks Tab */}
-          {activeTab === 'tasks' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-ink">{t('customerDetail.tasks')}</h3>
-                <Button onClick={() => navigate(`/tasks?taskable_type=Customer&taskable_id=${customer.id}`)}>
-                  {t('customerDetail.newTask')}
-                </Button>
-              </div>
-              {customer.tasks && customer.tasks.length > 0 ? (
-                <div className="space-y-3">
-                  {customer.tasks.map((task) => (
-                    <div key={task.id} className="border border-line rounded-lg p-4 hover:bg-aqua-1/10 transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="font-semibold text-ink">{task.title}</div>
-                          {task.description && (
-                            <div className="text-sm text-muted mt-1">{task.description}</div>
-                          )}
-                          <div className="flex gap-4 mt-3 text-sm text-muted">
-                            {task.due_date && <span>{t('customerDetail.dueLabel', { date: formatDate(task.due_date) })}</span>}
-                            {task.assignee && <span>{t('customerDetail.assignedToLabel', { name: task.assignee.name })}</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityBadge(task.priority)}`}>
-                            {task.priority}
-                          </span>
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusBadge(task.status)}`}>
-                            {task.status.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted">
-                  {t('customerDetail.noTasks')}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Notes Tab */}
-          {activeTab === 'notes' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-ink">{t('customerDetail.notes')}</h3>
-                <Button onClick={() => navigate(`/notes?noteable_type=Customer&noteable_id=${customer.id}`)}>
-                  {t('customerDetail.newNote')}
-                </Button>
-              </div>
-              {customer.notes && Array.isArray(customer.notes) && customer.notes.length > 0 ? (
-                <div className="space-y-3">
-                  {customer.notes.map((note) => (
-                    <div key={note.id} className="border border-line rounded-lg p-4 hover:bg-aqua-1/10 transition-colors">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="font-semibold text-ink">{note.title || t('customerDetail.untitledNote')}</div>
-                        <div className="flex items-center gap-2">
-                          {note.is_pinned && <span className="text-xs">📌</span>}
-                          {note.is_important && <span className="text-xs">⭐</span>}
-                          <span className="text-xs text-muted">{formatDateTime(note.created_at)}</span>
-                        </div>
-                      </div>
-                      <div className="text-sm text-ink whitespace-pre-wrap">{note.content}</div>
-                      {note.user && (
-                        <div className="text-xs text-muted mt-2">{t('customerDetail.byUser', { name: note.user.name })}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted">
-                  {t('customerDetail.noNotes')}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Documents Tab */}
-          {activeTab === 'documents' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-ink">{t('customerDetail.documents')}</h3>
-                <Button onClick={() => navigate(`/documents?documentable_type=Customer&documentable_id=${customer.id}`)}>
-                  {t('customerDetail.uploadDocument')}
-                </Button>
-              </div>
-              {customer.documents && customer.documents.length > 0 ? (
-                <div className="space-y-3">
-                  {customer.documents.map((doc) => (
-                    <div key={doc.id} className="border border-line rounded-lg p-4 hover:bg-aqua-1/10 transition-colors">
-                      <div className="flex justify-between items-center">
-                        <div className="flex-1">
-                          <div className="font-semibold text-ink">{doc.name}</div>
-                          <div className="text-sm text-muted mt-1">
-                            {doc.original_name} • {formatFileSize(doc.size)}
-                            {doc.category && ` • ${doc.category}`}
-                          </div>
-                          <div className="text-xs text-muted mt-1">{formatDateTime(doc.created_at)}</div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          onClick={() => window.open(`/api/documents/${doc.id}/download`, '_blank')}
-                        >
-                          {t('customerDetail.download')}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted">
-                  {t('customerDetail.noDocuments')}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Activity Tab */}
-          {activeTab === 'activity' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-ink">{t('customerDetail.activityLog')}</h3>
-              {activityLogs.length > 0 ? (
-                <div className="space-y-3">
-                  {activityLogs.map((log) => (
-                    <div key={log.id} className="border border-line rounded-lg p-4 hover:bg-aqua-1/10 transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="font-semibold text-ink">{log.action}</div>
-                          <div className="text-sm text-muted mt-1">{log.description}</div>
-                        </div>
-                        <div className="text-xs text-muted">
-                          {formatDateTime(log.created_at)}
-                          {log.user && ` • ${log.user.name}`}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted">
-                  {t('customerDetail.noActivity')}
-                </div>
-              )}
-            </div>
-          )}
+          {activeTab === 'opportunities' && <Collection title={t('customerDetail.opportunities')} actionLabel={t('customerDetail.newOpportunity')} onAction={() => setShowOpportunityForm(true)} empty={t('customerDetail.noOpportunities')} items={customer.opportunities} render={(item) => <div className="flex flex-col justify-between gap-3 sm:flex-row"><div><p className="font-semibold text-ink">{item.name}</p>{item.description && <p className="mt-1 text-sm text-muted">{item.description}</p>}<p className="mt-2 text-sm text-muted">{formatMoney(item.value, item.currency)} · {item.probability ?? 0}% · {formatDate(item.expected_close_date)}</p></div><Badge value={item.stage.replaceAll('_', ' ')} /></div>} />}
+          {activeTab === 'tasks' && <Collection title={t('customerDetail.tasks')} actionLabel={t('customerDetail.newTask')} onAction={() => setShowTaskForm(true)} empty={t('customerDetail.noTasks')} items={customer.tasks} render={(item) => <div className="flex flex-col justify-between gap-3 sm:flex-row"><div><p className="font-semibold text-ink">{item.title}</p>{item.description && <p className="mt-1 text-sm text-muted">{item.description}</p>}<p className="mt-2 text-sm text-muted">{formatDate(item.due_date)}{item.assignee ? ` · ${item.assignee.name}` : ''}</p></div><div className="flex gap-2"><Badge value={item.priority} /><Badge value={item.status.replaceAll('_', ' ')} /></div></div>} />}
+          {activeTab === 'notes' && <Collection title={t('customerDetail.notes')} actionLabel={t('customerDetail.newNote')} onAction={() => setShowNoteForm(true)} empty={t('customerDetail.noNotes')} items={customer.notes} render={(item) => <div><p className="font-semibold text-ink">{item.title || t('customerDetail.untitledNote')}</p><p className="mt-1 whitespace-pre-wrap text-sm text-ink">{item.content}</p><p className="mt-2 text-xs text-muted">{formatDateTime(item.created_at)}{item.user ? ` · ${item.user.name}` : ''}</p></div>} />}
+          {activeTab === 'documents' && <Collection title={t('customerDetail.documents')} actionLabel={t('customerDetail.uploadDocument')} onAction={() => setShowDocumentForm(true)} empty={t('customerDetail.noDocuments')} items={customer.documents} render={(item) => <div className="flex items-center justify-between gap-3"><div><p className="font-semibold text-ink">{item.name}</p><p className="mt-1 text-sm text-muted">{item.original_name} · {formatFileSize(item.size)}{item.category ? ` · ${item.category}` : ''}</p></div><button type="button" onClick={() => void downloadDocument(item)} className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-aqua-5 hover:bg-aqua-1/30">{t('customerDetail.download')}</button></div>} />}
+          {activeTab === 'activity' && <Collection title={t('customerDetail.activityLog')} actionLabel={t('customerDetail.newActivity')} onAction={() => setShowActivityForm(true)} empty={t('customerDetail.noActivity')} items={activityLogs} render={(item) => <div><div className="flex items-center justify-between gap-3"><p className="font-semibold capitalize text-ink">{item.action.replaceAll('_', ' ')}</p><p className="text-xs text-muted">{formatDateTime(item.created_at)}</p></div><p className="mt-1 text-sm text-muted">{item.description}</p>{item.user && <p className="mt-2 text-xs text-muted">{item.user.name}</p>}</div>} />}
         </div>
       </div>
 
-      {/* Create Opportunity Modal */}
-      {showOpportunityModal && (
-        <Modal
-          isOpen={showOpportunityModal}
-          onClose={() => {
-            setShowOpportunityModal(false);
-            resetOpportunityForm();
-          }}
-          title={t('customerDetail.createOpportunity')}
-          size="lg"
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-ink mb-1">{t('customerDetail.opportunityName')}</label>
-              <input
-                type="text"
-                value={opportunityFormData.name}
-                onChange={(e) => setOpportunityFormData({ ...opportunityFormData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                required
-                placeholder={t('customerDetail.opportunityNamePlaceholder')}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-ink mb-1">{t('common.description')}</label>
-              <textarea
-                value={opportunityFormData.description}
-                onChange={(e) => setOpportunityFormData({ ...opportunityFormData, description: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none resize-none"
-                placeholder={t('customerDetail.descriptionPlaceholder')}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-ink mb-1">{t('sales.stage')} *</label>
-              <select
-                value={opportunityFormData.stage}
-                onChange={(e) => setOpportunityFormData({ ...opportunityFormData, stage: e.target.value as any })}
-                className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                required
-              >
-                <option value="prospecting">{t('sales.prospecting')}</option>
-                <option value="qualification">{t('sales.qualification')}</option>
-                <option value="proposal">{t('sales.proposal')}</option>
-                <option value="negotiation">{t('sales.negotiation')}</option>
-                <option value="closed_won">{t('sales.closedWon')}</option>
-                <option value="closed_lost">{t('sales.closedLost')}</option>
-                <option value="on_hold">{t('sales.onHold')}</option>
-              </select>
-            </div>
-
-            {users.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('sales.assignedTo')}</label>
-                <select
-                  value={opportunityFormData.assigned_to}
-                  onChange={(e) => setOpportunityFormData({ ...opportunityFormData, assigned_to: e.target.value })}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                >
-                  <option value="">{t('customerDetail.selectUserOptional')}</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('sales.expectedCloseDate')}</label>
-                <input
-                  type="date"
-                  value={opportunityFormData.expected_close_date}
-                  onChange={(e) => setOpportunityFormData({ ...opportunityFormData, expected_close_date: e.target.value })}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('common.value')}</label>
-                <input
-                  type="number"
-                  value={opportunityFormData.value}
-                  onChange={(e) => setOpportunityFormData({ ...opportunityFormData, value: e.target.value })}
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('sales.currency')}</label>
-                <select
-                  value={opportunityFormData.currency}
-                  onChange={(e) => setOpportunityFormData({ ...opportunityFormData, currency: e.target.value })}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                >
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                  <option value="GBP">GBP</option>
-                  <option value="JPY">JPY</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('customerDetail.probabilityPercent')}</label>
-                <input
-                  type="number"
-                  value={opportunityFormData.probability}
-                  onChange={(e) => setOpportunityFormData({ ...opportunityFormData, probability: e.target.value })}
-                  placeholder="0-100"
-                  min="0"
-                  max="100"
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('leads.source')}</label>
-                <input
-                  type="text"
-                  value={opportunityFormData.source}
-                  onChange={(e) => setOpportunityFormData({ ...opportunityFormData, source: e.target.value })}
-                  placeholder={t('customerDetail.sourcePlaceholder')}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">{t('sales.campaign')}</label>
-                <input
-                  type="text"
-                  value={opportunityFormData.campaign}
-                  onChange={(e) => setOpportunityFormData({ ...opportunityFormData, campaign: e.target.value })}
-                  placeholder={t('customerDetail.campaignPlaceholder')}
-                  className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowOpportunityModal(false);
-                  resetOpportunityForm();
-                }}
-                className="flex-1"
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                onClick={handleCreateOpportunity}
-                className="flex-1"
-              >
-                {t('sales.createOpportunity')}
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* Edit Modal */}
-      {showEditModal && (
-        <Modal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          title={t('customerDetail.editCustomer')}
-        >
-          <div className="space-y-4">
-            <Input
-              label={`${t('common.email')} *`}
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
-            <Input
-              label={`${t('common.phone')} *`}
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              required
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label={t('common.firstName')}
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-              />
-              <Input
-                label={t('common.lastName')}
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-              />
-            </div>
-            <Input
-              label={t('common.vatNumber')}
-              value={formData.vat}
-              onChange={(e) => setFormData({ ...formData, vat: e.target.value })}
-            />
-            <div>
-              <label className="block text-sm font-medium text-ink mb-1">{t('common.address')}</label>
-              <textarea
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none resize-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-ink mb-1">{t('common.notes')}</label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none resize-none"
-              />
-            </div>
-            <div className="flex gap-3 mt-6">
-              <Button
-                variant="ghost"
-                onClick={() => setShowEditModal(false)}
-                className="flex-1"
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                onClick={handleUpdateCustomer}
-                className="flex-1"
-              >
-                {t('common.update')}
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
+      <Modal isOpen={showCustomerForm} onClose={() => setShowCustomerForm(false)} title={t('customers.editCustomer')} size="xl"><form onSubmit={updateCustomer} className="space-y-5"><CustomerFormFields value={customerForm} onChange={setCustomerForm} /><ModalActions saving={saving} onCancel={() => setShowCustomerForm(false)} /></form></Modal>
+      <Modal isOpen={showOpportunityForm} onClose={() => setShowOpportunityForm(false)} title={t('customerDetail.createOpportunity')} size="lg"><form onSubmit={createOpportunity} className="space-y-4"><Field label={t('customerDetail.opportunityName')}><input required className={inputClass} value={opportunityForm.name} onChange={(event) => setOpportunityForm({ ...opportunityForm, name: event.target.value })} /></Field><Field label={t('common.description')}><textarea className={inputClass} rows={3} value={opportunityForm.description} onChange={(event) => setOpportunityForm({ ...opportunityForm, description: event.target.value })} /></Field><div className="grid gap-3 sm:grid-cols-2"><Field label={t('customerDetail.stage')}><select className={inputClass} value={opportunityForm.stage} onChange={(event) => setOpportunityForm({ ...opportunityForm, stage: event.target.value })}>{['prospecting','qualification','proposal','negotiation','closed_won','closed_lost','on_hold'].map((stage) => <option key={stage} value={stage}>{stage.replaceAll('_', ' ')}</option>)}</select></Field><Field label={t('customerDetail.assignedTo')}><select className={inputClass} value={opportunityForm.assigned_to} onChange={(event) => setOpportunityForm({ ...opportunityForm, assigned_to: event.target.value })}><option value="">{t('customerDetail.unassigned')}</option>{users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></Field><Field label={t('customerDetail.value')}><input type="number" min="0" className={inputClass} value={opportunityForm.value} onChange={(event) => setOpportunityForm({ ...opportunityForm, value: event.target.value })} /></Field><Field label={t('customerDetail.probability')}><input type="number" min="0" max="100" className={inputClass} value={opportunityForm.probability} onChange={(event) => setOpportunityForm({ ...opportunityForm, probability: event.target.value })} /></Field><Field label={t('customerDetail.expectedClose')}><input type="date" className={inputClass} value={opportunityForm.expected_close_date} onChange={(event) => setOpportunityForm({ ...opportunityForm, expected_close_date: event.target.value })} /></Field><Field label={t('customerDetail.source')}><input className={inputClass} value={opportunityForm.source} onChange={(event) => setOpportunityForm({ ...opportunityForm, source: event.target.value })} /></Field></div><ModalActions saving={saving} onCancel={() => setShowOpportunityForm(false)} /></form></Modal>
+      <Modal isOpen={showTaskForm} onClose={() => setShowTaskForm(false)} title={t('customerDetail.createTask')} size="lg"><form onSubmit={createTask} className="space-y-4"><Field label={t('customerDetail.taskTitle')}><input required className={inputClass} value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} /></Field><Field label={t('common.description')}><textarea className={inputClass} rows={3} value={taskForm.description} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></Field><div className="grid gap-3 sm:grid-cols-2"><Field label={t('customerDetail.priority')}><select className={inputClass} value={taskForm.priority} onChange={(event) => setTaskForm({ ...taskForm, priority: event.target.value })}>{['low','medium','high','urgent'].map((priority) => <option key={priority} value={priority}>{priority}</option>)}</select></Field><Field label={t('customerDetail.status')}><select className={inputClass} value={taskForm.status} onChange={(event) => setTaskForm({ ...taskForm, status: event.target.value })}>{['pending','in_progress','completed','cancelled'].map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}</select></Field><Field label={t('customerDetail.dueDate')}><input type="date" className={inputClass} value={taskForm.due_date} onChange={(event) => setTaskForm({ ...taskForm, due_date: event.target.value })} /></Field><Field label={t('customerDetail.assignedTo')}><select className={inputClass} value={taskForm.assigned_to} onChange={(event) => setTaskForm({ ...taskForm, assigned_to: event.target.value })}><option value="">{t('customerDetail.unassigned')}</option>{users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></Field></div><ModalActions saving={saving} onCancel={() => setShowTaskForm(false)} /></form></Modal>
+      <Modal isOpen={showNoteForm} onClose={() => setShowNoteForm(false)} title={t('customerDetail.createNote')} size="lg"><form onSubmit={createNote} className="space-y-4"><Field label={t('customerDetail.noteTitle')}><input className={inputClass} value={noteForm.title} onChange={(event) => setNoteForm({ ...noteForm, title: event.target.value })} /></Field><Field label={t('customerDetail.noteContent')}><textarea required className={inputClass} rows={5} value={noteForm.content} onChange={(event) => setNoteForm({ ...noteForm, content: event.target.value })} /></Field><div className="grid gap-3 sm:grid-cols-3"><Field label={t('customerDetail.noteType')}><select className={inputClass} value={noteForm.type} onChange={(event) => setNoteForm({ ...noteForm, type: event.target.value })}>{['note','comment','call_log','meeting','email','other'].map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}</select></Field><Check label={t('customerDetail.private')} checked={noteForm.is_private} onChange={(checked) => setNoteForm({ ...noteForm, is_private: checked })} /><Check label={t('customerDetail.important')} checked={noteForm.is_important} onChange={(checked) => setNoteForm({ ...noteForm, is_important: checked })} /></div><ModalActions saving={saving} onCancel={() => setShowNoteForm(false)} /></form></Modal>
+      <Modal isOpen={showDocumentForm} onClose={() => setShowDocumentForm(false)} title={t('customerDetail.uploadDocument')} size="lg"><form onSubmit={uploadDocument} className="space-y-4"><Field label={t('customerDetail.file')}><input required type="file" className={inputClass} onChange={(event) => setDocumentForm({ ...documentForm, file: event.target.files?.[0] || null })} /></Field><Field label={t('customerDetail.documentName')}><input className={inputClass} value={documentForm.name} onChange={(event) => setDocumentForm({ ...documentForm, name: event.target.value })} /></Field><Field label={t('customerDetail.category')}><input className={inputClass} value={documentForm.category} onChange={(event) => setDocumentForm({ ...documentForm, category: event.target.value })} /></Field><Field label={t('common.description')}><textarea className={inputClass} rows={3} value={documentForm.description} onChange={(event) => setDocumentForm({ ...documentForm, description: event.target.value })} /></Field><Check label={t('customerDetail.publicDocument')} checked={documentForm.is_public} onChange={(checked) => setDocumentForm({ ...documentForm, is_public: checked })} /><ModalActions saving={saving} onCancel={() => setShowDocumentForm(false)} /></form></Modal>
+      <Modal isOpen={showActivityForm} onClose={() => setShowActivityForm(false)} title={t('customerDetail.createActivity')} size="lg"><form onSubmit={createActivity} className="space-y-4"><Field label={t('customerDetail.activityType')}><select className={inputClass} value={activityForm.action} onChange={(event) => setActivityForm({ ...activityForm, action: event.target.value })}>{['note','call','email','meeting','other'].map((action) => <option key={action} value={action}>{action}</option>)}</select></Field><Field label={t('customerDetail.activityDescription')}><textarea required className={inputClass} rows={4} value={activityForm.description} onChange={(event) => setActivityForm({ ...activityForm, description: event.target.value })} /></Field><Field label={t('customerDetail.severity')}><select className={inputClass} value={activityForm.severity} onChange={(event) => setActivityForm({ ...activityForm, severity: event.target.value })}>{['info','warning','error','critical'].map((severity) => <option key={severity} value={severity}>{severity}</option>)}</select></Field><ModalActions saving={saving} onCancel={() => setShowActivityForm(false)} /></form></Modal>
     </div>
   );
 }
 
+function Stat({ label, value, detail }: { label: string; value: number; detail?: string }) { return <div className="rounded-xl border border-line bg-white p-4"><p className="text-xs font-bold uppercase text-muted">{label}</p><p className="mt-1 text-2xl font-bold text-ink">{value}</p>{detail && <p className="mt-1 text-xs text-muted">{detail}</p>}</div>; }
+function DetailSection({ title, children }: { title: string; children: ReactNode }) { return <section className="rounded-xl border border-line p-4"><h3 className="mb-3 font-semibold text-ink">{title}</h3><div className="space-y-3">{children}</div></section>; }
+function Detail({ label, value }: { label: string; value?: string | null }) { return <div><p className="text-xs font-bold uppercase tracking-wide text-muted">{label}</p><p className="mt-0.5 whitespace-pre-wrap text-sm text-ink">{value || '—'}</p></div>; }
+function Badge({ value }: { value: string }) { return <span className="inline-flex rounded-full border border-aqua-5/25 bg-aqua-1/30 px-2 py-1 text-xs font-medium capitalize text-aqua-5">{value}</span>; }
+function Collection<T extends { id: number }>({ title, actionLabel, onAction, empty, items, render }: { title: string; actionLabel: string; onAction: () => void; empty: string; items: T[]; render: (item: T) => ReactNode }) { return <section className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="text-lg font-semibold text-ink">{title}</h3><Button onClick={onAction}>{actionLabel}</Button></div>{items.length ? <div className="space-y-3">{items.map((item) => <div key={item.id} className="rounded-xl border border-line p-4 transition-colors hover:bg-aqua-1/10">{render(item)}</div>)}</div> : <div className="rounded-xl border border-dashed border-line p-10 text-center text-muted">{empty}</div>}</section>; }
+function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) { return <label className="flex items-center gap-2 pt-6 text-sm text-ink"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 rounded border-line text-aqua-5 focus:ring-aqua-5" />{label}</label>; }
+function ModalActions({ saving, onCancel }: { saving: boolean; onCancel: () => void }) { const { t } = useTranslation(); return <div className="flex gap-3 border-t border-line pt-4"><button type="button" onClick={onCancel} className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-ink hover:bg-aqua-1/30">{t('common.cancel')}</button><button type="submit" disabled={saving} className="flex-1 rounded-xl bg-aqua-5 px-4 py-2.5 text-sm font-semibold text-white hover:bg-aqua-4 disabled:opacity-50">{saving ? t('customers.saving') : t('common.create')}</button></div>; }

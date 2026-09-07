@@ -250,7 +250,16 @@
     "updateFailed": "Failed to update customer. Please try again.",
     "deleteFailed": "Failed to delete customer. Please try again.",
     "viewDetails": "View Details",
-    "createNewCustomer": "Create New Customer"
+    "createNewCustomer": "Create New Customer",
+    "title": "Customers",
+    "subtitle": "Manage customer profiles, contacts, and CRM activity",
+    "customer": "Customer",
+    "contact": "Contact",
+    "location": "Location",
+    "groupCode": "Group / Code",
+    "editCustomer": "Edit Customer",
+    "saving": "Saving…",
+    "noCustomersFound": "No customers found."
   },
   "customerDetail": {
     "title": "Customer Details",
@@ -298,7 +307,43 @@
     "selectUserOptional": "Select User (Optional)",
     "sourcePlaceholder": "e.g., website, referral, cold_call",
     "campaignPlaceholder": "Campaign name",
-    "probabilityPercent": "Probability (%)"
+    "probabilityPercent": "Probability (%)",
+    "newActivity": "+ New Activity",
+    "createTask": "Create Task",
+    "createNote": "Create Note",
+    "createActivity": "Create Activity",
+    "taskTitle": "Task title *",
+    "noteTitle": "Note title",
+    "noteContent": "Content *",
+    "noteType": "Note type",
+    "activityType": "Activity type",
+    "activityDescription": "Description *",
+    "documentName": "Document name",
+    "file": "File *",
+    "category": "Category",
+    "publicDocument": "Public document",
+    "private": "Private",
+    "important": "Important",
+    "assignedTo": "Assigned to",
+    "unassigned": "Unassigned",
+    "stage": "Stage",
+    "value": "Value",
+    "probability": "Probability (%)",
+    "expectedClose": "Expected close date",
+    "source": "Source",
+    "priority": "Priority",
+    "status": "Status",
+    "dueDate": "Due date",
+    "severity": "Severity",
+    "operator": "Operator",
+    "preferences": "Preferences",
+    "yes": "Yes",
+    "no": "No",
+    "createTaskFailed": "Unable to create task. Please try again.",
+    "createNoteFailed": "Unable to create note. Please try again.",
+    "uploadDocumentFailed": "Unable to upload document. Please try again.",
+    "createActivityFailed": "Unable to create activity. Please try again.",
+    "downloadFailed": "Unable to download document. Please try again."
   },
   "categories": {
     "newCategory": "+ New Category",
@@ -694,5 +739,20 @@
     "title": "Checkout Canceled",
     "message": "Your checkout was canceled. No charges were made. You can try subscribing again anytime.",
     "goToDashboard": "Go to Dashboard"
+  },
+  "myPetPlusLeads": {
+    "title": "MyPet Plus Leads", "subtitle": "Registrations and subscription activity from the MyPet Plus platform", "refresh": "Refresh", "loading": "Loading…", "loadError": "Unable to load MyPet Plus leads.", "projectUnavailable": "MyPet Plus is not available in your Projects list. Ask an administrator to activate or grant access to it.",
+    "totalRegistrations": "Total registrations", "subscriptionRevenue": "Subscription revenue", "subscriptionRevenueDetail": "Successful doctor + pharmacy plan payments only", "subscriptionPayments": "Subscription payments", "subscriptionPaymentDetail": "Doctors {{doctors}} · Pharmacies {{pharmacies}}", "source": "Source", "liveIntegration": "Live registration integration",
+    "autoFilterHelp": "Filters update automatically while you type or select an option.", "clearFilters": "Clear filters", "generalSearch": "General search", "name": "Name", "email": "Email", "phone": "Phone", "allUserTypes": "All user types", "allRegistrationStatuses": "All registration statuses", "veterinarianSpecialization": "Veterinarian specialization", "city": "City", "country": "Country", "region": "Region", "area": "Area", "documentType": "Document type",
+    "lead": "Lead", "userType": "User type", "profile": "Profile", "subscription": "Subscription", "status": "Status", "registered": "Registered", "action": "Action", "viewDetails": "View details", "noMatches": "No MyPet Plus registrations match these filters.", "showing": "Showing {{from}}–{{to}} of {{total}}", "previous": "Previous", "next": "Next", "pageOf": "{{current}} / {{total}}",
+    "ariaLeadDetails": "MyPet Plus lead details", "registration": "Registration", "closeDetails": "Close details", "registrationStatus": "Registration status", "lastUpdated": "Last updated", "emailVerified": "Email verified", "phoneVerified": "Phone verified", "yes": "Yes", "no": "No", "contactLocation": "Contact and location", "specializations": "Specializations", "experience": "Experience", "years": "{{count}} years", "veterinarianVerified": "Veterinarian verified", "profileComplete": "Profile complete", "businessName": "Business name", "businessActive": "Business active", "publicListing": "Public listing", "subscriptionAgreement": "Subscription and agreement", "planPrice": "Plan price", "planDuration": "Plan duration", "days": "{{count}} days", "subscriptionStart": "Subscription start", "subscriptionEnd": "Subscription end", "planType": "Plan type", "subscriptionStatus": "Subscription status", "includedFeatures": "Included features", "noPlanFeatures": "No plan features recorded", "agreementNote": "No separate signed contract file is stored in MyPet Plus. The plan, dates, price, and included features above are the subscription agreement details currently recorded.", "noCurrentSubscription": "No current subscription is recorded for this lead.", "noSubscriptionForRole": "This registration type does not currently use a MyPet Plus subscription plan.", "documents": "Documents", "noDocumentsRecorded": "No document types recorded",
+    "values": { "ACTIVE": "Active", "EXPIRED": "Expired", "NOT_SUBSCRIBED": "Not subscribed", "APPROVED": "Approved", "PENDING": "Pending", "REJECTED": "Rejected", "BLOCKED": "Blocked", "VETERINARIAN": "Veterinarian", "PET_OWNER": "Pet owner", "PET_STORE": "Pharmacy", "PARAPHARMACY": "Parapharmacy", "ADMIN": "Admin" }
+  },
+  "customerForm": {
+    "identity": "Identity", "title": "Title", "select": "Select", "mr": "Mr.", "ms": "Ms.", "other": "Other", "firstName": "First name", "lastName": "Last name", "secondLastName": "Second last name", "group": "Group", "code": "Customer code", "gender": "Gender", "female": "Female", "male": "Male", "language": "Language", "dateOfBirth": "Date of birth", "age": "Age", "placeOfBirth": "Place of birth",
+    "contactAddress": "Contact and address", "email": "Email", "phone": "Phone", "mobile": "Mobile", "phone2": "Phone 2", "fax": "Fax", "pecEmail": "PEC email", "address": "Address", "city": "City", "zipCode": "ZIP code", "stateProvince": "State / Province", "country": "Country",
+    "generalInformation": "General information", "branch": "Branch", "dateAdded": "Date added", "taxCode": "Tax code", "vatNumber": "VAT number", "taxCodeFe": "Tax code (e-invoice)", "privacyDate": "Privacy date", "privacyGdpr": "Privacy / GDPR", "processingConsent": "Consent to processing", "marketingConsent": "Marketing consent", "profilingConsent": "Profiling consent", "communicationPreferences": "Communication preferences", "sendSms": "Send SMS", "sendMail": "Send email", "sendNewsletter": "Send newsletter",
+    "billingInformation": "Billing information", "billingAddress": "Billing address", "billingCity": "Billing city", "billingZipCode": "Billing ZIP code", "billingState": "Billing state", "billingCountry": "Billing country",
+    "additionalInformation": "Additional information", "familyMembers": "Family members", "occupation": "Occupation", "visionProblem": "Vision problem", "hobbies": "Hobbies", "acquiredBy": "Acquired by", "promotion": "Promotion", "referredBy": "Referred by", "notes": "Notes", "privateNotes": "Private notes"
   }
 }

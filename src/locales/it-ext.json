@@ -250,7 +250,16 @@
     "updateFailed": "Impossibile aggiornare il cliente. Riprova.",
     "deleteFailed": "Impossibile eliminare il cliente. Riprova.",
     "viewDetails": "Visualizza Dettagli",
-    "createNewCustomer": "Crea Nuovo Cliente"
+    "createNewCustomer": "Crea Nuovo Cliente",
+    "title": "Clienti",
+    "subtitle": "Gestisci profili clienti, contatti e attività CRM",
+    "customer": "Cliente",
+    "contact": "Contatto",
+    "location": "Località",
+    "groupCode": "Gruppo / Codice",
+    "editCustomer": "Modifica Cliente",
+    "saving": "Salvataggio…",
+    "noCustomersFound": "Nessun cliente trovato."
   },
   "customerDetail": {
     "title": "Dettagli Cliente",
@@ -298,7 +307,43 @@
     "selectUserOptional": "Seleziona Utente (Opzionale)",
     "sourcePlaceholder": "es. sito web, referral, cold_call",
     "campaignPlaceholder": "Nome campagna",
-    "probabilityPercent": "Probabilità (%)"
+    "probabilityPercent": "Probabilità (%)",
+    "newActivity": "+ Nuova Attività",
+    "createTask": "Crea Compito",
+    "createNote": "Crea Nota",
+    "createActivity": "Crea Attività",
+    "taskTitle": "Titolo compito *",
+    "noteTitle": "Titolo nota",
+    "noteContent": "Contenuto *",
+    "noteType": "Tipo di nota",
+    "activityType": "Tipo di attività",
+    "activityDescription": "Descrizione *",
+    "documentName": "Nome documento",
+    "file": "File *",
+    "category": "Categoria",
+    "publicDocument": "Documento pubblico",
+    "private": "Privata",
+    "important": "Importante",
+    "assignedTo": "Assegnato a",
+    "unassigned": "Non assegnato",
+    "stage": "Fase",
+    "value": "Valore",
+    "probability": "Probabilità (%)",
+    "expectedClose": "Data di chiusura prevista",
+    "source": "Fonte",
+    "priority": "Priorità",
+    "status": "Stato",
+    "dueDate": "Scadenza",
+    "severity": "Gravità",
+    "operator": "Operatore",
+    "preferences": "Preferenze",
+    "yes": "Sì",
+    "no": "No",
+    "createTaskFailed": "Impossibile creare il compito. Riprova.",
+    "createNoteFailed": "Impossibile creare la nota. Riprova.",
+    "uploadDocumentFailed": "Impossibile caricare il documento. Riprova.",
+    "createActivityFailed": "Impossibile creare l'attività. Riprova.",
+    "downloadFailed": "Impossibile scaricare il documento. Riprova."
   },
   "categories": {
     "newCategory": "+ Nuova Categoria",
@@ -694,5 +739,20 @@
     "title": "Checkout Annullato",
     "message": "Il checkout è stato annullato. Nessun addebito effettuato. Puoi riprovare ad abbonarti in qualsiasi momento.",
     "goToDashboard": "Vai alla Dashboard"
+  },
+  "myPetPlusLeads": {
+    "title": "Lead MyPet Plus", "subtitle": "Registrazioni e attività di abbonamento dalla piattaforma MyPet Plus", "refresh": "Aggiorna", "loading": "Caricamento…", "loadError": "Impossibile caricare i lead MyPet Plus.", "projectUnavailable": "MyPet Plus non è disponibile nell'elenco Progetti. Chiedi a un amministratore di attivarlo o di concederti l'accesso.",
+    "totalRegistrations": "Registrazioni totali", "subscriptionRevenue": "Ricavi da abbonamenti", "subscriptionRevenueDetail": "Solo pagamenti riusciti di piani per veterinari e farmacie", "subscriptionPayments": "Pagamenti abbonamenti", "subscriptionPaymentDetail": "Veterinari {{doctors}} · Farmacie {{pharmacies}}", "source": "Fonte", "liveIntegration": "Integrazione registrazioni in tempo reale",
+    "autoFilterHelp": "I filtri si aggiornano automaticamente durante la digitazione o la selezione.", "clearFilters": "Cancella filtri", "generalSearch": "Ricerca generale", "name": "Nome", "email": "Email", "phone": "Telefono", "allUserTypes": "Tutti i tipi di utente", "allRegistrationStatuses": "Tutti gli stati di registrazione", "veterinarianSpecialization": "Specializzazione veterinaria", "city": "Città", "country": "Paese", "region": "Regione", "area": "Zona", "documentType": "Tipo di documento",
+    "lead": "Lead", "userType": "Tipo di utente", "profile": "Profilo", "subscription": "Abbonamento", "status": "Stato", "registered": "Registrato", "action": "Azione", "viewDetails": "Visualizza dettagli", "noMatches": "Nessuna registrazione MyPet Plus corrisponde a questi filtri.", "showing": "Visualizzazione {{from}}–{{to}} di {{total}}", "previous": "Precedente", "next": "Successivo", "pageOf": "{{current}} / {{total}}",
+    "ariaLeadDetails": "Dettagli lead MyPet Plus", "registration": "Registrazione", "closeDetails": "Chiudi dettagli", "registrationStatus": "Stato di registrazione", "lastUpdated": "Ultimo aggiornamento", "emailVerified": "Email verificata", "phoneVerified": "Telefono verificato", "yes": "Sì", "no": "No", "contactLocation": "Contatti e posizione", "specializations": "Specializzazioni", "experience": "Esperienza", "years": "{{count}} anni", "veterinarianVerified": "Veterinario verificato", "profileComplete": "Profilo completato", "businessName": "Nome attività", "businessActive": "Attività attiva", "publicListing": "Profilo pubblico", "subscriptionAgreement": "Abbonamento e accordo", "planPrice": "Prezzo piano", "planDuration": "Durata piano", "days": "{{count}} giorni", "subscriptionStart": "Inizio abbonamento", "subscriptionEnd": "Fine abbonamento", "planType": "Tipo di piano", "subscriptionStatus": "Stato abbonamento", "includedFeatures": "Funzionalità incluse", "noPlanFeatures": "Nessuna funzionalità del piano registrata", "agreementNote": "In MyPet Plus non è archiviato un contratto firmato separato. Il piano, le date, il prezzo e le funzionalità sopra indicate sono i dettagli dell'accordo di abbonamento registrati.", "noCurrentSubscription": "Per questo lead non risulta alcun abbonamento corrente.", "noSubscriptionForRole": "Questo tipo di registrazione non utilizza attualmente un piano di abbonamento MyPet Plus.", "documents": "Documenti", "noDocumentsRecorded": "Nessun tipo di documento registrato",
+    "values": { "ACTIVE": "Attivo", "EXPIRED": "Scaduto", "NOT_SUBSCRIBED": "Non abbonato", "APPROVED": "Approvato", "PENDING": "In attesa", "REJECTED": "Rifiutato", "BLOCKED": "Bloccato", "VETERINARIAN": "Veterinario", "PET_OWNER": "Proprietario dell'animale", "PET_STORE": "Farmacia", "PARAPHARMACY": "Parafarmacia", "ADMIN": "Amministratore" }
+  },
+  "customerForm": {
+    "identity": "Identità", "title": "Titolo", "select": "Seleziona", "mr": "Sig.", "ms": "Sig.ra", "other": "Altro", "firstName": "Nome", "lastName": "Cognome", "secondLastName": "Secondo cognome", "group": "Gruppo", "code": "Codice cliente", "gender": "Genere", "female": "Femmina", "male": "Maschio", "language": "Lingua", "dateOfBirth": "Data di nascita", "age": "Età", "placeOfBirth": "Luogo di nascita",
+    "contactAddress": "Contatti e indirizzo", "email": "Email", "phone": "Telefono", "mobile": "Cellulare", "phone2": "Telefono 2", "fax": "Fax", "pecEmail": "Email PEC", "address": "Indirizzo", "city": "Città", "zipCode": "CAP", "stateProvince": "Stato / Provincia", "country": "Paese",
+    "generalInformation": "Informazioni generali", "branch": "Filiale", "dateAdded": "Data inserimento", "taxCode": "Codice fiscale", "vatNumber": "Partita IVA", "taxCodeFe": "Codice fiscale (fattura elettronica)", "privacyDate": "Data privacy", "privacyGdpr": "Privacy / GDPR", "processingConsent": "Consenso al trattamento", "marketingConsent": "Consenso marketing", "profilingConsent": "Consenso alla profilazione", "communicationPreferences": "Preferenze di comunicazione", "sendSms": "Invia SMS", "sendMail": "Invia email", "sendNewsletter": "Invia newsletter",
+    "billingInformation": "Informazioni di fatturazione", "billingAddress": "Indirizzo di fatturazione", "billingCity": "Città di fatturazione", "billingZipCode": "CAP fatturazione", "billingState": "Provincia fatturazione", "billingCountry": "Paese fatturazione",
+    "additionalInformation": "Informazioni aggiuntive", "familyMembers": "Membri della famiglia", "occupation": "Occupazione", "visionProblem": "Problema di vista", "hobbies": "Hobby", "acquiredBy": "Acquisito da", "promotion": "Promozione", "referredBy": "Segnalato da", "notes": "Note", "privateNotes": "Note private"
   }
 }
