@@ -35,9 +35,22 @@ export interface MyPetPlusLead {
   area: string | null;
   specializations: string[];
   veterinarian: {
+    title: string | null;
+    biography: string | null;
     experienceYears: number | null;
     isVerified: boolean;
     profileCompleted: boolean;
+    isAvailableOnline: boolean;
+    ratingAvg: number;
+    ratingCount: number;
+    clinic: {
+      name: string | null;
+      address: string | null;
+      city: string | null;
+      region: string | null;
+      country: string | null;
+      phone: string | null;
+    } | null;
   } | null;
   business: {
     name: string | null;

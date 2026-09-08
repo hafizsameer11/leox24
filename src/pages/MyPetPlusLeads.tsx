@@ -51,12 +51,13 @@ const EMPTY_RESPONSE: MyPetPlusLeadResponse = {
 
 const USER_ROLE_OPTIONS = ['VETERINARIAN', 'PET_OWNER', 'PET_STORE', 'PARAPHARMACY', 'ADMIN'];
 const REGISTRATION_STATUS_OPTIONS = ['PENDING', 'APPROVED', 'REJECTED', 'BLOCKED'];
+const SUBSCRIPTION_ROLES = ['VETERINARIAN', 'PET_STORE'];
 
-const display = (value?: string | null) => String(value || '').trim() || '—';
-const label = (value?: string | null) => display(value).replace(/_/g, ' ');
+const display = (value?: string | null, fallback = '') => String(value || '').trim() || fallback;
+const label = (value?: string | null, fallback = '') => display(value, fallback).replace(/_/g, ' ');
 
-function formatDate(value?: string | null): string {
-  if (!value) return '—';
+function formatDate(value?: string | null, fallback = ''): string {
+  if (!value) return fallback;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
@@ -100,20 +101,16 @@ function roleClass(role?: string | null): string {
   return styles[String(role || '').toUpperCase()] || 'bg-gray-100 text-gray-800 border-gray-300';
 }
 
-function location(lead: MyPetPlusLead): string {
-  return [lead.city, lead.region, lead.country].filter(Boolean).join(' · ') || '—';
-}
-
-function profileSummary(lead: MyPetPlusLead): string {
+function profileSummary(lead: MyPetPlusLead, notProvided: string, notApplicable: string): string {
   if (lead.role === 'VETERINARIAN') {
-    return lead.specializations.map(label).join(', ') || '—';
+    return lead.specializations.map(label).join(', ') || notProvided;
   }
 
   if (lead.role === 'PET_STORE') {
-    return lead.business?.name || '—';
+    return lead.business?.name || notProvided;
   }
 
-  return lead.business?.name || location(lead);
+  return notApplicable;
 }
 
 function StatusBadge({ status }: { status?: string | null }) {
@@ -135,7 +132,8 @@ function LeadDetailsModal({ lead, onClose }: { lead: MyPetPlusLead | null; onClo
   const { t } = useTranslation();
   if (!lead) return null;
 
-  const isSubscriptionRole = ['VETERINARIAN', 'PET_STORE'].includes(lead.role);
+  const notProvided = t('myPetPlusLeads.notProvided');
+  const isSubscriptionRole = SUBSCRIPTION_ROLES.includes(lead.role);
   const subscription = lead.subscription;
 
   return (
@@ -144,8 +142,8 @@ function LeadDetailsModal({ lead, onClose }: { lead: MyPetPlusLead | null; onClo
         <div className="sticky top-0 z-10 flex items-start justify-between border-b border-line bg-white px-6 py-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-aqua-5">{t('myPetPlusLeads.registration')}</p>
-            <h2 className="mt-1 text-xl font-bold text-ink">{display(lead.name)}</h2>
-            <p className="mt-1 text-sm text-muted">{display(lead.email)}</p>
+            <h2 className="mt-1 text-xl font-bold text-ink">{display(lead.name, notProvided)}</h2>
+            <p className="mt-1 text-sm text-muted">{display(lead.email, notProvided)}</p>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg px-3 py-1 text-2xl leading-none text-muted hover:bg-aqua-1/40 hover:text-ink" aria-label={t('myPetPlusLeads.closeDetails')}>×</button>
         </div>
@@ -156,8 +154,8 @@ function LeadDetailsModal({ lead, onClose }: { lead: MyPetPlusLead | null; onClo
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <DetailItem label={t('myPetPlusLeads.userType')} value={t(`myPetPlusLeads.values.${lead.role}`, { defaultValue: label(lead.role) })} />
               <DetailItem label={t('myPetPlusLeads.registrationStatus')} value={<StatusBadge status={lead.status} />} />
-              <DetailItem label={t('myPetPlusLeads.registered')} value={formatDate(lead.createdAt)} />
-              <DetailItem label={t('myPetPlusLeads.lastUpdated')} value={formatDate(lead.updatedAt)} />
+              <DetailItem label={t('myPetPlusLeads.registered')} value={formatDate(lead.createdAt, notProvided)} />
+              <DetailItem label={t('myPetPlusLeads.lastUpdated')} value={formatDate(lead.updatedAt, notProvided)} />
               <DetailItem label={t('myPetPlusLeads.emailVerified')} value={lead.emailVerified ? t('myPetPlusLeads.yes') : t('myPetPlusLeads.no')} />
               <DetailItem label={t('myPetPlusLeads.phoneVerified')} value={lead.phoneVerified ? t('myPetPlusLeads.yes') : t('myPetPlusLeads.no')} />
             </div>
@@ -166,12 +164,12 @@ function LeadDetailsModal({ lead, onClose }: { lead: MyPetPlusLead | null; onClo
           <section>
             <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">{t('myPetPlusLeads.contactLocation')}</h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <DetailItem label={t('myPetPlusLeads.email')} value={display(lead.email)} />
-              <DetailItem label={t('myPetPlusLeads.phone')} value={display(lead.phone)} />
-              <DetailItem label={t('myPetPlusLeads.city')} value={display(lead.city)} />
-              <DetailItem label={t('myPetPlusLeads.area')} value={display(lead.area)} />
-              <DetailItem label={t('myPetPlusLeads.region')} value={display(lead.region)} />
-              <DetailItem label={t('myPetPlusLeads.country')} value={display(lead.country)} />
+              <DetailItem label={t('myPetPlusLeads.email')} value={display(lead.email, notProvided)} />
+              <DetailItem label={t('myPetPlusLeads.phone')} value={display(lead.phone, notProvided)} />
+              <DetailItem label={t('myPetPlusLeads.city')} value={display(lead.city, notProvided)} />
+              <DetailItem label={t('myPetPlusLeads.area')} value={display(lead.area, notProvided)} />
+              <DetailItem label={t('myPetPlusLeads.region')} value={display(lead.region, notProvided)} />
+              <DetailItem label={t('myPetPlusLeads.country')} value={display(lead.country, notProvided)} />
             </div>
           </section>
 
@@ -180,13 +178,19 @@ function LeadDetailsModal({ lead, onClose }: { lead: MyPetPlusLead | null; onClo
               <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">{t('myPetPlusLeads.profile')}</h3>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {lead.veterinarian && <>
-                  <DetailItem label={t('myPetPlusLeads.specializations')} value={lead.specializations.map(label).join(', ') || '—'} />
-                  <DetailItem label={t('myPetPlusLeads.experience')} value={lead.veterinarian.experienceYears === null ? '—' : t('myPetPlusLeads.years', { count: lead.veterinarian.experienceYears })} />
+                  <DetailItem label={t('myPetPlusLeads.professionalTitle')} value={display(lead.veterinarian.title, notProvided)} />
+                  <DetailItem label={t('myPetPlusLeads.specializations')} value={lead.specializations.map(label).join(', ') || notProvided} />
+                  <DetailItem label={t('myPetPlusLeads.experience')} value={lead.veterinarian.experienceYears === null ? notProvided : t('myPetPlusLeads.years', { count: lead.veterinarian.experienceYears })} />
                   <DetailItem label={t('myPetPlusLeads.veterinarianVerified')} value={lead.veterinarian.isVerified ? t('myPetPlusLeads.yes') : t('myPetPlusLeads.no')} />
                   <DetailItem label={t('myPetPlusLeads.profileComplete')} value={lead.veterinarian.profileCompleted ? t('myPetPlusLeads.yes') : t('myPetPlusLeads.no')} />
+                  <DetailItem label={t('myPetPlusLeads.onlineConsultations')} value={lead.veterinarian.isAvailableOnline ? t('myPetPlusLeads.yes') : t('myPetPlusLeads.no')} />
+                  <DetailItem label={t('myPetPlusLeads.clinicName')} value={display(lead.veterinarian.clinic?.name, notProvided)} />
+                  <DetailItem label={t('myPetPlusLeads.clinicAddress')} value={display(lead.veterinarian.clinic?.address, notProvided)} />
+                  <DetailItem label={t('myPetPlusLeads.clinicPhone')} value={display(lead.veterinarian.clinic?.phone, notProvided)} />
+                  {lead.veterinarian.biography && <DetailItem label={t('myPetPlusLeads.biography')} value={lead.veterinarian.biography} />}
                 </>}
                 {lead.business && <>
-                  <DetailItem label={t('myPetPlusLeads.businessName')} value={display(lead.business.name)} />
+                  <DetailItem label={t('myPetPlusLeads.businessName')} value={display(lead.business.name, notProvided)} />
                   <DetailItem label={t('myPetPlusLeads.businessActive')} value={lead.business.isActive ? t('myPetPlusLeads.yes') : t('myPetPlusLeads.no')} />
                   <DetailItem label={t('myPetPlusLeads.profileComplete')} value={lead.business.profileCompleted ? t('myPetPlusLeads.yes') : t('myPetPlusLeads.no')} />
                   <DetailItem label={t('myPetPlusLeads.publicListing')} value={lead.business.isPublic ? t('myPetPlusLeads.yes') : t('myPetPlusLeads.no')} />
@@ -200,15 +204,15 @@ function LeadDetailsModal({ lead, onClose }: { lead: MyPetPlusLead | null; onClo
             {subscription ? (
               <div className="space-y-4 rounded-xl border border-aqua-5/20 bg-aqua-1/20 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold text-ink">{display(subscription.planName)}</p>
+                  <p className="font-semibold text-ink">{display(subscription.planName, notProvided)}</p>
                   <StatusBadge status={subscription.status} />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <DetailItem label={t('myPetPlusLeads.planPrice')} value={formatMoney(subscription.planPrice, subscription.currency)} />
-                  <DetailItem label={t('myPetPlusLeads.planDuration')} value={subscription.durationInDays ? t('myPetPlusLeads.days', { count: subscription.durationInDays }) : '—'} />
-                  <DetailItem label={t('myPetPlusLeads.subscriptionStart')} value={formatDate(subscription.startDate)} />
-                  <DetailItem label={t('myPetPlusLeads.subscriptionEnd')} value={formatDate(subscription.endDate)} />
-                  <DetailItem label={t('myPetPlusLeads.planType')} value={label(subscription.planType)} />
+                  <DetailItem label={t('myPetPlusLeads.planDuration')} value={subscription.durationInDays ? t('myPetPlusLeads.days', { count: subscription.durationInDays }) : notProvided} />
+                  <DetailItem label={t('myPetPlusLeads.subscriptionStart')} value={formatDate(subscription.startDate, notProvided)} />
+                  <DetailItem label={t('myPetPlusLeads.subscriptionEnd')} value={formatDate(subscription.endDate, notProvided)} />
+                  <DetailItem label={t('myPetPlusLeads.planType')} value={label(subscription.planType, notProvided)} />
                   <DetailItem label={t('myPetPlusLeads.subscriptionStatus')} value={<StatusBadge status={subscription.status} />} />
                 </div>
                 <DetailItem label={t('myPetPlusLeads.includedFeatures')} value={subscription.features.length ? subscription.features.join(', ') : t('myPetPlusLeads.noPlanFeatures')} />
@@ -370,23 +374,23 @@ export default function MyPetPlusLeads() {
                 <tr>
                   <th className="w-[26%] px-4 py-3 text-left text-xs font-bold uppercase text-muted">{t('myPetPlusLeads.lead')}</th>
                   <th className="w-[12%] px-3 py-3 text-left text-xs font-bold uppercase text-muted">{t('myPetPlusLeads.userType')}</th>
-                  <th className="hidden w-[20%] px-3 py-3 text-left text-xs font-bold uppercase text-muted md:table-cell">{t('myPetPlusLeads.profile')}</th>
+                  <th className="hidden w-[18%] px-3 py-3 text-left text-xs font-bold uppercase text-muted md:table-cell">{t('myPetPlusLeads.profile')}</th>
                   <th className="hidden w-[14%] px-3 py-3 text-left text-xs font-bold uppercase text-muted md:table-cell">{t('myPetPlusLeads.subscription')}</th>
                   <th className="w-[12%] px-3 py-3 text-left text-xs font-bold uppercase text-muted">{t('myPetPlusLeads.status')}</th>
                   <th className="hidden w-[8%] px-3 py-3 text-left text-xs font-bold uppercase text-muted lg:table-cell">{t('myPetPlusLeads.registered')}</th>
-                  <th className="w-[8%] px-3 py-3 text-right text-xs font-bold uppercase text-muted">{t('myPetPlusLeads.action')}</th>
+                  <th className="w-[10%] px-3 py-3 text-right text-xs font-bold uppercase text-muted">{t('myPetPlusLeads.action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {result.users.map((lead) => (
                   <tr key={lead.id} className="border-b border-line/50 transition-colors hover:bg-aqua-1/10">
-                    <td className="px-4 py-3 align-top"><p className="truncate font-semibold text-ink" title={display(lead.name)}>{display(lead.name)}</p><p className="truncate text-sm text-muted" title={display(lead.email)}>{display(lead.email)}</p></td>
+                    <td className="px-4 py-3 align-top"><p className="truncate font-semibold text-ink" title={display(lead.name, t('myPetPlusLeads.notProvided'))}>{display(lead.name, t('myPetPlusLeads.notProvided'))}</p><p className="truncate text-sm text-muted" title={display(lead.email, t('myPetPlusLeads.notProvided'))}>{display(lead.email, t('myPetPlusLeads.notProvided'))}</p></td>
                     <td className="px-3 py-3 align-top"><span className={`inline-flex max-w-full truncate rounded-full border px-2 py-1 text-xs font-medium ${roleClass(lead.role)}`}>{t(`myPetPlusLeads.values.${lead.role}`, { defaultValue: label(lead.role) })}</span></td>
-                    <td className="hidden px-3 py-3 align-top text-sm text-muted md:table-cell"><p className="line-clamp-2" title={profileSummary(lead)}>{profileSummary(lead)}</p></td>
-                    <td className="hidden px-3 py-3 align-top md:table-cell">{['VETERINARIAN', 'PET_STORE'].includes(lead.role) ? <StatusBadge status={lead.subscription?.status || 'NOT_SUBSCRIBED'} /> : <span className="text-sm text-muted">—</span>}</td>
+                    <td className="hidden px-3 py-3 align-top text-sm text-muted md:table-cell"><p className="line-clamp-2" title={profileSummary(lead, t('myPetPlusLeads.notProvided'), t('myPetPlusLeads.notApplicable'))}>{profileSummary(lead, t('myPetPlusLeads.notProvided'), t('myPetPlusLeads.notApplicable'))}</p></td>
+                    <td className="hidden px-3 py-3 align-top md:table-cell">{SUBSCRIPTION_ROLES.includes(lead.role) ? <StatusBadge status={lead.subscription?.status || 'NOT_SUBSCRIBED'} /> : <span className="inline-flex rounded-full border border-line bg-gray-50 px-2 py-1 text-xs font-medium text-muted">{t('myPetPlusLeads.notApplicable')}</span>}</td>
                     <td className="px-3 py-3 align-top"><StatusBadge status={lead.status} /></td>
-                    <td className="hidden px-3 py-3 align-top text-sm text-muted lg:table-cell"><span className="line-clamp-2">{formatDate(lead.createdAt)}</span></td>
-                    <td className="px-3 py-3 text-right align-top"><button type="button" onClick={() => setSelectedLead(lead)} className="whitespace-nowrap rounded-lg border border-aqua-5/35 bg-aqua-1/30 px-3 py-1.5 text-xs font-semibold text-aqua-5 transition-colors hover:bg-aqua-1/60">{t('myPetPlusLeads.viewDetails')}</button></td>
+                    <td className="hidden px-3 py-3 align-top text-sm text-muted lg:table-cell"><span className="line-clamp-2">{formatDate(lead.createdAt, t('myPetPlusLeads.notProvided'))}</span></td>
+                    <td className="px-2 py-3 text-right align-middle"><button type="button" onClick={() => setSelectedLead(lead)} className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg border border-aqua-5/35 bg-aqua-1/30 px-2 text-xs font-semibold leading-none text-aqua-5 transition-colors hover:bg-aqua-1/60">{t('myPetPlusLeads.viewDetails')}</button></td>
                   </tr>
                 ))}
               </tbody>
