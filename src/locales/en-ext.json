@@ -257,6 +257,9 @@
     "contact": "Contact",
     "location": "Location",
     "groupCode": "Group / Code",
+    "categoryGroupCode": "Category / group / code",
+    "noCategory": "No category",
+    "noGroupCode": "No group or code",
     "editCustomer": "Edit Customer",
     "saving": "Saving…",
     "noCustomersFound": "No customers found."
@@ -749,7 +752,7 @@
     "values": { "ACTIVE": "Active", "EXPIRED": "Expired", "NOT_SUBSCRIBED": "Not subscribed", "APPROVED": "Approved", "PENDING": "Pending", "REJECTED": "Rejected", "BLOCKED": "Blocked", "VETERINARIAN": "Veterinarian", "PET_OWNER": "Pet owner", "PET_STORE": "Pharmacy", "PARAPHARMACY": "Parapharmacy", "ADMIN": "Admin" }
   },
   "customerForm": {
-    "identity": "Identity", "title": "Title", "select": "Select", "mr": "Mr.", "ms": "Ms.", "other": "Other", "firstName": "First name", "lastName": "Last name", "secondLastName": "Second last name", "group": "Group", "code": "Customer code", "gender": "Gender", "female": "Female", "male": "Male", "language": "Language", "dateOfBirth": "Date of birth", "age": "Age", "placeOfBirth": "Place of birth",
+    "identity": "Identity", "title": "Title", "category": "Category", "selectCategory": "Select a category", "loadingCategories": "Loading categories…", "select": "Select", "mr": "Mr.", "ms": "Ms.", "other": "Other", "firstName": "First name", "lastName": "Last name", "secondLastName": "Second last name", "group": "Group", "code": "Customer code", "gender": "Gender", "female": "Female", "male": "Male", "language": "Language", "dateOfBirth": "Date of birth", "age": "Age", "placeOfBirth": "Place of birth",
     "contactAddress": "Contact and address", "email": "Email", "phone": "Phone", "mobile": "Mobile", "phone2": "Phone 2", "fax": "Fax", "pecEmail": "PEC email", "address": "Address", "city": "City", "zipCode": "ZIP code", "stateProvince": "State / Province", "country": "Country",
     "generalInformation": "General information", "branch": "Branch", "dateAdded": "Date added", "taxCode": "Tax code", "vatNumber": "VAT number", "taxCodeFe": "Tax code (e-invoice)", "privacyDate": "Privacy date", "privacyGdpr": "Privacy / GDPR", "processingConsent": "Consent to processing", "marketingConsent": "Marketing consent", "profilingConsent": "Profiling consent", "communicationPreferences": "Communication preferences", "sendSms": "Send SMS", "sendMail": "Send email", "sendNewsletter": "Send newsletter",
     "billingInformation": "Billing information", "billingAddress": "Billing address", "billingCity": "Billing city", "billingZipCode": "Billing ZIP code", "billingState": "Billing state", "billingCountry": "Billing country",

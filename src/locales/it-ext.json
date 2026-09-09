@@ -257,6 +257,9 @@
     "contact": "Contatto",
     "location": "Località",
     "groupCode": "Gruppo / Codice",
+    "categoryGroupCode": "Categoria / gruppo / codice",
+    "noCategory": "Nessuna categoria",
+    "noGroupCode": "Nessun gruppo o codice",
     "editCustomer": "Modifica Cliente",
     "saving": "Salvataggio…",
     "noCustomersFound": "Nessun cliente trovato."
@@ -749,7 +752,7 @@
     "values": { "ACTIVE": "Attivo", "EXPIRED": "Scaduto", "NOT_SUBSCRIBED": "Non abbonato", "APPROVED": "Approvato", "PENDING": "In attesa", "REJECTED": "Rifiutato", "BLOCKED": "Bloccato", "VETERINARIAN": "Veterinario", "PET_OWNER": "Proprietario dell'animale", "PET_STORE": "Farmacia", "PARAPHARMACY": "Parafarmacia", "ADMIN": "Amministratore" }
   },
   "customerForm": {
-    "identity": "Identità", "title": "Titolo", "select": "Seleziona", "mr": "Sig.", "ms": "Sig.ra", "other": "Altro", "firstName": "Nome", "lastName": "Cognome", "secondLastName": "Secondo cognome", "group": "Gruppo", "code": "Codice cliente", "gender": "Genere", "female": "Femmina", "male": "Maschio", "language": "Lingua", "dateOfBirth": "Data di nascita", "age": "Età", "placeOfBirth": "Luogo di nascita",
+    "identity": "Identità", "title": "Titolo", "category": "Categoria", "selectCategory": "Seleziona una categoria", "loadingCategories": "Caricamento categorie…", "select": "Seleziona", "mr": "Sig.", "ms": "Sig.ra", "other": "Altro", "firstName": "Nome", "lastName": "Cognome", "secondLastName": "Secondo cognome", "group": "Gruppo", "code": "Codice cliente", "gender": "Genere", "female": "Femmina", "male": "Maschio", "language": "Lingua", "dateOfBirth": "Data di nascita", "age": "Età", "placeOfBirth": "Luogo di nascita",
     "contactAddress": "Contatti e indirizzo", "email": "Email", "phone": "Telefono", "mobile": "Cellulare", "phone2": "Telefono 2", "fax": "Fax", "pecEmail": "Email PEC", "address": "Indirizzo", "city": "Città", "zipCode": "CAP", "stateProvince": "Stato / Provincia", "country": "Paese",
     "generalInformation": "Informazioni generali", "branch": "Filiale", "dateAdded": "Data inserimento", "taxCode": "Codice fiscale", "vatNumber": "Partita IVA", "taxCodeFe": "Codice fiscale (fattura elettronica)", "privacyDate": "Data privacy", "privacyGdpr": "Privacy / GDPR", "processingConsent": "Consenso al trattamento", "marketingConsent": "Consenso marketing", "profilingConsent": "Consenso alla profilazione", "communicationPreferences": "Preferenze di comunicazione", "sendSms": "Invia SMS", "sendMail": "Invia email", "sendNewsletter": "Invia newsletter",
     "billingInformation": "Informazioni di fatturazione", "billingAddress": "Indirizzo di fatturazione", "billingCity": "Città di fatturazione", "billingZipCode": "CAP fatturazione", "billingState": "Provincia fatturazione", "billingCountry": "Paese fatturazione",

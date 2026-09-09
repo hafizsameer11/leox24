@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Topbar from '../components/layout/Topbar';
 import Modal from '../components/ui/Modal';
-import CustomerFormFields, { createEmptyCustomerForm, customerToForm, type CustomerFormData } from '../components/customers/CustomerFormFields';
+import CustomerFormFields, { createEmptyCustomerForm, customerFormPayload, customerToForm, type CustomerCategory, type CustomerFormData } from '../components/customers/CustomerFormFields';
 
-interface Customer extends Omit<Partial<CustomerFormData>, 'email' | 'phone' | 'first_name' | 'last_name' | 'second_last_name'> {
+interface Customer extends Omit<Partial<CustomerFormData>, 'email' | 'phone' | 'first_name' | 'last_name' | 'second_last_name' | 'category_id'> {
   id: number;
   email: string;
   phone: string;
@@ -16,6 +16,8 @@ interface Customer extends Omit<Partial<CustomerFormData>, 'email' | 'phone' | '
   city?: string | null;
   customer_code?: string | null;
   customer_group?: string | null;
+  category_id?: number | null;
+  category?: CustomerCategory | null;
   mobile?: string | null;
   created_at?: string;
 }
@@ -73,9 +75,9 @@ export default function Customers() {
     try {
       setSaving(true);
       if (editingCustomer) {
-        await api.put(`/customers/${editingCustomer.id}`, formData);
+        await api.put(`/customers/${editingCustomer.id}`, customerFormPayload(formData));
       } else {
-        await api.post('/customers', formData);
+        await api.post('/customers', customerFormPayload(formData));
       }
       closeForm();
       await fetchCustomers();
@@ -126,7 +128,7 @@ export default function Customers() {
               <th className="w-[32%] px-4 py-3 text-left text-xs font-bold uppercase text-muted">{t('customers.customer')}</th>
               <th className="w-[22%] px-3 py-3 text-left text-xs font-bold uppercase text-muted">{t('customers.contact')}</th>
               <th className="hidden w-[18%] px-3 py-3 text-left text-xs font-bold uppercase text-muted md:table-cell">{t('customers.location')}</th>
-              <th className="hidden w-[16%] px-3 py-3 text-left text-xs font-bold uppercase text-muted lg:table-cell">{t('customers.groupCode')}</th>
+              <th className="hidden w-[16%] px-3 py-3 text-left text-xs font-bold uppercase text-muted lg:table-cell">{t('customers.categoryGroupCode')}</th>
               <th className="w-[12%] px-3 py-3 text-right text-xs font-bold uppercase text-muted">{t('common.actions')}</th>
             </tr>
           </thead>
@@ -136,7 +138,7 @@ export default function Customers() {
                 <td className="px-4 py-3 align-top"><p className="truncate font-semibold text-ink" title={getCustomerName(customer)}>{getCustomerName(customer)}</p><p className="truncate text-sm text-muted" title={customer.email}>{customer.email}</p></td>
                 <td className="px-3 py-3 align-top"><p className="truncate text-sm text-ink">{customer.phone}</p>{customer.mobile && <p className="truncate text-xs text-muted">{customer.mobile}</p>}</td>
                 <td className="hidden px-3 py-3 align-top text-sm text-muted md:table-cell"><span className="truncate">{customer.city || '—'}</span></td>
-                <td className="hidden px-3 py-3 align-top text-sm text-muted lg:table-cell"><p className="truncate">{customer.customer_group || '—'}</p><p className="truncate text-xs">{customer.customer_code || '—'}</p></td>
+                <td className="hidden px-3 py-3 align-top text-sm text-muted lg:table-cell"><p className="truncate font-medium text-ink">{customer.category?.name || t('customers.noCategory')}</p><p className="truncate text-xs">{[customer.customer_group, customer.customer_code].filter(Boolean).join(' · ') || t('customers.noGroupCode')}</p></td>
                 <td className="px-3 py-3 text-right align-top"><div className="flex justify-end gap-1"><button type="button" onClick={() => navigate(`/customers/${customer.id}`)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-aqua-5 hover:bg-aqua-1/50">{t('common.view')}</button><button type="button" onClick={() => openEditForm(customer)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-ink hover:bg-aqua-1/50">{t('common.edit')}</button><button type="button" onClick={() => void handleDeleteCustomer(customer.id)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-bad hover:bg-red-50">{t('common.delete')}</button></div></td>
               </tr>
             ))}

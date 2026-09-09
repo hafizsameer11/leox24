@@ -1,5 +1,12 @@
-import { useMemo, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import api from '../../services/api';
+
+export interface CustomerCategory {
+  id: number;
+  name: string;
+  description?: string | null;
+}
 
 export interface CustomerFormData {
   email: string;
@@ -9,6 +16,7 @@ export interface CustomerFormData {
   last_name: string;
   second_last_name: string;
   title: string;
+  category_id: string;
   customer_group: string;
   customer_code: string;
   gender: string;
@@ -52,7 +60,7 @@ export interface CustomerFormData {
 }
 
 export const createEmptyCustomerForm = (): CustomerFormData => ({
-  email: '', phone: '', vat: '', first_name: '', last_name: '', second_last_name: '', title: '',
+  email: '', phone: '', vat: '', first_name: '', last_name: '', second_last_name: '', title: '', category_id: '',
   customer_group: '', customer_code: '', gender: '', address: '', city: '', zip_code: '',
   state_province: '', country: '', date_of_birth: '', place_of_birth: '', branch: '',
   date_added: new Date().toISOString().slice(0, 10), tax_code: '', pec_email: '', tax_code_fe: '',
@@ -75,6 +83,13 @@ export const customerToForm = (customer: Record<string, unknown> | null | undefi
   date_of_birth: dateInputValue(customer?.date_of_birth),
   date_added: dateInputValue(customer?.date_added) || createEmptyCustomerForm().date_added,
   privacy_date: dateInputValue(customer?.privacy_date),
+  category_id: customer?.category_id ? String(customer.category_id) : '',
+});
+
+/** Convert local form values to the customer API's expected data types. */
+export const customerFormPayload = (form: CustomerFormData) => ({
+  ...form,
+  category_id: form.category_id ? Number(form.category_id) : null,
 });
 
 function dateInputValue(value: unknown): string {
@@ -109,6 +124,26 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 
 export default function CustomerFormFields({ value, onChange }: Props) {
   const { t } = useTranslation();
+  const [categories, setCategories] = useState<CustomerCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const loadCategories = useCallback(async () => {
+    try {
+      setCategoriesLoading(true);
+      const response = await api.get('/categories');
+      const data = Array.isArray(response.data) ? response.data : response.data?.data;
+      setCategories(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to load customer categories:', error);
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCategories();
+  }, [loadCategories]);
+
   const age = useMemo(() => {
     if (!value.date_of_birth) return '—';
     const birth = new Date(value.date_of_birth);
@@ -131,6 +166,7 @@ export default function CustomerFormFields({ value, onChange }: Props) {
         <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-aqua-5">{t('customerForm.identity')}</h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Field label={t('customerForm.title')}><select className={inputClass} value={value.title} onChange={(event) => update('title', event.target.value)}><option value="">{t('customerForm.select')}</option><option value="Mr.">{t('customerForm.mr')}</option><option value="Ms.">{t('customerForm.ms')}</option><option value="Other">{t('customerForm.other')}</option></select></Field>
+          <Field label={t('customerForm.category')} className="sm:col-start-1"><select className={inputClass} value={value.category_id} onFocus={() => void loadCategories()} onChange={(event) => update('category_id', event.target.value)}><option value="">{categoriesLoading ? t('customerForm.loadingCategories') : t('customerForm.selectCategory')}</option>{categories.map((category) => <option key={category.id} value={String(category.id)}>{category.name}</option>)}</select></Field>
           <Field label={`${t('customerForm.firstName')} *`}><input required className={inputClass} value={value.first_name} onChange={(event) => update('first_name', event.target.value)} /></Field>
           <Field label={t('customerForm.lastName')}><input className={inputClass} value={value.last_name} onChange={(event) => update('last_name', event.target.value)} /></Field>
           <Field label={t('customerForm.secondLastName')}><input className={inputClass} value={value.second_last_name} onChange={(event) => update('second_last_name', event.target.value)} /></Field>

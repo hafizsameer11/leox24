@@ -6,7 +6,7 @@ import Topbar from '../components/layout/Topbar';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import CustomerFormFields, { customerToForm, type CustomerFormData } from '../components/customers/CustomerFormFields';
+import CustomerFormFields, { customerFormPayload, customerToForm, type CustomerCategory, type CustomerFormData } from '../components/customers/CustomerFormFields';
 
 interface User { id: number; name: string; email: string; }
 interface Opportunity { id: number; name: string; description: string | null; stage: string; value: number | null; currency: string; probability: number | null; expected_close_date: string | null; assignee: User | null; }
@@ -14,7 +14,7 @@ interface Task { id: number; title: string; description: string | null; priority
 interface Note { id: number; title: string | null; content: string; type: string; is_pinned: boolean; is_important: boolean; user: User | null; created_at: string; }
 interface CustomerDocument { id: number; name: string; original_name: string; category: string | null; size: number; mime_type: string | null; created_at: string; }
 interface ActivityLog { id: number; action: string; description: string; severity: string; user: User | null; created_at: string; }
-interface Customer extends Omit<Partial<CustomerFormData>, 'email' | 'phone' | 'first_name' | 'last_name' | 'second_last_name' | 'notes'> { id: number; email: string; phone: string; first_name: string | null; last_name: string | null; second_last_name?: string | null; notes_text?: string | null; created_at: string; updated_at: string; created_by?: User | null; opportunities: Opportunity[]; tasks: Task[]; notes: Note[]; documents: CustomerDocument[]; }
+interface Customer extends Omit<Partial<CustomerFormData>, 'email' | 'phone' | 'first_name' | 'last_name' | 'second_last_name' | 'notes' | 'category_id'> { id: number; email: string; phone: string; first_name: string | null; last_name: string | null; second_last_name?: string | null; category_id?: number | null; category?: CustomerCategory | null; notes_text?: string | null; created_at: string; updated_at: string; created_by?: User | null; opportunities: Opportunity[]; tasks: Task[]; notes: Note[]; documents: CustomerDocument[]; }
 interface CustomerStats { opportunities_count: number; open_opportunities_count: number; tasks_count: number; pending_tasks_count: number; notes_count: number; documents_count: number; activity_logs_count: number; }
 type Tab = 'overview' | 'opportunities' | 'tasks' | 'notes' | 'documents' | 'activity';
 
@@ -103,7 +103,7 @@ export default function CustomerDetail() {
     event.preventDefault();
     if (!customer) return;
     await runAction(async () => {
-      await api.put(`/customers/${customer.id}`, customerForm);
+      await api.put(`/customers/${customer.id}`, customerFormPayload(customerForm));
       setShowCustomerForm(false);
     }, 'customerDetail.updateFailed');
   };
@@ -226,7 +226,7 @@ export default function CustomerDetail() {
         <div className="p-5">
           {activeTab === 'overview' && <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <DetailSection title={t('customerDetail.contactInformation')}><Detail label={t('customerForm.email')} value={customer.email} /><Detail label={t('customerForm.phone')} value={customer.phone} /><Detail label={t('customerForm.mobile')} value={customer.mobile} /><Detail label={t('customerForm.address')} value={[customer.address, customer.city, customer.state_province, customer.country].filter(Boolean).join(', ') || '—'} /><Detail label={t('customerForm.pecEmail')} value={customer.pec_email} /></DetailSection>
-            <DetailSection title={t('customerDetail.additionalInformation')}><Detail label={t('customerForm.code')} value={customer.customer_code} /><Detail label={t('customerForm.group')} value={customer.customer_group} /><Detail label={t('customerForm.taxCode')} value={customer.tax_code} /><Detail label={t('customerForm.vatNumber')} value={customer.vat} /><Detail label={t('customerForm.dateAdded')} value={formatDate(customer.date_added)} /><Detail label={t('customerDetail.created')} value={formatDateTime(customer.created_at)} /><Detail label={t('customerDetail.operator')} value={customer.created_by?.name} /></DetailSection>
+            <DetailSection title={t('customerDetail.additionalInformation')}><Detail label={t('customerForm.category')} value={customer.category?.name} /><Detail label={t('customerForm.code')} value={customer.customer_code} /><Detail label={t('customerForm.group')} value={customer.customer_group} /><Detail label={t('customerForm.taxCode')} value={customer.tax_code} /><Detail label={t('customerForm.vatNumber')} value={customer.vat} /><Detail label={t('customerForm.dateAdded')} value={formatDate(customer.date_added)} /><Detail label={t('customerDetail.created')} value={formatDateTime(customer.created_at)} /><Detail label={t('customerDetail.operator')} value={customer.created_by?.name} /></DetailSection>
             <DetailSection title={t('customerDetail.preferences')}><Detail label={t('customerForm.processingConsent')} value={customer.privacy_consent_processing ? t('customerDetail.yes') : t('customerDetail.no')} /><Detail label={t('customerForm.marketingConsent')} value={customer.marketing_consent ? t('customerDetail.yes') : t('customerDetail.no')} /><Detail label={t('customerForm.profilingConsent')} value={customer.profiling_consent ? t('customerDetail.yes') : t('customerDetail.no')} /><Detail label={t('customerForm.language')} value={customer.language} /></DetailSection>
             <DetailSection title={t('customerDetail.notes')}><Detail label={t('customerForm.notes')} value={customer.notes_text} /><Detail label={t('customerForm.privateNotes')} value={customer.private_notes} /></DetailSection>
           </div>}
