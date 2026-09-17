@@ -42,6 +42,9 @@ function normalizeHeaderToken(header: string): string {
   return String(header)
     .trim()
     .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_\-/\\.:]+/g, ' ')
     .replace(/\s+/g, ' ');
 }
 
@@ -150,14 +153,15 @@ export function coerceLegacyCsvShape(
 }
 
 function headerLooksLikeEmail(norm: string): boolean {
-  if (norm === 'mail' || norm === 'e-mail' || norm === 'email') return true;
-  if (norm.includes('email') || norm.includes('e-mail')) return true;
+  const compact = norm.replace(/\s+/g, '');
+  if (compact === 'mail' || compact === 'email') return true;
+  if (compact.includes('email') || compact.includes('mail')) return true;
   if (norm.includes('pec')) return true;
   return false;
 }
 
 function headerLooksLikePhone(norm: string): boolean {
-  for (const token of ['telefono', 'cellulare', 'mobile', 'phone', 'tel', 'fax', 'whatsapp']) {
+  for (const token of ['telefono', 'telefonino', 'cellulare', 'mobile', 'phone', 'tel', 'fax', 'whatsapp']) {
     if (norm.includes(token)) return true;
   }
   return false;
@@ -166,6 +170,15 @@ function headerLooksLikePhone(norm: string): boolean {
 type NormPair = { norm: string; value: string; label: string };
 
 function pickNameFromRow(normPairs: NormPair[]): string {
+  let firstName = '';
+  let lastName = '';
+  for (const pair of normPairs) {
+    if (!pair.value) continue;
+    if (!firstName && isFirstNameHeader(pair.norm)) firstName = pair.value;
+    if (!lastName && isLastNameHeader(pair.norm)) lastName = pair.value;
+  }
+  if (firstName || lastName) return `${firstName} ${lastName}`.trim();
+
   const priorityFragments: string[][] = [
     ['ragione sociale'],
     ['insegna'],
@@ -181,10 +194,7 @@ function pickNameFromRow(normPairs: NormPair[]): string {
     ['nome', 'e', 'cognome'],
     ['first', 'name'],
     ['last', 'name'],
-    ['nome'],
-    ['cognome'],
     ['name'],
-    ['titolo'],
     ['contact'],
   ];
 
@@ -205,6 +215,16 @@ function pickNameFromRow(normPairs: NormPair[]): string {
   }
 
   return '';
+}
+
+function isFirstNameHeader(norm: string): boolean {
+  return ['nome', 'first name', 'firstname', 'given name'].includes(norm) || norm.includes('first name');
+}
+
+function isLastNameHeader(norm: string): boolean {
+  return ['cognome', 'last name', 'lastname', 'surname', 'family name'].includes(norm)
+    || norm.includes('last name')
+    || norm.includes('surname');
 }
 
 function normalizePhone(value: string): string {
