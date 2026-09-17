@@ -18,6 +18,17 @@ type Lead = ApiLead;
 
 type LeadUploadFormat = 'csv' | 'excel';
 
+type LeadImportStatus = {
+  id: number;
+  file_name: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  total_rows: number | null;
+  processed_rows: number;
+  imported_count: number;
+  error_count: number;
+  error_message: string | null;
+};
+
 const LEAD_UPLOAD_ACCEPT = [
   '.csv',
   'text/csv',
@@ -109,6 +120,10 @@ export default function Leads() {
     format: 'csv',
     category: '',
   });
+  const [activeImport, setActiveImport] = useState<LeadImportStatus | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [importStatusError, setImportStatusError] = useState<string | null>(null);
+  const [importQueuedAt, setImportQueuedAt] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
@@ -306,6 +321,7 @@ export default function Leads() {
   };
 
   const handleFileUpload = async () => {
+    if (uploading) return;
     try {
       const file = uploadFormData.file;
       const detectedFormat = file ? getLeadUploadFormat(file) : null;
@@ -330,21 +346,23 @@ export default function Leads() {
       // Let Axios/browser set the multipart boundary automatically. Setting
       // Content-Type manually can make binary workbook uploads arrive without
       // a valid boundary on some browsers/proxies.
+      setUploading(true);
       const response = await api.post('/leads', formData);
 
       console.log('Lead file uploaded successfully:', response.data);
-
-      setShowCreateModal(false);
+      setActiveImport({
+        id: response.data.import_id,
+        file_name: response.data.file_name || file.name,
+        status: response.data.status || 'queued',
+        total_rows: null,
+        processed_rows: 0,
+        imported_count: 0,
+        error_count: 0,
+        error_message: null,
+      });
+      setImportStatusError(null);
+      setImportQueuedAt(Date.now());
       resetUploadForm();
-      await fetchLeads(1);
-      setListPage(1);
-
-      const imported = response.data?.imported_count;
-      if (typeof imported === 'number') {
-        alert(t('leads.uploadSuccessCount', { count: imported }));
-      } else {
-        alert(t('leads.uploadSuccess'));
-      }
     } catch (error: any) {
       console.error('Failed to upload lead file:', error);
       const errorMessage = error.response?.data?.message ||
@@ -354,8 +372,52 @@ export default function Leads() {
                             : error.message) ||
                           t('leads.uploadError');
       alert(t('leadsPage.errorWithMessage', { message: errorMessage }));
+    } finally {
+      setUploading(false);
     }
   };
+
+  useEffect(() => {
+    if (!activeImport || activeImport.status === 'completed' || activeImport.status === 'failed') {
+      return;
+    }
+
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const response = await api.get(`/leads/imports/${activeImport.id}`);
+        if (!cancelled) {
+          const next = response.data as LeadImportStatus;
+          setActiveImport(next);
+          setImportStatusError(null);
+          if (next.status === 'completed') {
+            setShowCreateModal(false);
+            await fetchLeads(1);
+            setListPage(1);
+            alert(t('leads.uploadSuccessCount', { count: next.imported_count }));
+          } else if (next.status === 'failed') {
+            alert(next.error_message || t('leads.uploadError'));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check lead import status:', error);
+        if (!cancelled) {
+          const message = (error as any)?.response?.data?.message
+            || ((error as any)?.request
+              ? 'The CRM server did not return the import status. The queue worker may be unavailable.'
+              : (error as any)?.message)
+            || 'The import status could not be checked.';
+          setImportStatusError(message);
+        }
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => void poll(), 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [activeImport?.id, activeImport?.status]);
 
   const handleDeleteLead = async (row: LeadTableRow) => {
     const confirmMsg =
@@ -639,7 +701,13 @@ export default function Leads() {
             </button>
             )}
             <button 
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => {
+                setActiveImport(null);
+                setImportStatusError(null);
+                setImportQueuedAt(null);
+                resetUploadForm();
+                setShowCreateModal(true);
+              }}
               className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
             >
               ➕ {t('leads.uploadFile')}
@@ -941,6 +1009,7 @@ export default function Leads() {
           isOpen={true}
           title={t('leads.fileUpload')}
           onClose={() => {
+            if (uploading || (activeImport && ['queued', 'processing'].includes(activeImport.status))) return;
             setShowCreateModal(false);
             resetUploadForm();
           }}
@@ -1001,6 +1070,7 @@ export default function Leads() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => {
+                  if (uploading || (activeImport && ['queued', 'processing'].includes(activeImport.status))) return;
                   setShowCreateModal(false);
                   resetUploadForm();
                 }}
@@ -1010,12 +1080,48 @@ export default function Leads() {
               </button>
               <button
                 onClick={handleFileUpload}
-                disabled={!uploadFormData.file || !uploadFormData.category}
+                disabled={uploading || !uploadFormData.file || !uploadFormData.category}
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t('leads.upload')}
+                {uploading ? t('leads.uploading') : t('leads.upload')}
               </button>
             </div>
+            {activeImport && ['queued', 'processing'].includes(activeImport.status) && (
+              <div className="mt-4 rounded-xl border border-aqua-5/30 bg-aqua-1/30 p-4 text-sm text-ink">
+                <p className="font-semibold">{activeImport.status === 'queued' ? 'Import queued' : 'Import processing'}</p>
+                <p className="mt-1 break-all">{activeImport.file_name}</p>
+                <p className="mt-2 text-muted">
+                  {activeImport.total_rows
+                    ? `${activeImport.processed_rows} / ${activeImport.total_rows} rows processed`
+                    : 'Preparing the spreadsheet...'}
+                </p>
+                {activeImport.total_rows && (
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
+                    <div
+                      className="h-full bg-aqua-5 transition-all"
+                      style={{ width: `${Math.min(100, (activeImport.processed_rows / activeImport.total_rows) * 100)}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            {activeImport?.status === 'queued' && importQueuedAt && Date.now() - importQueuedAt > 30000 && (
+              <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+                The upload is waiting for the background queue worker. It has not started spreadsheet parsing yet.
+              </div>
+            )}
+            {importStatusError && (
+              <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+                <p className="font-semibold">Import status unavailable</p>
+                <p className="mt-1 break-words">{importStatusError}</p>
+              </div>
+            )}
+            {activeImport?.status === 'failed' && (
+              <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+                <p className="font-semibold">Lead import failed</p>
+                <p className="mt-1 break-words">{activeImport.error_message || 'The spreadsheet could not be imported.'}</p>
+              </div>
+            )}
         </Modal>
       )}
 
