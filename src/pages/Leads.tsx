@@ -16,6 +16,36 @@ import {
 
 type Lead = ApiLead;
 
+type LeadUploadFormat = 'csv' | 'excel';
+
+const LEAD_UPLOAD_ACCEPT = [
+  '.csv',
+  'text/csv',
+  'application/csv',
+  'application/vnd.ms-excel',
+  '.txt',
+  'text/plain',
+  '.xls',
+  'application/excel',
+  'application/xls',
+  '.xlsx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+].join(',');
+
+function getLeadUploadFormat(file: File): LeadUploadFormat | null {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+
+  if (extension === 'csv' || extension === 'txt') {
+    return 'csv';
+  }
+
+  if (extension === 'xls' || extension === 'xlsx') {
+    return 'excel';
+  }
+
+  return null;
+}
+
 /** Renders only this many table body rows at a time (legacy imports expand to many contacts). */
 const LEADS_TABLE_ROWS_PER_PAGE = 25;
 
@@ -277,7 +307,10 @@ export default function Leads() {
 
   const handleFileUpload = async () => {
     try {
-      if (!uploadFormData.file) {
+      const file = uploadFormData.file;
+      const detectedFormat = file ? getLeadUploadFormat(file) : null;
+
+      if (!file || !detectedFormat) {
         alert(t('leads.selectFile') + ' ' + t('common.required', 'required'));
         return;
       }
@@ -287,15 +320,17 @@ export default function Leads() {
       }
 
       const formData = new FormData();
-      formData.append('file', uploadFormData.file);
-      formData.append('format', uploadFormData.format);
+      formData.append('file', file);
+      // The backend also derives this from the extension. Sending the detected
+      // value keeps older API clients compatible without allowing a stale UI
+      // selection to make an Excel workbook get parsed as CSV.
+      formData.append('format', detectedFormat);
       formData.append('category', uploadFormData.category);
 
-      const response = await api.post('/leads', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // Let Axios/browser set the multipart boundary automatically. Setting
+      // Content-Type manually can make binary workbook uploads arrive without
+      // a valid boundary on some browsers/proxies.
+      const response = await api.post('/leads', formData);
 
       console.log('Lead file uploaded successfully:', response.data);
 
@@ -312,9 +347,11 @@ export default function Leads() {
       }
     } catch (error: any) {
       console.error('Failed to upload lead file:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          error.message || 
+      const errorMessage = error.response?.data?.message ||
+                          error.response?.data?.error ||
+                          (error.request && !error.response
+                            ? t('leads.uploadNetworkError', 'The upload could not reach the CRM server. Please check the API connection and try again.')
+                            : error.message) ||
                           t('leads.uploadError');
       alert(t('leadsPage.errorWithMessage', { message: errorMessage }));
     }
@@ -940,10 +977,17 @@ export default function Leads() {
                 <input
                   type="file"
                   ref={fileInputRef}
-                  accept=".csv,.txt,.xlsx,.xls"
+                  accept={LEAD_UPLOAD_ACCEPT}
                   onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                        setUploadFormData({ ...uploadFormData, file: e.target.files[0] });
+                    const file = e.target.files?.[0];
+                    const detectedFormat = file ? getLeadUploadFormat(file) : null;
+
+                    if (file && detectedFormat) {
+                      setUploadFormData({ ...uploadFormData, file, format: detectedFormat });
+                    } else if (file) {
+                      alert(t('leads.invalidFileType', 'Please select a CSV, TXT, XLS, or XLSX file.'));
+                      e.currentTarget.value = '';
+                      setUploadFormData({ ...uploadFormData, file: null });
                     }
                   }}
                   className="w-full px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none"

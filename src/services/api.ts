@@ -18,7 +18,15 @@ api.interceptors.request.use(
     }
     // Don't set Content-Type for FormData - let axios set it automatically with boundary
     if (config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
+      // Axios 1.x uses AxiosHeaders, whose normalized key may be lowercase.
+      // Use its delete method so a stale JSON content type cannot be sent with
+      // a binary multipart upload (especially .xls/.xlsx files).
+      if (config.headers && typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type');
+      } else if (config.headers) {
+        delete config.headers['Content-Type'];
+        delete config.headers['content-type'];
+      }
     }
     return config;
   },
