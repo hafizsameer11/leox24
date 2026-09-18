@@ -8,6 +8,11 @@ export interface ApiLead {
   name: string;
   email?: string;
   phone?: string;
+  mobile?: string;
+  age?: string;
+  gender?: string;
+  country?: string;
+  intention?: string;
   source?: string;
   status: string;
   category?: string;
@@ -15,6 +20,7 @@ export interface ApiLead {
   file_format?: string;
   file_headers?: string[];
   file_records?: string[][];
+  raw_attributes?: Record<string, string> | null;
   value?: number;
   created_at: string;
   assigned_to?: string;
@@ -28,6 +34,11 @@ export interface LeadTableRow {
   name: string;
   email?: string;
   phone?: string;
+  mobile?: string;
+  age?: string;
+  gender?: string;
+  country?: string;
+  intention?: string;
   source?: string;
   status: string;
   category?: string;
@@ -161,10 +172,79 @@ function headerLooksLikeEmail(norm: string): boolean {
 }
 
 function headerLooksLikePhone(norm: string): boolean {
-  for (const token of ['telefono', 'telefonino', 'cellulare', 'mobile', 'phone', 'tel', 'fax', 'whatsapp']) {
+  if (headerLooksLikeMobile(norm)) return false;
+  for (const token of ['telefono', 'telephone', 'phone', 'tel', 'landline', 'fisso', 'fax']) {
     if (norm.includes(token)) return true;
   }
   return false;
+}
+
+function headerLooksLikeMobile(norm: string): boolean {
+  const compact = norm.replace(/\s+/g, '');
+  return ['telefonino', 'cellulare', 'mobile', 'gsm', 'cell', 'whatsapp', 'phone2', 'secondphone', 'secondaryphone']
+    .some((token) => compact.includes(token));
+}
+
+function headerLooksLikeAge(norm: string): boolean {
+  return ['age', 'eta', 'anni'].includes(norm) || norm.includes('age');
+}
+
+function headerLooksLikeDateOfBirth(norm: string): boolean {
+  return norm.includes('data nascita')
+    || norm.includes('date of birth')
+    || norm.includes('birth date')
+    || norm === 'dob';
+}
+
+function headerLooksLikeGender(norm: string): boolean {
+  return ['gender', 'sesso', 'sex'].includes(norm);
+}
+
+function headerLooksLikeCountry(norm: string): boolean {
+  return ['country', 'paese', 'nazione', 'stato'].includes(norm) || norm.includes('country');
+}
+
+function headerLooksLikeIntention(norm: string): boolean {
+  return norm.includes('intention')
+    || norm.includes('intenzione')
+    || norm.includes('interesse')
+    || norm.includes('interest')
+    || norm === 'intent'
+    || norm.includes('lead intent');
+}
+
+function normalizeAge(value: string): string | undefined {
+  const match = value.match(/\b(\d{1,3})\b/);
+  if (!match) return undefined;
+  const age = Number(match[1]);
+  return age >= 0 && age <= 130 ? String(age) : undefined;
+}
+
+function calculateAgeFromDateValue(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  const raw = value.trim();
+  let date: Date | undefined;
+
+  const numeric = Number(raw);
+  if (Number.isFinite(numeric) && numeric > 1000 && numeric < 100000) {
+    // Excel's 1900 date system; this is only a fallback for legacy rows.
+    date = new Date(Date.UTC(1899, 11, 30) + numeric * 86400000);
+  }
+
+  if (!date) {
+    const match = raw.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})$/);
+    if (match) {
+      date = new Date(Date.UTC(Number(match[3]), Number(match[2]) - 1, Number(match[1])));
+    }
+  }
+
+  if (!date || Number.isNaN(date.getTime()) || date > new Date()) return undefined;
+  const today = new Date();
+  let age = today.getUTCFullYear() - date.getUTCFullYear();
+  const birthdayNotReached = today.getUTCMonth() < date.getUTCMonth()
+    || (today.getUTCMonth() === date.getUTCMonth() && today.getUTCDate() < date.getUTCDate());
+  if (birthdayNotReached) age -= 1;
+  return age >= 0 && age <= 130 ? String(age) : undefined;
 }
 
 type NormPair = { norm: string; value: string; label: string };
@@ -236,6 +316,11 @@ export function mapLeadImportRow(headers: string[], row: (string | number | null
   name: string;
   email?: string;
   phone?: string;
+  mobile?: string;
+  age?: string;
+  gender?: string;
+  country?: string;
+  intention?: string;
   raw: Record<string, string>;
 } {
   const { headers: h, row: coerced } = coerceLegacyCsvShape(
@@ -247,7 +332,14 @@ export function mapLeadImportRow(headers: string[], row: (string | number | null
   h.forEach((headerLabel, i) => {
     const label = String(headerLabel ?? '').trim();
     const cell = rowStr[i] ?? '';
-    if (label && cell) raw[label] = cell;
+    if (!label || !cell) return;
+    let key = label;
+    let duplicate = 2;
+    while (raw[key] !== undefined) {
+      key = `${label} (${duplicate})`;
+      duplicate += 1;
+    }
+    raw[key] = cell;
   });
 
   const normPairs: NormPair[] = h.map((headerLabel, i) => ({
@@ -266,21 +358,46 @@ export function mapLeadImportRow(headers: string[], row: (string | number | null
   }
 
   let phone: string | undefined;
+  let mobile: string | undefined;
   for (const pair of normPairs) {
     if (!pair.value) continue;
+    if (headerLooksLikeMobile(pair.norm)) {
+      if (!mobile) mobile = normalizePhone(pair.value);
+      continue;
+    }
     if (headerLooksLikePhone(pair.norm)) {
-      phone = normalizePhone(pair.value);
-      break;
+      if (!phone) phone = normalizePhone(pair.value);
     }
   }
+
+  // Preserve a second generic phone column as mobile when its header is not
+  // specific enough to identify it as a mobile number.
+  if (phone && !mobile) {
+    for (const pair of normPairs) {
+      if (!pair.value || !headerLooksLikePhone(pair.norm)) continue;
+      const candidate = normalizePhone(pair.value);
+      if (candidate !== phone) {
+        mobile = candidate;
+        break;
+      }
+    }
+  }
+
+  const firstImportValue = (matcher: (norm: string) => boolean): string | undefined =>
+    normPairs.find((pair) => pair.value && matcher(pair.norm))?.value;
+  const ageValue = firstImportValue(headerLooksLikeAge);
+  const age = normalizeAge(ageValue || '') || calculateAgeFromDateValue(firstImportValue(headerLooksLikeDateOfBirth));
+  const gender = firstImportValue(headerLooksLikeGender);
+  const country = firstImportValue(headerLooksLikeCountry);
+  const intention = firstImportValue(headerLooksLikeIntention);
 
   let name = pickNameFromRow(normPairs);
   if (!name) {
     const firstVal = Object.values(raw)[0];
-    name = email || phone || firstVal || 'Unnamed lead';
+    name = email || phone || mobile || firstVal || 'Unnamed lead';
   }
 
-  return { name, email, phone, raw };
+  return { name, email, phone, mobile, age, gender, country, intention, raw };
 }
 
 export function isLegacyBatchLead(lead: ApiLead): boolean {
@@ -310,6 +427,11 @@ export function expandApiLeadsToTableRows(leads: ApiLead[]): LeadTableRow[] {
           name: mapped.name,
           email: mapped.email,
           phone: mapped.phone,
+          mobile: mapped.mobile,
+          age: mapped.age,
+          gender: mapped.gender,
+          country: mapped.country,
+          intention: mapped.intention,
           source: lead.source,
           status: lead.status,
           category: lead.category,
@@ -328,6 +450,11 @@ export function expandApiLeadsToTableRows(leads: ApiLead[]): LeadTableRow[] {
         name: lead.name,
         email: lead.email,
         phone: lead.phone,
+        mobile: lead.mobile,
+        age: lead.age,
+        gender: lead.gender,
+        country: lead.country,
+        intention: lead.intention,
         source: lead.source,
         status: lead.status,
         category: lead.category,
@@ -348,6 +475,11 @@ export function filterTableRowsBySearch(rows: LeadTableRow[], searchRaw: string)
     if (row.name.toLowerCase().includes(q)) return true;
     if (row.email?.toLowerCase().includes(q)) return true;
     if (row.phone?.replace(/\s/g, '').includes(q.replace(/\s/g, ''))) return true;
+    if (row.mobile?.replace(/\s/g, '').includes(q.replace(/\s/g, ''))) return true;
+    if (row.age?.toLowerCase().includes(q)) return true;
+    if (row.gender?.toLowerCase().includes(q)) return true;
+    if (row.country?.toLowerCase().includes(q)) return true;
+    if (row.intention?.toLowerCase().includes(q)) return true;
     if (row.file_name?.toLowerCase().includes(q)) return true;
     if (row.category?.toLowerCase().includes(q)) return true;
     for (const v of Object.values(row.raw_attributes || {})) {
@@ -355,6 +487,26 @@ export function filterTableRowsBySearch(rows: LeadTableRow[], searchRaw: string)
     }
     return false;
   });
+}
+
+export type LeadFieldFilters = {
+  age: string;
+  gender: string;
+  country: string;
+  intention: string;
+};
+
+/** Applies the dedicated Leads filters to both modern and legacy-expanded rows. */
+export function filterTableRowsByLeadFields(rows: LeadTableRow[], filters: LeadFieldFilters): LeadTableRow[] {
+  const active = (Object.entries(filters) as Array<[keyof LeadFieldFilters, string]>)
+    .map(([field, value]) => [field, value.trim().toLowerCase()] as const)
+    .filter(([, value]) => value.length > 0);
+  if (active.length === 0) return rows;
+
+  return rows.filter((row) => active.every(([field, value]) => {
+    const actual = String(row[field] ?? '').trim().toLowerCase();
+    return actual.includes(value);
+  }));
 }
 
 export type ImportFilter = { field: string; value: string };
@@ -394,11 +546,29 @@ const RAW_KEYS_SKIP_NORMALIZED = new Set([
   'mail',
   'pec',
   'telefono',
+  'telefonino',
+  'telefonino gsm',
   'cellulare',
   'mobile',
+  'gsm',
+  'whatsapp',
   'phone',
   'tel',
   'fax',
+  'age',
+  'eta',
+  'anni',
+  'gender',
+  'sesso',
+  'sex',
+  'country',
+  'paese',
+  'nazione',
+  'stato',
+  'intention',
+  'intenzione',
+  'interesse',
+  'interest',
   'nome',
   'cognome',
   'name',

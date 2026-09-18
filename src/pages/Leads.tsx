@@ -9,8 +9,10 @@ import type { ApiLead, LeadTableRow } from '../utils/leadTableRows';
 import {
   expandApiLeadsToTableRows,
   filterTableRowsBySearch,
+  filterTableRowsByLeadFields,
   filterTableRowsByImportFilters,
   computeTopRawAttributeKeys,
+  type LeadFieldFilters,
   type ImportFilter,
 } from '../utils/leadTableRows';
 
@@ -103,6 +105,10 @@ export default function Leads() {
     source: 'all',
     category: 'all',
     search: '',
+    age: '',
+    gender: '',
+    country: '',
+    intention: '',
   });
   /** Stacked filters on imported CSV columns (e.g. Città → Roma, Professione → Medico). */
   const [importFilters, setImportFilters] = useState<ImportFilter[]>(() => [
@@ -154,6 +160,12 @@ export default function Leads() {
     total: 0,
   });
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
+  const [debouncedLeadFilters, setDebouncedLeadFilters] = useState<LeadFieldFilters>({
+    age: filters.age,
+    gender: filters.gender,
+    country: filters.country,
+    intention: filters.intention,
+  });
   const [debouncedImportFilters, setDebouncedImportFilters] = useState<ImportFilter[]>(() => [
     { field: '', value: '' },
     { field: '', value: '' },
@@ -167,17 +179,27 @@ export default function Leads() {
   }, [filters.search]);
 
   useEffect(() => {
+    const timer = setTimeout(() => setDebouncedLeadFilters({
+      age: filters.age,
+      gender: filters.gender,
+      country: filters.country,
+      intention: filters.intention,
+    }), 300);
+    return () => clearTimeout(timer);
+  }, [filters.age, filters.gender, filters.country, filters.intention]);
+
+  useEffect(() => {
     const timer = setTimeout(() => setDebouncedImportFilters(importFilters), 400);
     return () => clearTimeout(timer);
   }, [importFilters]);
 
   useEffect(() => {
     setListPage(1);
-  }, [filters.status, filters.source, filters.category, debouncedSearch, debouncedImportFilters]);
+  }, [filters.status, filters.source, filters.category, debouncedSearch, debouncedLeadFilters, debouncedImportFilters]);
 
   useEffect(() => {
     setContactTablePage(1);
-  }, [listPage, filters.status, filters.source, filters.category, debouncedSearch, debouncedImportFilters]);
+  }, [listPage, filters.status, filters.source, filters.category, debouncedSearch, debouncedLeadFilters, debouncedImportFilters]);
 
   useEffect(() => {
     void fetchLeads();
@@ -190,8 +212,9 @@ export default function Leads() {
   const tableRows = useMemo(() => {
     const expanded = expandApiLeadsToTableRows(leads);
     const searched = filterTableRowsBySearch(expanded, debouncedSearch);
-    return filterTableRowsByImportFilters(searched, debouncedImportFilters);
-  }, [leads, debouncedSearch, debouncedImportFilters]);
+    const fieldFiltered = filterTableRowsByLeadFields(searched, debouncedLeadFilters);
+    return filterTableRowsByImportFilters(fieldFiltered, debouncedImportFilters);
+  }, [leads, debouncedSearch, debouncedLeadFilters, debouncedImportFilters]);
 
   const dynamicImportKeys = useMemo(() => computeTopRawAttributeKeys(tableRows, 4), [tableRows]);
 
@@ -240,6 +263,9 @@ export default function Leads() {
       if (debouncedSearch) {
         params.append('search', debouncedSearch);
       }
+      (Object.entries(debouncedLeadFilters) as Array<[keyof LeadFieldFilters, string]>).forEach(([field, value]) => {
+        if (value.trim()) params.append(field, value.trim());
+      });
       const importPayload = debouncedImportFilters
         .map((f) => ({ field: f.field.trim(), value: f.value.trim() }))
         .filter((f) => f.value.length > 0);
@@ -295,6 +321,10 @@ export default function Leads() {
       if (debouncedSearch) {
         params.search = debouncedSearch;
       }
+
+      (Object.entries(debouncedLeadFilters) as Array<[keyof LeadFieldFilters, string]>).forEach(([field, value]) => {
+        if (value.trim()) params[field] = value.trim();
+      });
 
       const importPayload = debouncedImportFilters
         .map((f) => ({ field: f.field.trim(), value: f.value.trim() }))
@@ -454,6 +484,10 @@ export default function Leads() {
       source: 'all',
       category: 'all',
       search: '',
+      age: '',
+      gender: '',
+      country: '',
+      intention: '',
     });
     setImportFilters([
       { field: '', value: '' },
@@ -545,7 +579,8 @@ export default function Leads() {
 
   const handleStartCall = async (followUp: FollowUp | null, row: LeadTableRow | null) => {
     try {
-      if (!row?.phone?.trim()) {
+      const contactPhone = row?.phone?.trim() || row?.mobile?.trim();
+      if (!contactPhone) {
         alert(t('leads.noPhoneForCall'));
         return;
       }
@@ -553,7 +588,7 @@ export default function Leads() {
       // Do not send customer_id: leads are not customers (validation would fail).
       const callPayload: Record<string, unknown> = {
         contact_name: row.name,
-        contact_phone: row.phone,
+        contact_phone: contactPhone,
         source: row.source || 'Leads',
         priority: followUp?.priority || 'medium',
         status: 'in_progress',
@@ -584,7 +619,7 @@ export default function Leads() {
   };
 
   const openWhatsAppModal = (row: LeadTableRow) => {
-    if (!row.phone?.trim()) {
+    if (!(row.phone?.trim() || row.mobile?.trim())) {
       alert(t('leads.noPhoneForCall'));
       return;
     }
@@ -594,7 +629,8 @@ export default function Leads() {
   };
 
   const handleSendWhatsApp = async () => {
-    if (!actionContactRow?.phone || !whatsAppMessage.trim()) {
+    const contactPhone = actionContactRow?.phone?.trim() || actionContactRow?.mobile?.trim();
+    if (!contactPhone || !whatsAppMessage.trim()) {
       alert(t('leadsPage.enterMessage'));
       return;
     }
@@ -602,7 +638,7 @@ export default function Leads() {
     try {
       setWhatsAppSending(true);
       await api.post('/communications/whatsapp/send', {
-        to: actionContactRow.phone,
+        to: contactPhone,
         message: whatsAppMessage,
       });
 
@@ -756,6 +792,24 @@ export default function Leads() {
         </div>
 
         <div className="mt-4 pt-4 border-t border-line">
+          <p className="text-xs font-bold text-muted uppercase tracking-wide mb-3">{t('leads.contactFiltersTitle')}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {(['age', 'gender', 'country', 'intention'] as const).map((field) => (
+              <label key={field} className="block">
+                <span className="block text-[11px] text-muted mb-1">{t(`leads.${field}`)}</span>
+                <input
+                  type="text"
+                  value={filters[field]}
+                  onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
+                  placeholder={t(`leads.${field}FilterPlaceholder`)}
+                  className="w-full px-3 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-line">
           <p className="text-xs font-bold text-muted uppercase tracking-wide mb-1">{t('leads.importFiltersTitle')}</p>
           <p className="text-xs text-muted mb-3">{t('leads.importFiltersHelp')}</p>
           <div className="space-y-2">
@@ -815,6 +869,11 @@ export default function Leads() {
                 <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.name')}</th>
                 <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.email')}</th>
                 <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('common.phone')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('leads.mobile')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('leads.age')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('leads.gender')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('leads.country')}</th>
+                <th className="text-left text-xs font-bold text-muted uppercase py-3 px-4">{t('leads.intention')}</th>
                 {dynamicImportKeys.map((colKey) => (
                   <th
                     key={colKey}
@@ -850,6 +909,21 @@ export default function Leads() {
                   <td className="py-3 px-4 text-sm text-ink whitespace-nowrap">
                     {displayCell(row.phone)}
                   </td>
+                  <td className="py-3 px-4 text-sm text-ink whitespace-nowrap">
+                    {displayCell(row.mobile)}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-ink whitespace-nowrap">
+                    {displayCell(row.age)}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-ink whitespace-nowrap">
+                    {displayCell(row.gender)}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-ink whitespace-nowrap">
+                    {displayCell(row.country)}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-ink max-w-[180px] truncate" title={row.intention || undefined}>
+                    {displayCell(row.intention)}
+                  </td>
                   {dynamicImportKeys.map((colKey) => {
                     const full = rawAttributeCell(row, colKey);
                     return (
@@ -870,7 +944,7 @@ export default function Leads() {
                   </td>
                   <td className="py-3 px-4">
                     <span className={`text-xs px-2 py-1 rounded-full border font-medium ${getStatusBadge(row.status)}`}>
-                      {row.status}
+                      {t(`leads.${row.status}`, row.status)}
                     </span>
                   </td>
                   <td className="py-3 px-4">
@@ -878,7 +952,7 @@ export default function Leads() {
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-end gap-2">
-                      {row.phone?.trim() && (
+                      {(row.phone?.trim() || row.mobile?.trim()) && (
                         <>
                           <button
                             onClick={() => handleStartCall(null, row)}
@@ -1088,12 +1162,12 @@ export default function Leads() {
             </div>
             {activeImport && ['queued', 'processing'].includes(activeImport.status) && (
               <div className="mt-4 rounded-xl border border-aqua-5/30 bg-aqua-1/30 p-4 text-sm text-ink">
-                <p className="font-semibold">{activeImport.status === 'queued' ? 'Import queued' : 'Import processing'}</p>
+                <p className="font-semibold">{activeImport.status === 'queued' ? t('leadsPage.importQueued') : t('leadsPage.importProcessing')}</p>
                 <p className="mt-1 break-all">{activeImport.file_name}</p>
                 <p className="mt-2 text-muted">
                   {activeImport.total_rows
                     ? `${activeImport.processed_rows} / ${activeImport.total_rows} rows processed`
-                    : 'Preparing the spreadsheet...'}
+                    : t('leadsPage.preparingSpreadsheet')}
                 </p>
                 {activeImport.total_rows && (
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
@@ -1107,19 +1181,19 @@ export default function Leads() {
             )}
             {activeImport?.status === 'queued' && importQueuedAt && Date.now() - importQueuedAt > 30000 && (
               <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-                The upload is waiting for the background queue worker. It has not started spreadsheet parsing yet.
+                {t('leadsPage.waitingForQueueWorker')}
               </div>
             )}
             {importStatusError && (
               <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-                <p className="font-semibold">Import status unavailable</p>
+                <p className="font-semibold">{t('leadsPage.importStatusUnavailable')}</p>
                 <p className="mt-1 break-words">{importStatusError}</p>
               </div>
             )}
             {activeImport?.status === 'failed' && (
               <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-                <p className="font-semibold">Lead import failed</p>
-                <p className="mt-1 break-words">{activeImport.error_message || 'The spreadsheet could not be imported.'}</p>
+                <p className="font-semibold">{t('leadsPage.importFailed')}</p>
+                <p className="mt-1 break-words">{activeImport.error_message || t('leadsPage.spreadsheetImportFailed')}</p>
               </div>
             )}
         </Modal>
@@ -1148,6 +1222,26 @@ export default function Leads() {
               <div>
                 <label className="block text-xs font-medium text-muted mb-1">{t('common.phone')}</label>
                 <p className="text-sm text-ink">{displayCell(viewingRow.phone)}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">{t('leads.mobile')}</label>
+                <p className="text-sm text-ink">{displayCell(viewingRow.mobile)}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">{t('leads.age')}</label>
+                <p className="text-sm text-ink">{displayCell(viewingRow.age)}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">{t('leads.gender')}</label>
+                <p className="text-sm text-ink">{displayCell(viewingRow.gender)}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">{t('leads.country')}</label>
+                <p className="text-sm text-ink">{displayCell(viewingRow.country)}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">{t('leads.intention')}</label>
+                <p className="text-sm text-ink">{displayCell(viewingRow.intention)}</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted mb-1">{t('common.category')}</label>
