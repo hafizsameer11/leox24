@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 
@@ -18,15 +18,16 @@ export interface CustomerFormData {
   title: string;
   category_id: string;
   customer_group: string;
-  customer_code: string;
   gender: string;
   address: string;
   city: string;
   zip_code: string;
   state_province: string;
   country: string;
-  date_of_birth: string;
+  date_of_birth_from: string;
+  date_of_birth_to: string;
   place_of_birth: string;
+  city_of_birth: string;
   branch: string;
   date_added: string;
   tax_code: string;
@@ -61,8 +62,8 @@ export interface CustomerFormData {
 
 export const createEmptyCustomerForm = (): CustomerFormData => ({
   email: '', phone: '', vat: '', first_name: '', last_name: '', second_last_name: '', title: '', category_id: '',
-  customer_group: '', customer_code: '', gender: '', address: '', city: '', zip_code: '',
-  state_province: '', country: '', date_of_birth: '', place_of_birth: '', branch: '',
+  customer_group: '', gender: '', address: '', city: '', zip_code: '',
+  state_province: '', country: '', date_of_birth_from: '', date_of_birth_to: '', place_of_birth: '', city_of_birth: '', branch: '',
   date_added: new Date().toISOString().slice(0, 10), tax_code: '', pec_email: '', tax_code_fe: '',
   phone_secondary: '', mobile: '', fax: '', privacy_date: '', privacy_consent_processing: false,
   marketing_consent: false, profiling_consent: false, send_sms: false, send_mail: false,
@@ -80,7 +81,10 @@ export const customerToForm = (customer: Record<string, unknown> | null | undefi
   send_sms: Boolean(customer?.send_sms),
   send_mail: Boolean(customer?.send_mail),
   send_newsletter: Boolean(customer?.send_newsletter),
-  date_of_birth: dateInputValue(customer?.date_of_birth),
+  // Existing customers used a single birth date. Show it in both new range
+  // fields until it is next saved, without losing their historic value.
+  date_of_birth_from: dateInputValue(customer?.date_of_birth_from) || dateInputValue(customer?.date_of_birth),
+  date_of_birth_to: dateInputValue(customer?.date_of_birth_to) || dateInputValue(customer?.date_of_birth),
   date_added: dateInputValue(customer?.date_added) || createEmptyCustomerForm().date_added,
   privacy_date: dateInputValue(customer?.privacy_date),
   category_id: customer?.category_id ? String(customer.category_id) : '',
@@ -144,17 +148,6 @@ export default function CustomerFormFields({ value, onChange }: Props) {
     void loadCategories();
   }, [loadCategories]);
 
-  const age = useMemo(() => {
-    if (!value.date_of_birth) return '—';
-    const birth = new Date(value.date_of_birth);
-    if (Number.isNaN(birth.getTime())) return '—';
-    const today = new Date();
-    let years = today.getFullYear() - birth.getFullYear();
-    const beforeBirthday = today.getMonth() < birth.getMonth()
-      || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate());
-    if (beforeBirthday) years -= 1;
-    return years >= 0 ? String(years) : '—';
-  }, [value.date_of_birth]);
   const inputClass = 'w-full rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20';
   const update = <K extends keyof CustomerFormData>(key: K, fieldValue: CustomerFormData[K]) => onChange({ ...value, [key]: fieldValue });
 
@@ -171,12 +164,12 @@ export default function CustomerFormFields({ value, onChange }: Props) {
           <Field label={t('customerForm.lastName')}><input className={inputClass} value={value.last_name} onChange={(event) => update('last_name', event.target.value)} /></Field>
           <Field label={t('customerForm.secondLastName')}><input className={inputClass} value={value.second_last_name} onChange={(event) => update('second_last_name', event.target.value)} /></Field>
           <Field label={t('customerForm.group')}><input className={inputClass} value={value.customer_group} onChange={(event) => update('customer_group', event.target.value)} /></Field>
-          <Field label={t('customerForm.code')}><input className={inputClass} value={value.customer_code} onChange={(event) => update('customer_code', event.target.value)} /></Field>
           <Field label={t('customerForm.gender')}><select className={inputClass} value={value.gender} onChange={(event) => update('gender', event.target.value)}><option value="">{t('customerForm.select')}</option><option value="female">{t('customerForm.female')}</option><option value="male">{t('customerForm.male')}</option><option value="other">{t('customerForm.other')}</option></select></Field>
           <Field label={t('customerForm.language')}><select className={inputClass} value={value.language} onChange={(event) => update('language', event.target.value)}><option value="en">English</option><option value="it">Italiano</option></select></Field>
-          <Field label={t('customerForm.dateOfBirth')}><input type="date" className={inputClass} value={value.date_of_birth} onChange={(event) => update('date_of_birth', event.target.value)} /></Field>
-          <Field label={t('customerForm.age')}><input readOnly className={`${inputClass} bg-gray-50 text-muted`} value={age} /></Field>
-          <Field label={t('customerForm.placeOfBirth')} className="sm:col-span-2"><input className={inputClass} value={value.place_of_birth} onChange={(event) => update('place_of_birth', event.target.value)} /></Field>
+          <Field label={t('customerForm.fromDateOfBirth')}><input type="date" max={value.date_of_birth_to || undefined} className={inputClass} value={value.date_of_birth_from} onChange={(event) => update('date_of_birth_from', event.target.value)} /></Field>
+          <Field label={t('customerForm.toDateOfBirth')}><input type="date" min={value.date_of_birth_from || undefined} className={inputClass} value={value.date_of_birth_to} onChange={(event) => update('date_of_birth_to', event.target.value)} /></Field>
+          <Field label={t('customerForm.placeOfBirth')}><input className={inputClass} value={value.place_of_birth} onChange={(event) => update('place_of_birth', event.target.value)} /></Field>
+          <Field label={t('customerForm.cityOfBirth')}><input className={inputClass} value={value.city_of_birth} onChange={(event) => update('city_of_birth', event.target.value)} /></Field>
         </div>
       </section>
 
@@ -187,7 +180,6 @@ export default function CustomerFormFields({ value, onChange }: Props) {
           <Field label={`${t('customerForm.phone')} *`}><input required className={inputClass} value={value.phone} onChange={(event) => update('phone', event.target.value)} /></Field>
           <Field label={t('customerForm.mobile')}><input className={inputClass} value={value.mobile} onChange={(event) => update('mobile', event.target.value)} /></Field>
           <Field label={t('customerForm.phone2')}><input className={inputClass} value={value.phone_secondary} onChange={(event) => update('phone_secondary', event.target.value)} /></Field>
-          <Field label={t('customerForm.fax')}><input className={inputClass} value={value.fax} onChange={(event) => update('fax', event.target.value)} /></Field>
           <Field label={t('customerForm.pecEmail')} className="sm:col-span-2"><input type="email" className={inputClass} value={value.pec_email} onChange={(event) => update('pec_email', event.target.value)} /></Field>
           <Field label={t('customerForm.address')} className="xl:col-span-2"><input className={inputClass} value={value.address} onChange={(event) => update('address', event.target.value)} /></Field>
           <Field label={t('customerForm.city')}><input className={inputClass} value={value.city} onChange={(event) => update('city', event.target.value)} /></Field>

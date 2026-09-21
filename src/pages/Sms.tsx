@@ -6,6 +6,13 @@ import Button from '../components/ui/Button';
 import api from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 
+function normalizeInternationalPhoneNumber(value: string): string | null {
+  let normalized = value.trim().replace(/[\s().-]/g, '');
+  if (normalized.startsWith('00')) normalized = `+${normalized.slice(2)}`;
+
+  return /^\+[1-9]\d{7,14}$/.test(normalized) ? normalized : null;
+}
+
 export default function Sms() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -28,18 +35,29 @@ export default function Sms() {
       return;
     }
 
+    const normalizedPhoneNumber = normalizeInternationalPhoneNumber(phoneNumber);
+    if (!normalizedPhoneNumber) {
+      alert(t('sms.invalidPhone'));
+      return;
+    }
+
     try {
       setSending(true);
       const response = await api.post('/sms/send', {
-        phone_number: phoneNumber.trim(),
+        phone_number: normalizedPhoneNumber,
         message: message.trim(),
       });
-      alert(response.data.message || t('sms.sentSuccess'));
+
+      if (!response.data?.accepted || !response.data?.sid) {
+        throw new Error(response.data?.message || t('sms.providerNotAccepted'));
+      }
+
+      alert(t('sms.acceptedSuccess', { sid: response.data.sid }));
       setPhoneNumber('');
       setMessage('');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      alert(err.response?.data?.message || t('sms.sentError'));
+      const err = error as Error & { response?: { data?: { message?: string } } };
+      alert(err.response?.data?.message || err.message || t('sms.sentError'));
     } finally {
       setSending(false);
     }

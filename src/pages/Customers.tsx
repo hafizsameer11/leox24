@@ -21,25 +21,7 @@ interface Customer extends Omit<Partial<CustomerFormData>, 'email' | 'phone' | '
   mobile?: string | null;
   gender?: string | null;
   country?: string | null;
-  date_of_birth?: string | null;
   created_at?: string;
-}
-
-function getCustomerAge(dateOfBirth?: string | null): string {
-  if (!dateOfBirth) return '';
-  const match = String(dateOfBirth).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return '';
-
-  const birthYear = Number(match[1]);
-  const birthMonth = Number(match[2]) - 1;
-  const birthDay = Number(match[3]);
-  const today = new Date();
-  let age = today.getFullYear() - birthYear;
-  if (today.getMonth() < birthMonth || (today.getMonth() === birthMonth && today.getDate() < birthDay)) {
-    age -= 1;
-  }
-
-  return age >= 0 && age <= 130 ? String(age) : '';
 }
 
 export default function Customers() {
@@ -180,7 +162,7 @@ export default function Customers() {
             <tr>
               <th className="w-[32%] px-4 py-3 text-left text-xs font-bold uppercase text-muted">{t('customers.customer')}</th>
               <th className="w-[22%] px-3 py-3 text-left text-xs font-bold uppercase text-muted">{t('customers.contact')}</th>
-              <th className="hidden w-[18%] px-3 py-3 text-left text-xs font-bold uppercase text-muted md:table-cell">{t('customers.demographics')}</th>
+              <th className="hidden w-[12%] px-3 py-3 text-left text-xs font-bold uppercase text-muted md:table-cell">{t('customers.gender')}</th>
               <th className="hidden w-[18%] px-3 py-3 text-left text-xs font-bold uppercase text-muted md:table-cell">{t('customers.location')}</th>
               <th className="hidden w-[16%] px-3 py-3 text-left text-xs font-bold uppercase text-muted lg:table-cell">{t('customers.categoryGroupCode')}</th>
               <th className="w-[12%] px-3 py-3 text-right text-xs font-bold uppercase text-muted">{t('common.actions')}</th>
@@ -191,8 +173,8 @@ export default function Customers() {
               <tr key={customer.id} className="border-b border-line/50 transition-colors hover:bg-aqua-1/10">
                 <td className="px-4 py-3 align-top"><p className="truncate font-semibold text-ink" title={getCustomerName(customer)}>{getCustomerName(customer)}</p><p className="truncate text-sm text-muted" title={customer.email}>{customer.email}</p></td>
                 <td className="px-3 py-3 align-top"><p className="truncate text-sm text-ink">{customer.phone}</p>{customer.mobile && <p className="truncate text-xs text-muted">{customer.mobile}</p>}</td>
-                <td className="hidden px-3 py-3 align-top text-sm text-muted md:table-cell"><p className="truncate text-ink">{getCustomerAge(customer.date_of_birth) || '—'}{customer.gender ? ` · ${customer.gender}` : ''}</p></td>
-                <td className="hidden px-3 py-3 align-top text-sm text-muted md:table-cell"><span className="truncate">{customer.city || '—'}</span></td>
+                <td className="hidden px-3 py-3 align-top text-sm text-muted md:table-cell"><p className="truncate text-ink capitalize">{customer.gender || '—'}</p></td>
+                <td className="hidden px-3 py-3 align-top text-sm text-muted md:table-cell"><span className="truncate">{[customer.city, customer.country].filter(Boolean).join(', ') || '—'}</span></td>
                 <td className="hidden px-3 py-3 align-top text-sm text-muted lg:table-cell"><p className="truncate font-medium text-ink">{customer.category?.name || t('customers.noCategory')}</p><p className="truncate text-xs">{[customer.customer_group, customer.customer_code].filter(Boolean).join(' · ') || t('customers.noGroupCode')}</p></td>
                 <td className="px-3 py-3 text-right align-top"><div className="flex justify-end gap-1"><button type="button" onClick={() => navigate(`/customers/${customer.id}`)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-aqua-5 hover:bg-aqua-1/50">{t('common.view')}</button><button type="button" onClick={() => openEditForm(customer)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-ink hover:bg-aqua-1/50">{t('common.edit')}</button><button type="button" onClick={() => void handleDeleteCustomer(customer.id)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-bad hover:bg-red-50">{t('common.delete')}</button></div></td>
               </tr>

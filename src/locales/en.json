@@ -295,6 +295,9 @@
     "messagePlaceholder": "Enter your SMS message…",
     "send": "Send SMS",
     "sentSuccess": "SMS sent successfully",
+    "acceptedSuccess": "SMS accepted by Twilio for delivery. Reference: {{sid}}",
+    "providerNotAccepted": "Twilio did not accept this SMS for delivery.",
+    "invalidPhone": "Enter a valid international phone number, for example +39 333 1234567.",
     "sentError": "Failed to send SMS",
     "fillRequired": "Please enter phone number and message",
     "callsHint": "To send SMS from a call record, go to"

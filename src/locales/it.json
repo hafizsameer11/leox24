@@ -295,6 +295,9 @@
     "messagePlaceholder": "Inserisci il messaggio SMS…",
     "send": "Invia SMS",
     "sentSuccess": "SMS inviato con successo",
+    "acceptedSuccess": "SMS accettato da Twilio per la consegna. Riferimento: {{sid}}",
+    "providerNotAccepted": "Twilio non ha accettato questo SMS per la consegna.",
+    "invalidPhone": "Inserisci un numero internazionale valido, ad esempio +39 333 1234567.",
     "sentError": "Invio SMS non riuscito",
     "fillRequired": "Inserisci numero di telefono e messaggio",
     "callsHint": "Per inviare SMS da una chiamata, vai a"
