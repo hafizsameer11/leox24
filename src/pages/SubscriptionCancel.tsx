@@ -7,8 +7,8 @@ export default function SubscriptionCancel() {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1">
-      <div className="bg-white p-8 rounded-2xl shadow-lg border border-line w-full max-w-md text-center">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5 text-center shadow-lg sm:p-8">
         <div className="mb-4">
           <svg
             className="mx-auto h-16 w-16 text-yellow-500"

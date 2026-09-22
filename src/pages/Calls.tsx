@@ -838,21 +838,21 @@ export default function Calls() {
       </div>
 
       {/* All Calls Table */}
-      <div className="bg-white border border-line rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
+      <div className="rounded-2xl border border-line bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-bold text-ink">{t('calls.allCalls', 'All Calls')}</h3>
-          <div className="flex gap-2">
+          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:flex sm:flex-wrap">
             <input
               type="text"
               placeholder={t('calls.searchPlaceholder')}
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5 text-sm"
+              className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5 sm:w-auto"
             />
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5 text-sm"
+              className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5 sm:w-auto"
             >
               <option value="">{t('calls.allStatus')}</option>
               <option value="scheduled">{t('calls.scheduled')}</option>
@@ -865,7 +865,7 @@ export default function Calls() {
             <select
               value={filters.priority}
               onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-              className="px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5 text-sm"
+              className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-aqua-5 sm:w-auto"
             >
               <option value="">{t('calls.allPriority')}</option>
               <option value="low">{t('leads.low')}</option>

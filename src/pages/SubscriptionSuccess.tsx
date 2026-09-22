@@ -77,8 +77,8 @@ export default function SubscriptionSuccess() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1">
-        <div className="bg-white p-8 rounded-2xl shadow-lg border border-line w-full max-w-md text-center">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1 p-4">
+        <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5 text-center shadow-lg sm:p-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-5 mx-auto mb-4"></div>
           <p className="text-muted mb-2">{t('subscriptionSuccess.processingPayment')}</p>
           <p className="text-sm text-muted">{t('subscriptionSuccess.savingSubscription')}</p>
@@ -89,8 +89,8 @@ export default function SubscriptionSuccess() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1">
-        <div className="bg-white p-8 rounded-2xl shadow-lg border border-line w-full max-w-md text-center">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1 p-4">
+        <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5 text-center shadow-lg sm:p-8">
           <div className="mb-4">
             <svg
               className="mx-auto h-16 w-16 text-red-500"
@@ -117,8 +117,8 @@ export default function SubscriptionSuccess() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1">
-      <div className="bg-white p-8 rounded-2xl shadow-lg border border-line w-full max-w-md text-center">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5 text-center shadow-lg sm:p-8">
         <div className="mb-4">
           <svg
             className="mx-auto h-16 w-16 text-green-500"

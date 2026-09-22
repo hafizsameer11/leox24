@@ -48,19 +48,17 @@ export default function TGCalabriaTry() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <div className="border-b border-line px-6 py-4 flex items-center justify-between bg-white">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
           <button
             onClick={() => navigate(backToProject)}
             className="px-3 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
             {t('tgCalabriaTry.back')}
           </button>
-          <h1 className="text-xl font-bold text-ink">{t('tgCalabriaTry.title')}</h1>
-        </div>
+          <h1 className="truncate text-xl font-bold text-ink">{t('tgCalabriaTry.title')}</h1>
       </div>
 
-      <div className="px-6 py-4">
+      <div className="px-4 py-4 sm:px-6">
         <div className="bg-white rounded-xl border border-line p-4">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div>
@@ -84,8 +82,8 @@ export default function TGCalabriaTry() {
         </div>
       </div>
 
-      <div className="flex-1 px-6 pb-6">
-        <div className="bg-white rounded-xl border border-line p-6 h-full flex flex-col items-center justify-center text-center">
+      <div className="flex-1 px-4 pb-4 sm:px-6 sm:pb-6">
+        <div className="flex h-full flex-col items-center justify-center rounded-xl border border-line bg-white p-4 text-center sm:p-6">
           <div className="text-3xl mb-3">🌐</div>
           <h3 className="text-lg font-semibold text-ink mb-2">{t('tgCalabriaTry.openAdminLogin')}</h3>
           <p className="text-sm text-muted mb-4 max-w-xl">

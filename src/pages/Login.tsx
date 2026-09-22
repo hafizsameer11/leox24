@@ -49,9 +49,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1 p-4">
       <LanguageSwitcher />
-      <div className="bg-card p-8 rounded-2xl shadow-lg border border-line w-full max-w-md">
+      <div className="w-full max-w-md rounded-2xl border border-line bg-card p-5 shadow-lg sm:p-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-ink mb-2">LEO24 CRM</h1>
           <p className="text-muted">{t('login.title')}</p>

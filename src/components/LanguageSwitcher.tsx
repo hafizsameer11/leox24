@@ -20,7 +20,7 @@ export default function LanguageSwitcher() {
   const currentLang = languages.find((lang) => lang.code === currentLanguage) || languages[0];
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 z-30 sm:bottom-6 sm:right-6 sm:z-50">
       <div className="relative">
         {/* Language Button */}
         <button

@@ -6,12 +6,12 @@ interface TopbarProps {
 
 export default function Topbar({ title, subtitle, actions }: TopbarProps) {
   return (
-    <div className="flex items-center justify-between p-4 border border-line rounded-2xl bg-white/80 backdrop-blur-sm mb-6">
-      <div>
+    <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-line bg-white/80 p-4 backdrop-blur-sm sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
         <h2 className="text-xl font-bold text-ink mb-0.5">{title}</h2>
         {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
       </div>
-      {actions && <div className="flex items-center gap-3">{actions}</div>}
+      {actions && <div data-crm-topbar-actions className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">{actions}</div>}
     </div>
   );
 }

@@ -103,8 +103,8 @@ export default function Register() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1">
-        <div className="bg-card p-8 rounded-2xl shadow-lg border border-line w-full max-w-md">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1 p-4">
+        <div className="w-full max-w-md rounded-2xl border border-line bg-card p-5 shadow-lg sm:p-8">
           <div className="text-center">
             <div className="mb-4">
               <svg
@@ -136,7 +136,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-2 to-aqua-1 py-12 px-4">
-      <div className="bg-card p-8 rounded-2xl shadow-lg border border-line w-full max-w-2xl">
+      <div className="w-full max-w-2xl rounded-2xl border border-line bg-card p-5 shadow-lg sm:p-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-ink mb-2">{t('register.brandTitle')}</h1>
           <p className="text-muted">{t('register.subtitle')}</p>
@@ -241,7 +241,7 @@ export default function Register() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Link to="/login" className="text-cyan-500 hover:text-cyan-600 text-sm">
               {t('register.alreadyHaveAccount')} {t('register.signIn')}
             </Link>

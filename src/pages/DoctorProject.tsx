@@ -193,20 +193,20 @@ export default function DoctorProject() {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
-      <div className="border-b border-line px-6 py-4 flex items-center justify-between bg-white">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 border-b border-line bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <button
             onClick={() => navigate('/projects')}
             className="px-3 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
             {t('doctor.back')}
           </button>
-          <h1 className="text-xl font-bold text-ink">{t('doctor.title')}</h1>
+          <h1 className="truncate text-xl font-bold text-ink">{t('doctor.title')}</h1>
         </div>
         {!isSuperAdmin && (
         <button
           onClick={handleTryNow}
-          className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
+          className="w-full rounded-xl border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 px-4 py-2 text-sm font-semibold text-ink transition-all hover:shadow-lg hover:shadow-aqua-5/10 sm:w-auto"
         >
           {t('doctor.wantToTry')}
         </button>
@@ -214,8 +214,8 @@ export default function DoctorProject() {
       </div>
 
       {/* Doctor Summary Card */}
-      <div className="px-6 py-6">
-        <div className="bg-white rounded-xl border border-line p-6 flex items-center gap-6">
+      <div className="px-4 py-4 sm:px-6 sm:py-6">
+        <div className="flex flex-col gap-5 rounded-xl border border-line bg-white p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
           <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 border-2 border-aqua-5/30">
             {doctorData.doctor?.profileImage ? (
               <img
@@ -237,7 +237,7 @@ export default function DoctorProject() {
               {doctorData.doctor?.role || 'DOCTOR'}
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid w-full grid-cols-1 gap-3 text-center sm:w-auto sm:grid-cols-3 sm:gap-4">
             <div className="px-4">
               <div className="text-2xl font-bold text-ink">{doctorData.stats?.totalPatients || 0}</div>
               <div className="text-xs text-muted">{t('doctor.patients')}</div>
@@ -255,8 +255,8 @@ export default function DoctorProject() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="px-6 mb-4">
-        <div className="bg-white rounded-xl border border-line p-1 flex gap-1 inline-flex">
+      <div className="mb-4 px-4 sm:px-6">
+        <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-line bg-white p-1 sm:inline-flex sm:w-auto sm:grid-cols-none">
           {[
             { id: 'patients', label: `👥 ${t('doctor.patients')}`, count: doctorData.patients?.length || 0 },
             { id: 'appointments', label: `📅 ${t('doctor.appointments')}`, count: doctorData.appointments?.length || 0 },
@@ -266,7 +266,7 @@ export default function DoctorProject() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+              className={`w-full rounded-lg px-3 py-2 text-sm font-medium transition-all sm:w-auto sm:px-4 ${
                 activeTab === tab.id
                   ? 'bg-aqua-5 text-white shadow-md'
                   : 'text-muted hover:text-ink hover:bg-gray-50'
@@ -279,7 +279,7 @@ export default function DoctorProject() {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 px-6 pb-6 overflow-auto">
+      <div className="flex-1 overflow-auto px-4 pb-4 sm:px-6 sm:pb-6">
         <div className="space-y-4">
           {/* Patients Tab */}
           {activeTab === 'patients' && (
@@ -332,7 +332,7 @@ export default function DoctorProject() {
             <div className="space-y-3">
               {doctorData.appointments && doctorData.appointments.length > 0 ? (
                 doctorData.appointments.map((appointment) => (
-                  <div key={appointment._id} className="bg-white rounded-xl border border-line p-5 flex items-center justify-between hover:shadow-md transition-shadow">
+                  <div key={appointment._id} className="flex flex-col gap-3 rounded-xl border border-line bg-white p-5 transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex-1">
                       <div className="font-semibold text-ink mb-1">
                         {appointment.patientId?.fullName || t('doctor.unknownPatient')}

@@ -24,7 +24,7 @@
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
 }
 
@@ -34,4 +34,205 @@ body {
     radial-gradient(1200px 600px at 90% 0%, var(--aqua-1), transparent 55%),
     var(--bg);
   color: var(--ink);
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+/* Shared mobile treatment for all existing CRM pages. */
+@media (max-width: 767px) {
+  [data-crm-main] > * {
+    min-width: 0;
+  }
+
+  [data-crm-main] [class*="min-w-"] {
+    min-width: 0 !important;
+  }
+
+  [data-crm-topbar-actions] > button,
+  [data-crm-topbar-actions] > a {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  [data-crm-main] .overflow-x-auto {
+    overflow-x: visible;
+  }
+
+  [data-crm-main] .flex.items-center.justify-between,
+  [data-crm-main] .flex.items-start.justify-between {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  [data-crm-main] form .grid.grid-cols-2,
+  [data-crm-main] form .grid.grid-cols-3,
+  [data-crm-main] form .grid.grid-cols-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-crm-main] form .col-span-2,
+  [data-crm-main] form .col-span-3,
+  [data-crm-main] form .col-span-4,
+  .crm-mobile-sheet-panel .col-span-2,
+  .crm-mobile-sheet-panel .col-span-3,
+  .crm-mobile-sheet-panel .col-span-4,
+  .crm-shared-modal-panel .col-span-2,
+  .crm-shared-modal-panel .col-span-3,
+  .crm-shared-modal-panel .col-span-4 {
+    grid-column: span 1 / span 1;
+  }
+
+  [data-crm-responsive-table] {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+  }
+
+  [data-crm-responsive-table] thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  [data-crm-responsive-table] tbody,
+  [data-crm-responsive-table] tr {
+    display: block;
+    width: 100%;
+  }
+
+  [data-crm-responsive-table] tbody tr {
+    margin: 0.75rem;
+    overflow: hidden;
+    border: 1px solid var(--line) !important;
+    border-radius: 0.875rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  }
+
+  [data-crm-responsive-table] tbody tr:first-child {
+    margin-top: 0.75rem;
+  }
+
+  [data-crm-responsive-table] td {
+    display: grid !important;
+    grid-template-columns: minmax(5.75rem, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: 0.75rem;
+    width: 100% !important;
+    min-width: 0;
+    padding: 0.7rem 0.875rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--line) !important;
+    text-align: right !important;
+    white-space: normal !important;
+  }
+
+  [data-crm-responsive-table] td::before {
+    content: attr(data-crm-label);
+    min-width: 0;
+    color: var(--muted);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1.35;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  [data-crm-responsive-table] td > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  [data-crm-responsive-table] td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  [data-crm-responsive-table] td[colspan] {
+    display: block !important;
+    text-align: center !important;
+  }
+
+  [data-crm-responsive-table] td[colspan]::before {
+    display: none;
+  }
+
+  .crm-mobile-sheet-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .crm-mobile-sheet-panel,
+  .crm-shared-modal-panel {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(92dvh, 760px) !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    border-radius: 1.5rem 1.5rem 0 0 !important;
+    scroll-padding: 1rem 1rem 7rem;
+    animation: crm-sheet-enter 180ms ease-out;
+  }
+
+  .crm-mobile-sheet-panel .grid.grid-cols-2,
+  .crm-mobile-sheet-panel .grid.grid-cols-3,
+  .crm-mobile-sheet-panel .grid.grid-cols-4,
+  .crm-shared-modal-panel .grid.grid-cols-2,
+  .crm-shared-modal-panel .grid.grid-cols-3,
+  .crm-shared-modal-panel .grid.grid-cols-4 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .crm-mobile-sheet-panel .sticky.bottom-0,
+  .crm-shared-modal-panel .sticky.bottom-0 {
+    flex-direction: column;
+  }
+
+  [data-crm-main] input,
+  [data-crm-main] select,
+  [data-crm-main] textarea {
+    font-size: 16px;
+  }
+
+  [data-crm-main] input:not([type='checkbox']):not([type='radio']),
+  [data-crm-main] select,
+  [data-crm-main] textarea,
+  [data-crm-main] button {
+    min-height: 2.625rem;
+  }
+
+  [data-crm-main] td,
+  [data-crm-main] p,
+  [data-crm-main] span {
+    overflow-wrap: anywhere;
+  }
+}
+
+@keyframes crm-sheet-enter {
+  from { transform: translateY(1rem); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }

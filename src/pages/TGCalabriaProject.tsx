@@ -408,28 +408,28 @@ export default function TGCalabriaProject() {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
-      <div className="border-b border-line px-6 py-4 flex items-center justify-between bg-white">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 border-b border-line bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <button
             onClick={() => navigate('/projects')}
             className="px-3 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
             {t('tgCalabria.back')}
           </button>
-          <h1 className="text-xl font-bold text-ink">{t('tgCalabria.title')}</h1>
+          <h1 className="truncate text-xl font-bold text-ink">{t('tgCalabria.title')}</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           {!isSuperAdmin && (
             <button
               onClick={() => navigate(projectId ? `/projects/${projectId}/tg-calabria/try` : '/projects')}
-              className="px-4 py-2 text-sm border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 rounded-xl hover:shadow-lg hover:shadow-aqua-5/10 transition-all text-ink font-semibold"
+              className="w-full rounded-xl border border-aqua-5/35 bg-gradient-to-r from-aqua-3/45 to-aqua-5/14 px-4 py-2 text-sm font-semibold text-ink transition-all hover:shadow-lg hover:shadow-aqua-5/10 sm:w-auto"
             >
               {t('tgCalabria.wantToTry')}
             </button>
           )}
           <button
             onClick={() => setShowArticleModal(true)}
-            className="px-4 py-2 text-sm bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-all font-semibold"
+            className="w-full rounded-xl bg-aqua-5 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-aqua-4 sm:w-auto"
           >
             {t('tgCalabria.createArticle')}
           </button>
@@ -437,8 +437,8 @@ export default function TGCalabriaProject() {
       </div>
 
       {/* User Summary Card */}
-      <div className="px-6 py-6">
-        <div className="bg-white rounded-xl border border-line p-6">
+      <div className="px-4 py-4 sm:px-6 sm:py-6">
+        <div className="rounded-xl border border-line bg-white p-4 sm:p-6">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-ink mb-1">{stats.user?.name}</h2>
             <p className="text-sm text-muted">{stats.user?.email}</p>
@@ -478,8 +478,8 @@ export default function TGCalabriaProject() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="px-6 mb-4">
-        <div className="bg-white rounded-xl border border-line p-1 inline-flex gap-1">
+      <div className="mb-4 px-4 sm:px-6">
+        <div className="grid w-full grid-cols-1 gap-1 rounded-xl border border-line bg-white p-1 sm:inline-flex sm:w-auto sm:grid-cols-none">
           {[
             { id: 'overview', label: t('tgCalabria.overview') },
             { id: 'topNews', label: t('tgCalabria.topNews') },
@@ -488,7 +488,7 @@ export default function TGCalabriaProject() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+              className={`w-full rounded-lg px-4 py-2 text-sm font-medium transition-all sm:w-auto ${
                 activeTab === tab.id
                   ? 'bg-aqua-5 text-white shadow-md'
                   : 'text-muted hover:text-ink hover:bg-gray-50'
@@ -501,7 +501,7 @@ export default function TGCalabriaProject() {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 px-6 pb-6 overflow-auto">
+      <div className="flex-1 overflow-auto px-4 pb-4 sm:px-6 sm:pb-6">
         <div className="space-y-4">
           {/* Overview Tab */}
           {activeTab === 'overview' && (

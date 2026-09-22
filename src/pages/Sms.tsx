@@ -70,7 +70,7 @@ export default function Sms() {
         subtitle={t('sms.subtitle')}
       />
 
-      <div className="bg-white border border-line rounded-2xl p-6 max-w-2xl shadow-sm">
+      <div className="max-w-2xl rounded-2xl border border-line bg-white p-4 shadow-sm sm:p-6">
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-ink mb-2">
@@ -111,12 +111,13 @@ export default function Sms() {
             </button>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-stretch pt-2 sm:justify-end">
             <Button
               onClick={handleSend}
               variant="primary"
               isLoading={sending}
               disabled={!phoneNumber.trim() || !message.trim()}
+              className="w-full sm:w-auto"
             >
               {t('sms.send')}
             </Button>

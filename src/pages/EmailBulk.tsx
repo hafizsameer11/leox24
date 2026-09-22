@@ -368,7 +368,7 @@ export default function EmailBulk() {
         title={t('emails.title')}
         subtitle={t('emails.subtitle')}
         actions={
-          <div className="flex gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <Button onClick={() => setShowUploadModal(true)} variant="primary">
               {t('emails.uploadEmails')}
             </Button>
@@ -379,7 +379,7 @@ export default function EmailBulk() {
         }
       />
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -462,11 +462,21 @@ export default function EmailBulk() {
             <div className="p-8 text-center text-gray-500">{t('emails.noEmailsFound')}</div>
           ) : (
             <>
+              <label className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 md:hidden">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.length === emails.length && emails.length > 0}
+                  onChange={toggleSelectAll}
+                  className="rounded border-gray-300"
+                />
+                {t('emails.selectAll', { defaultValue: 'Select all on this page' })}
+              </label>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-4 py-3 text-left">
+                        <span className="sr-only">{t('emails.selectAll', { defaultValue: 'Select' })}</span>
                         <input
                           type="checkbox"
                           checked={selectedIds.length === emails.length && emails.length > 0}

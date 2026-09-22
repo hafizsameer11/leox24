@@ -232,7 +232,7 @@ export default function Settings() {
       {/* Subscription Plans Management - Super Admin only */}
       {isSuperAdmin && (
         <div className="bg-white border border-line rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="text-lg font-semibold text-ink">{t('settings.subscriptionPlans')}</h3>
             <Button 
               onClick={() => {
@@ -262,7 +262,7 @@ export default function Settings() {
             <div className="space-y-4 border-t border-line pt-4">
               <h4 className="font-semibold text-ink">{editingPlan ? t('settings.editPlan') : t('settings.createNewPlan')}</h4>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-ink mb-1">{t('common.name')} *</label>
                   <input
@@ -295,7 +295,7 @@ export default function Settings() {
                     <option value="year">{t('settings.yearly')}</option>
                   </select>
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-ink mb-1">{t('common.description')}</label>
                   <textarea
                     value={formData.description}
@@ -304,7 +304,7 @@ export default function Settings() {
                     rows={3}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-ink mb-1">{t('settings.featuresOnePerLine')}</label>
                   <textarea
                     value={formData.features}
@@ -314,7 +314,7 @@ export default function Settings() {
                     placeholder={t('settings.featuresPlaceholder')}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -327,7 +327,7 @@ export default function Settings() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Button onClick={handleCreatePlan} variant="primary">
                   {editingPlan ? t('settings.updatePlan') : t('settings.createPlanBtn')}
                 </Button>
@@ -342,7 +342,7 @@ export default function Settings() {
           ) : subscriptionPlans.length > 0 ? (
             <div className="space-y-3">
               {subscriptionPlans.map((plan) => (
-                <div key={plan.id} className="flex items-center justify-between p-4 border border-line rounded-lg">
+                <div key={plan.id} className="flex flex-col gap-3 rounded-lg border border-line p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <h4 className="font-semibold text-ink">{plan.name}</h4>
@@ -359,7 +359,7 @@ export default function Settings() {
                       <p className="text-sm text-muted mt-1">{plan.description}</p>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button onClick={() => handleEditPlan(plan)} variant="secondary" className="text-sm">
                       {t('common.edit')}
                     </Button>
