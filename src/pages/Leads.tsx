@@ -10,7 +10,6 @@ import {
   expandApiLeadsToTableRows,
   filterTableRowsBySearch,
   filterTableRowsByLeadFields,
-  filterTableRowsByImportFilters,
   computeTopRawAttributeKeys,
   type LeadFieldFilters,
   type ImportFilter,
@@ -100,6 +99,8 @@ export default function Leads() {
   const isSuperAdmin = user?.role === 'super_admin';
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const latestLeadRequestRef = useRef(0);
   const [filters, setFilters] = useState({
     status: 'all',
     source: 'all',
@@ -108,9 +109,14 @@ export default function Leads() {
     age: '',
     gender: '',
     country: '',
+    city: '',
     intention: '',
+    date_of_birth_from: '',
+    date_of_birth_to: '',
+    company_id: '',
   });
-  /** Stacked filters on imported CSV columns (e.g. Città → Roma, Professione → Medico). */
+  // Retained internally for legacy export compatibility; the user-facing
+  // "Import Column Filters" controls have been removed.
   const [importFilters, setImportFilters] = useState<ImportFilter[]>(() => [
     { field: '', value: '' },
     { field: '', value: '' },
@@ -150,6 +156,7 @@ export default function Leads() {
     outcome: '',
   });
   const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
+  const [companies, setCompanies] = useState<Array<{ id: number; name: string }>>([]);
 
   const [listPage, setListPage] = useState(1);
   /** Client-side page over expanded contact rows for the current API page. */
@@ -164,7 +171,10 @@ export default function Leads() {
     age: filters.age,
     gender: filters.gender,
     country: filters.country,
+    city: filters.city,
     intention: filters.intention,
+    date_of_birth_from: filters.date_of_birth_from,
+    date_of_birth_to: filters.date_of_birth_to,
   });
   const [debouncedImportFilters, setDebouncedImportFilters] = useState<ImportFilter[]>(() => [
     { field: '', value: '' },
@@ -183,38 +193,38 @@ export default function Leads() {
       age: filters.age,
       gender: filters.gender,
       country: filters.country,
+      city: filters.city,
       intention: filters.intention,
+      date_of_birth_from: filters.date_of_birth_from,
+      date_of_birth_to: filters.date_of_birth_to,
     }), 300);
     return () => clearTimeout(timer);
-  }, [filters.age, filters.gender, filters.country, filters.intention]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedImportFilters(importFilters), 400);
-    return () => clearTimeout(timer);
-  }, [importFilters]);
+  }, [filters.age, filters.gender, filters.country, filters.city, filters.intention, filters.date_of_birth_from, filters.date_of_birth_to]);
 
   useEffect(() => {
     setListPage(1);
-  }, [filters.status, filters.source, filters.category, debouncedSearch, debouncedLeadFilters, debouncedImportFilters]);
+  }, [filters.status, filters.source, filters.category, filters.company_id, debouncedSearch, debouncedLeadFilters]);
 
   useEffect(() => {
     setContactTablePage(1);
-  }, [listPage, filters.status, filters.source, filters.category, debouncedSearch, debouncedLeadFilters, debouncedImportFilters]);
+  }, [listPage, filters.status, filters.source, filters.category, filters.company_id, debouncedSearch, debouncedLeadFilters]);
 
   useEffect(() => {
     void fetchLeads();
-  }, [listPage, filters.status, filters.source, filters.category, debouncedSearch, debouncedImportFilters]);
+  }, [listPage, filters.status, filters.source, filters.category, filters.company_id, debouncedSearch, debouncedLeadFilters]);
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+    if (isSuperAdmin) {
+      void fetchCompanies();
+    }
+  }, [isSuperAdmin]);
 
   const tableRows = useMemo(() => {
     const expanded = expandApiLeadsToTableRows(leads);
     const searched = filterTableRowsBySearch(expanded, debouncedSearch);
-    const fieldFiltered = filterTableRowsByLeadFields(searched, debouncedLeadFilters);
-    return filterTableRowsByImportFilters(fieldFiltered, debouncedImportFilters);
-  }, [leads, debouncedSearch, debouncedLeadFilters, debouncedImportFilters]);
+    return filterTableRowsByLeadFields(searched, debouncedLeadFilters);
+  }, [leads, debouncedSearch, debouncedLeadFilters]);
 
   const dynamicImportKeys = useMemo(() => computeTopRawAttributeKeys(tableRows, 4), [tableRows]);
 
@@ -246,6 +256,17 @@ export default function Leads() {
     }
   };
 
+  const fetchCompanies = async () => {
+    try {
+      const response = await api.get('/companies', { params: { per_page: 100 } });
+      const data = response.data?.data || response.data || [];
+      setCompanies(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+      setCompanies([]);
+    }
+  };
+
   const handleExport = async () => {
     try {
       // Build query params from current filters
@@ -259,6 +280,9 @@ export default function Leads() {
       }
       if (filters.category !== 'all') {
         params.append('category', filters.category);
+      }
+      if (isSuperAdmin && filters.company_id) {
+        params.append('company_id', filters.company_id);
       }
       if (debouncedSearch) {
         params.append('search', debouncedSearch);
@@ -301,6 +325,8 @@ export default function Leads() {
   };
 
   const fetchLeads = async (pageOverride?: number) => {
+    const requestId = ++latestLeadRequestRef.current;
+
     try {
       setLoading(true);
       const page = pageOverride ?? listPage;
@@ -316,6 +342,9 @@ export default function Leads() {
 
       if (filters.category !== 'all') {
         params.category = filters.category;
+      }
+      if (isSuperAdmin && filters.company_id) {
+        params.company_id = filters.company_id;
       }
       
       if (debouncedSearch) {
@@ -336,6 +365,11 @@ export default function Leads() {
       const response = await api.get('/leads', {
         params: { ...params, page, per_page: 30 },
       });
+
+      // A slower response for an earlier filter value must never overwrite the
+      // results for the value the user is currently typing.
+      if (requestId !== latestLeadRequestRef.current) return;
+
       setLeads(response.data.data || []);
       setPaginationMeta({
         current_page: response.data.current_page ?? 1,
@@ -343,10 +377,19 @@ export default function Leads() {
         total: response.data.total ?? 0,
       });
     } catch (error) {
+      if (requestId !== latestLeadRequestRef.current) return;
       console.error('Failed to fetch leads:', error);
-      setLeads([]);
+      // Keep the already-visible data and controls in place if a background
+      // refresh fails. This prevents a failed filter request from looking like
+      // a full page reload and preserves the input focus.
+      if (initialLoading) {
+        setLeads([]);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === latestLeadRequestRef.current) {
+        setLoading(false);
+        setInitialLoading(false);
+      }
     }
   };
 
@@ -487,7 +530,11 @@ export default function Leads() {
       age: '',
       gender: '',
       country: '',
+      city: '',
       intention: '',
+      date_of_birth_from: '',
+      date_of_birth_to: '',
+      company_id: '',
     });
     setImportFilters([
       { field: '', value: '' },
@@ -707,7 +754,7 @@ export default function Leads() {
     return styles[status as keyof typeof styles] || styles.cold;
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-5"></div>
@@ -754,6 +801,11 @@ export default function Leads() {
 
       {/* Filters */}
       <div className="bg-white border border-line rounded-2xl p-4">
+        {loading && (
+          <p className="mb-3 text-xs font-medium text-muted" role="status" aria-live="polite">
+            Updating results…
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <input
             type="text"
@@ -783,7 +835,20 @@ export default function Leads() {
               <option key={cat.id} value={cat.name}>{cat.name}</option>
             ))}
           </select>
-          <button 
+          {isSuperAdmin && (
+            <select
+              value={filters.company_id}
+              onChange={(e) => setFilters({ ...filters, company_id: e.target.value })}
+              className="px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
+            >
+              <option value="">{t('leads.allCompanies')}</option>
+              {companies.map((company) => (
+                <option key={company.id} value={String(company.id)}>{company.name}</option>
+              ))}
+            </select>
+          )}
+          <button
+            type="button"
             onClick={clearFilters}
             className="px-4 py-2 text-sm border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
           >
@@ -794,7 +859,7 @@ export default function Leads() {
         <div className="mt-4 pt-4 border-t border-line">
           <p className="text-xs font-bold text-muted uppercase tracking-wide mb-3">{t('leads.contactFiltersTitle')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {(['age', 'gender', 'country', 'intention'] as const).map((field) => (
+            {(['age', 'gender', 'country', 'city', 'intention'] as const).map((field) => (
               <label key={field} className="block">
                 <span className="block text-[11px] text-muted mb-1">{t(`leads.${field}`)}</span>
                 <input
@@ -806,58 +871,29 @@ export default function Leads() {
                 />
               </label>
             ))}
+            <label className="block">
+              <span className="block text-[11px] text-muted mb-1">{t('leads.dateOfBirthFrom')}</span>
+              <input
+                type="date"
+                value={filters.date_of_birth_from}
+                max={filters.date_of_birth_to || undefined}
+                onChange={(e) => setFilters({ ...filters, date_of_birth_from: e.target.value })}
+                className="w-full px-3 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-[11px] text-muted mb-1">{t('leads.dateOfBirthTo')}</span>
+              <input
+                type="date"
+                value={filters.date_of_birth_to}
+                min={filters.date_of_birth_from || undefined}
+                onChange={(e) => setFilters({ ...filters, date_of_birth_to: e.target.value })}
+                className="w-full px-3 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
+              />
+            </label>
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-line">
-          <p className="text-xs font-bold text-muted uppercase tracking-wide mb-1">{t('leads.importFiltersTitle')}</p>
-          <p className="text-xs text-muted mb-3">{t('leads.importFiltersHelp')}</p>
-          <div className="space-y-2">
-            {importFilters.map((row, idx) => (
-              <div key={idx} className="flex flex-wrap items-end gap-2">
-                <div className="flex-1 min-w-[160px]">
-                  <label className="block text-[11px] text-muted mb-0.5">{t('leads.importFieldLabel')}</label>
-                  <input
-                    type="text"
-                    value={row.field}
-                    onChange={(e) => updateImportFilter(idx, { field: e.target.value })}
-                    placeholder={t('leads.importFieldPlaceholder')}
-                    className="w-full px-3 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
-                  />
-                </div>
-                <div className="flex-1 min-w-[160px]">
-                  <label className="block text-[11px] text-muted mb-0.5">{t('leads.importValueLabel')}</label>
-                  <input
-                    type="text"
-                    value={row.value}
-                    onChange={(e) => updateImportFilter(idx, { value: e.target.value })}
-                    placeholder={t('leads.importValuePlaceholder')}
-                    className="w-full px-3 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
-                  />
-                </div>
-                {importFilters.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeImportFilterRow(idx)}
-                    className="px-2 py-2 text-sm text-muted hover:text-bad border border-line rounded-xl"
-                    title={t('common.delete')}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-          {importFilters.length < 6 && (
-            <button
-              type="button"
-              onClick={addImportFilterRow}
-              className="mt-2 text-sm font-medium text-aqua-5 hover:underline"
-            >
-              + {t('leads.addImportFilterRow')}
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Leads Table */}

@@ -12,6 +12,8 @@ export interface ApiLead {
   age?: string;
   gender?: string;
   country?: string;
+  city?: string;
+  date_of_birth?: string;
   intention?: string;
   source?: string;
   status: string;
@@ -38,6 +40,8 @@ export interface LeadTableRow {
   age?: string;
   gender?: string;
   country?: string;
+  city?: string;
+  date_of_birth?: string;
   intention?: string;
   source?: string;
   status: string;
@@ -204,6 +208,12 @@ function headerLooksLikeCountry(norm: string): boolean {
   return ['country', 'paese', 'nazione', 'stato'].includes(norm) || norm.includes('country');
 }
 
+function headerLooksLikeCity(norm: string): boolean {
+  return ['city', 'citta', 'comune', 'localita', 'municipality'].includes(norm)
+    || norm.includes('city')
+    || norm.includes('citta');
+}
+
 function headerLooksLikeIntention(norm: string): boolean {
   return norm.includes('intention')
     || norm.includes('intenzione')
@@ -245,6 +255,29 @@ function calculateAgeFromDateValue(value: string | undefined): string | undefine
     || (today.getUTCMonth() === date.getUTCMonth() && today.getUTCDate() < date.getUTCDate());
   if (birthdayNotReached) age -= 1;
   return age >= 0 && age <= 130 ? String(age) : undefined;
+}
+
+/** Convert the common spreadsheet formats used by legacy lead imports to ISO. */
+function normalizeDateOfBirth(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  const raw = value.trim();
+  const numeric = Number(raw);
+  if (Number.isFinite(numeric) && numeric > 1000 && numeric < 100000) {
+    return new Date(Date.UTC(1899, 11, 30) + numeric * 86400000).toISOString().slice(0, 10);
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const yearFirstMatch = raw.match(/^(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})$/);
+  if (yearFirstMatch) {
+    const iso = `${yearFirstMatch[1]}-${yearFirstMatch[2].padStart(2, '0')}-${yearFirstMatch[3].padStart(2, '0')}`;
+    const parsed = new Date(`${iso}T00:00:00Z`);
+    return Number.isNaN(parsed.getTime()) ? undefined : iso;
+  }
+  const match = raw.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  if (!match) return undefined;
+  const iso = `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+  const parsed = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? undefined : iso;
 }
 
 type NormPair = { norm: string; value: string; label: string };
@@ -385,10 +418,12 @@ export function mapLeadImportRow(headers: string[], row: (string | number | null
 
   const firstImportValue = (matcher: (norm: string) => boolean): string | undefined =>
     normPairs.find((pair) => pair.value && matcher(pair.norm))?.value;
+  const dateOfBirth = firstImportValue(headerLooksLikeDateOfBirth);
   const ageValue = firstImportValue(headerLooksLikeAge);
-  const age = normalizeAge(ageValue || '') || calculateAgeFromDateValue(firstImportValue(headerLooksLikeDateOfBirth));
+  const age = normalizeAge(ageValue || '') || calculateAgeFromDateValue(dateOfBirth);
   const gender = firstImportValue(headerLooksLikeGender);
   const country = firstImportValue(headerLooksLikeCountry);
+  const city = firstImportValue(headerLooksLikeCity);
   const intention = firstImportValue(headerLooksLikeIntention);
 
   let name = pickNameFromRow(normPairs);
@@ -397,7 +432,7 @@ export function mapLeadImportRow(headers: string[], row: (string | number | null
     name = email || phone || mobile || firstVal || 'Unnamed lead';
   }
 
-  return { name, email, phone, mobile, age, gender, country, intention, raw };
+  return { name, email, phone, mobile, age, gender, country, city, date_of_birth: normalizeDateOfBirth(dateOfBirth), intention, raw };
 }
 
 export function isLegacyBatchLead(lead: ApiLead): boolean {
@@ -431,6 +466,8 @@ export function expandApiLeadsToTableRows(leads: ApiLead[]): LeadTableRow[] {
           age: mapped.age,
           gender: mapped.gender,
           country: mapped.country,
+          city: mapped.city,
+          date_of_birth: mapped.date_of_birth,
           intention: mapped.intention,
           source: lead.source,
           status: lead.status,
@@ -454,6 +491,8 @@ export function expandApiLeadsToTableRows(leads: ApiLead[]): LeadTableRow[] {
         age: lead.age,
         gender: lead.gender,
         country: lead.country,
+        city: lead.city,
+        date_of_birth: lead.date_of_birth,
         intention: lead.intention,
         source: lead.source,
         status: lead.status,
@@ -493,7 +532,10 @@ export type LeadFieldFilters = {
   age: string;
   gender: string;
   country: string;
+  city: string;
   intention: string;
+  date_of_birth_from: string;
+  date_of_birth_to: string;
 };
 
 /** Applies the dedicated Leads filters to both modern and legacy-expanded rows. */
@@ -504,6 +546,12 @@ export function filterTableRowsByLeadFields(rows: LeadTableRow[], filters: LeadF
   if (active.length === 0) return rows;
 
   return rows.filter((row) => active.every(([field, value]) => {
+    if (field === 'date_of_birth_from') {
+      return Boolean(row.date_of_birth && row.date_of_birth >= value);
+    }
+    if (field === 'date_of_birth_to') {
+      return Boolean(row.date_of_birth && row.date_of_birth <= value);
+    }
     const actual = String(row[field] ?? '').trim().toLowerCase();
     return actual.includes(value);
   }));
