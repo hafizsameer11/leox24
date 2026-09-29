@@ -758,6 +758,72 @@
     "ariaLeadDetails": "Dettagli lead MyPet Plus", "registration": "Registrazione", "closeDetails": "Chiudi dettagli", "registrationStatus": "Stato di registrazione", "lastUpdated": "Ultimo aggiornamento", "emailVerified": "Email verificata", "phoneVerified": "Telefono verificato", "yes": "Sì", "no": "No", "notProvided": "Non fornito", "notApplicable": "Non applicabile", "contactLocation": "Contatti e posizione", "specializations": "Specializzazioni", "experience": "Esperienza", "years": "{{count}} anni", "professionalTitle": "Titolo professionale", "veterinarianVerified": "Veterinario verificato", "profileComplete": "Profilo completato", "onlineConsultations": "Consulti online", "clinicName": "Nome clinica", "clinicAddress": "Indirizzo clinica", "clinicPhone": "Telefono clinica", "biography": "Biografia", "businessName": "Nome attività", "businessActive": "Attività attiva", "publicListing": "Profilo pubblico", "subscriptionAgreement": "Abbonamento e accordo", "planPrice": "Prezzo piano", "planDuration": "Durata piano", "days": "{{count}} giorni", "subscriptionStart": "Inizio abbonamento", "subscriptionEnd": "Fine abbonamento", "planType": "Tipo di piano", "subscriptionStatus": "Stato abbonamento", "includedFeatures": "Funzionalità incluse", "noPlanFeatures": "Nessuna funzionalità del piano registrata", "agreementNote": "In MyPet Plus non è archiviato un contratto firmato separato. Il piano, le date, il prezzo e le funzionalità sopra indicate sono i dettagli dell'accordo di abbonamento registrati.", "noCurrentSubscription": "Per questo lead non risulta alcun abbonamento corrente.", "noSubscriptionForRole": "Questo tipo di registrazione non utilizza attualmente un piano di abbonamento MyPet Plus.", "documents": "Documenti", "noDocumentsRecorded": "Nessun tipo di documento registrato",
     "values": { "ACTIVE": "Attivo", "EXPIRED": "Scaduto", "NOT_SUBSCRIBED": "Non abbonato", "APPROVED": "Approvato", "PENDING": "In attesa", "REJECTED": "Rifiutato", "BLOCKED": "Bloccato", "VETERINARIAN": "Veterinario", "PET_OWNER": "Proprietario dell'animale", "PET_STORE": "Farmacia", "PARAPHARMACY": "Parafarmacia", "ADMIN": "Amministratore" }
   },
+  "vistaExpress": {
+    "title": "Vista Express Leads",
+    "subtitle": "Marketplace ottico Opti Amazon — panoramica business, utenti, venditori, prodotti, ordini, ricavi e spesa pubblicitaria",
+    "refresh": "Aggiorna",
+    "retry": "Riprova",
+    "updating": "Aggiornamento risultati…",
+    "loadFailed": "Impossibile caricare i dati di Vista Express.",
+    "projectUnavailable": "Il progetto Vista Express non è disponibile.",
+    "projectUnavailableTitle": "Progetto non disponibile",
+    "projectUnavailableHint": "Un super amministratore deve eseguire la migrazione del CRM per aggiungere il progetto Vista Express, quindi inserire API Base URL e API key di sola lettura in Project Management → Projects.",
+    "empty": "Nessun record corrisponde ai filtri.",
+    "searchPlaceholder": "Cerca…",
+    "view": "Apri",
+    "previous": "Precedente",
+    "next": "Successivo",
+    "page": "Pagina",
+    "months": "mesi",
+    "all": "Tutti",
+    "allRoles": "Tutti i ruoli",
+    "common": {
+      "name": "Nome", "email": "Email", "date": "Data", "role": "Ruolo", "total": "Totale", "revenue": "Ricavi", "type": "Tipo", "gender": "Genere"
+    },
+    "tabs": {
+      "overview": "Panoramica", "leads": "Lead", "users": "Utenti", "sellers": "Venditori", "products": "Prodotti", "orders": "Ordini", "warehouse": "Magazzino", "ads": "Spesa pubblicitaria"
+    },
+    "revenue": {
+      "orders": "Ordini", "ads": "Boost ads", "warehouse": "Magazzino"
+    },
+    "overview": {
+      "totalUsers": "Utenti totali", "sellers": "Venditori", "buyers": "Acquirenti", "products": "Prodotti", "orders": "Ordini", "totalRevenue": "Ricavi totali",
+      "revenueBreakdown": "Scomposizione dei ricavi", "revenueTrend": "Andamento ricavi", "operations": "Operatività", "bestSellers": "Prodotti più venduti", "recentActivity": "Attività recente",
+      "openOrders": "Ordini aperti", "sellerApprovals": "Approvazioni venditori", "productReviews": "Revisioni prodotti", "supportTickets": "Ticket assistenza"
+    },
+    "leads": {
+      "name": "Lead", "source": "Origine", "status": "Stato", "value": "Valore lifetime", "role": "Ruolo",
+      "buyers": "Acquirenti", "sellers": "Venditori", "newBuyers": "Nuovi acquirenti (mese)", "newThisMonth": "Nuovi questo mese", "unverified": "Email non verificata",
+      "referralClicks": "Click referral", "referralConversions": "Conversioni referral"
+    },
+    "roles": { "buyer": "Acquirente", "seller": "Venditore", "admin": "Admin" },
+    "users": {
+      "store": "Negozio", "lifetime": "Valore lifetime", "orders": "ordini", "joined": "Registrato", "blocked": "Bloccato"
+    },
+    "sellers": {
+      "total": "Negozi", "active": "Attivi", "pending": "In revisione", "suspended": "Sospesi", "owner": "Titolare", "status": "Stato",
+      "products": "Prodotti", "orders": "Ordini", "revenue": "Ricavi", "plan": "Piano"
+    },
+    "products": {
+      "title": "Catalogo magazzino", "store": "Negozio", "type": "Tipo", "price": "Prezzo", "stock": "Scorte", "sold": "Unità vendute", "revenue": "Ricavi",
+      "sku": "SKU", "category": "Categoria", "total": "Prodotti totali", "live": "Attivi", "pending": "In revisione", "inactive": "Non attivi",
+      "boosted": "Boost", "outOfStock": "Esauriti", "variants": "Varianti", "default": "predefinita", "frameShape": "Forma montatura", "frameMaterial": "Materiale montatura"
+    },
+    "orders": {
+      "number": "Ordine", "customer": "Cliente", "items": "Articoli", "total": "Totale", "payment": "Pagamento", "total_orders": "Ordini",
+      "paid": "Pagati", "pending": "In attesa", "refunded": "Rimborsati", "cancelled": "Annullati", "aov": "Scontrino medio",
+      "itemsTotal": "Articoli", "shipping": "Spedizione", "discount": "Sconto", "grandTotal": "Totale", "sellerTotal": "Totale venditore"
+    },
+    "warehouse": {
+      "stock": "Scorte totali", "products": "Prodotti", "lowStock": "Scorte basse", "outOfStock": "Esauriti", "orders": "Ordini", "revenue": "Ricavi",
+      "lowStockTitle": "Avvisi scorte basse", "noLowStock": "Nessun prodotto è sotto la soglia di scorta minima.", "stockByCategory": "Scorte per categoria",
+      "purchases": "Acquisti dal magazzino", "orderNumber": "Ordine", "seller": "Venditore", "items": "Articoli", "category": "Categoria", "availability": "Disponibilità"
+    },
+    "ads": {
+      "campaigns": "Campagne", "active": "Attive", "paused": "In pausa", "pending": "In revisione", "completed": "Completate", "rejected": "Rifiutate",
+      "campaign": "Campagna", "seller": "Venditore", "status": "Stato", "budget": "Budget", "spent": "Spesa pubblicitaria", "impressions": "Impression", "clicks": "Click", "ctr": "CTR", "roas": "ROAS"
+    }
+  },
   "customerForm": {
     "identity": "Identità", "title": "Titolo", "category": "Categoria", "selectCategory": "Seleziona una categoria", "loadingCategories": "Caricamento categorie…", "select": "Seleziona", "mr": "Sig.", "ms": "Sig.ra", "other": "Altro", "firstName": "Nome", "lastName": "Cognome", "secondLastName": "Secondo cognome", "group": "Gruppo", "code": "Codice cliente", "gender": "Genere", "female": "Femmina", "male": "Maschio", "language": "Lingua", "fromDateOfBirth": "Data di nascita da", "toDateOfBirth": "Data di nascita a", "placeOfBirth": "Luogo di nascita", "cityOfBirth": "Città di nascita",
     "contactAddress": "Contatti e indirizzo", "email": "Email", "phone": "Telefono", "mobile": "Cellulare", "phone2": "Telefono 2", "fax": "Fax", "pecEmail": "Email PEC", "address": "Indirizzo", "city": "Città", "zipCode": "CAP", "stateProvince": "Stato / Provincia", "country": "Paese",

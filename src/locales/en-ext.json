@@ -758,6 +758,72 @@
     "ariaLeadDetails": "MyPet Plus lead details", "registration": "Registration", "closeDetails": "Close details", "registrationStatus": "Registration status", "lastUpdated": "Last updated", "emailVerified": "Email verified", "phoneVerified": "Phone verified", "yes": "Yes", "no": "No", "notProvided": "Not provided", "notApplicable": "Not applicable", "contactLocation": "Contact and location", "specializations": "Specializations", "experience": "Experience", "years": "{{count}} years", "professionalTitle": "Professional title", "veterinarianVerified": "Veterinarian verified", "profileComplete": "Profile complete", "onlineConsultations": "Online consultations", "clinicName": "Clinic name", "clinicAddress": "Clinic address", "clinicPhone": "Clinic phone", "biography": "Biography", "businessName": "Business name", "businessActive": "Business active", "publicListing": "Public listing", "subscriptionAgreement": "Subscription and agreement", "planPrice": "Plan price", "planDuration": "Plan duration", "days": "{{count}} days", "subscriptionStart": "Subscription start", "subscriptionEnd": "Subscription end", "planType": "Plan type", "subscriptionStatus": "Subscription status", "includedFeatures": "Included features", "noPlanFeatures": "No plan features recorded", "agreementNote": "No separate signed contract file is stored in MyPet Plus. The plan, dates, price, and included features above are the subscription agreement details currently recorded.", "noCurrentSubscription": "No current subscription is recorded for this lead.", "noSubscriptionForRole": "This registration type does not currently use a MyPet Plus subscription plan.", "documents": "Documents", "noDocumentsRecorded": "No document types recorded",
     "values": { "ACTIVE": "Active", "EXPIRED": "Expired", "NOT_SUBSCRIBED": "Not subscribed", "APPROVED": "Approved", "PENDING": "Pending", "REJECTED": "Rejected", "BLOCKED": "Blocked", "VETERINARIAN": "Veterinarian", "PET_OWNER": "Pet owner", "PET_STORE": "Pharmacy", "PARAPHARMACY": "Parapharmacy", "ADMIN": "Admin" }
   },
+  "vistaExpress": {
+    "title": "Vista Express Leads",
+    "subtitle": "Opti Amazon optical marketplace — business overview, users, sellers, products, orders, revenue and ad spend",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "updating": "Updating results…",
+    "loadFailed": "Unable to load Vista Express data.",
+    "projectUnavailable": "The Vista Express project is not available.",
+    "projectUnavailableTitle": "Project not available",
+    "projectUnavailableHint": "A super administrator must migrate the CRM to add the Vista Express project, then enter its API Base URL and read-only API key in Project Management → Projects.",
+    "empty": "No records match these filters.",
+    "searchPlaceholder": "Search…",
+    "view": "View",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "months": "months",
+    "all": "All",
+    "allRoles": "All roles",
+    "common": {
+      "name": "Name", "email": "Email", "date": "Date", "role": "Role", "total": "Total", "revenue": "Revenue", "type": "Type", "gender": "Gender"
+    },
+    "tabs": {
+      "overview": "Overview", "leads": "Leads", "users": "Users", "sellers": "Sellers", "products": "Products", "orders": "Orders", "warehouse": "Warehouse", "ads": "Ad Spend"
+    },
+    "revenue": {
+      "orders": "Orders", "ads": "Boost ads", "warehouse": "Warehouse"
+    },
+    "overview": {
+      "totalUsers": "Total users", "sellers": "Sellers", "buyers": "Buyers", "products": "Products", "orders": "Orders", "totalRevenue": "Total revenue",
+      "revenueBreakdown": "Revenue breakdown", "revenueTrend": "Revenue trend", "operations": "Operations", "bestSellers": "Best-selling products", "recentActivity": "Recent activity",
+      "openOrders": "Open orders", "sellerApprovals": "Seller approvals", "productReviews": "Product reviews", "supportTickets": "Support tickets"
+    },
+    "leads": {
+      "name": "Lead", "source": "Source", "status": "Status", "value": "Lifetime value", "role": "Role",
+      "buyers": "Buyers", "sellers": "Sellers", "newBuyers": "New buyers (month)", "newThisMonth": "New this month", "unverified": "Unverified email",
+      "referralClicks": "Referral clicks", "referralConversions": "Referral conversions"
+    },
+    "roles": { "buyer": "Buyer", "seller": "Seller", "admin": "Admin" },
+    "users": {
+      "store": "Store", "lifetime": "Lifetime value", "orders": "orders", "joined": "Joined", "blocked": "Blocked"
+    },
+    "sellers": {
+      "total": "Stores", "active": "Active", "pending": "Pending review", "suspended": "Suspended", "owner": "Owner", "status": "Status",
+      "products": "Products", "orders": "Orders", "revenue": "Revenue", "plan": "Plan"
+    },
+    "products": {
+      "title": "Warehouse catalogue", "store": "Store", "type": "Type", "price": "Price", "stock": "Stock", "sold": "Units sold", "revenue": "Revenue",
+      "sku": "SKU", "category": "Category", "total": "Total products", "live": "Live", "pending": "Pending review", "inactive": "Inactive",
+      "boosted": "Boosted", "outOfStock": "Out of stock", "variants": "Variants", "default": "default", "frameShape": "Frame shape", "frameMaterial": "Frame material"
+    },
+    "orders": {
+      "number": "Order", "customer": "Customer", "items": "Items", "total": "Total", "payment": "Payment", "total_orders": "Orders",
+      "paid": "Paid", "pending": "Pending", "refunded": "Refunded", "cancelled": "Cancelled", "aov": "Average order",
+      "itemsTotal": "Items", "shipping": "Shipping", "discount": "Discount", "grandTotal": "Total", "sellerTotal": "Seller total"
+    },
+    "warehouse": {
+      "stock": "Total stock", "products": "Products", "lowStock": "Low stock", "outOfStock": "Out of stock", "orders": "Orders", "revenue": "Revenue",
+      "lowStockTitle": "Low stock alerts", "noLowStock": "No products are below their low-stock threshold.", "stockByCategory": "Stock by category",
+      "purchases": "Warehouse purchases", "orderNumber": "Order", "seller": "Seller", "items": "Items", "category": "Category", "availability": "Availability"
+    },
+    "ads": {
+      "campaigns": "Campaigns", "active": "Active", "paused": "Paused", "pending": "Pending review", "completed": "Completed", "rejected": "Rejected",
+      "campaign": "Campaign", "seller": "Seller", "status": "Status", "budget": "Budget", "spent": "Ad spend", "impressions": "Impressions", "clicks": "Clicks", "ctr": "CTR", "roas": "ROAS"
+    }
+  },
   "customerForm": {
     "identity": "Identity", "title": "Title", "category": "Category", "selectCategory": "Select a category", "loadingCategories": "Loading categories…", "select": "Select", "mr": "Mr.", "ms": "Ms.", "other": "Other", "firstName": "First name", "lastName": "Last name", "secondLastName": "Second last name", "group": "Group", "code": "Customer code", "gender": "Gender", "female": "Female", "male": "Male", "language": "Language", "fromDateOfBirth": "From date of birth", "toDateOfBirth": "To date of birth", "placeOfBirth": "Place of birth", "cityOfBirth": "City of birth",
     "contactAddress": "Contact and address", "email": "Email", "phone": "Phone", "mobile": "Mobile", "phone2": "Phone 2", "fax": "Fax", "pecEmail": "PEC email", "address": "Address", "city": "City", "zipCode": "ZIP code", "stateProvince": "State / Province", "country": "Country",

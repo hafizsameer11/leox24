@@ -46,6 +46,7 @@ export default function Sidebar({ iconOnly = false, mobileOpen = false, onNaviga
     { path: '/leads', label: t('sidebar.leads'), icon: '🎯', badge: null, roles: ['super_admin', 'company_admin', 'manager', 'staff'], linkTitle: t('sidebar.leadsLinkTitle') },
     { path: '/tg-leads', label: t('sidebar.tgLeads'), icon: '📰', badge: null, roles: ['super_admin', 'company_admin', 'manager', 'staff'] },
     { path: '/mypetplus-leads', label: 'MyPet Plus Leads', icon: '🐾', badge: null, roles: ['super_admin', 'company_admin', 'manager', 'staff'] },
+    { path: '/vista-express-leads', label: t('sidebar.vistaExpressLeads'), icon: '🛒', badge: null, roles: ['super_admin', 'company_admin', 'manager', 'staff'] },
     { path: '/calls', label: t('sidebar.calls'), icon: '📞', badge: null, roles: ['super_admin', 'company_admin', 'manager', 'staff'] },
     { path: '/sms', label: t('sidebar.sms'), icon: '💬', badge: null, roles: ['super_admin'] },
     { path: '/emails', label: t('sidebar.emails'), icon: '📧', badge: null, roles: ['super_admin'] },
