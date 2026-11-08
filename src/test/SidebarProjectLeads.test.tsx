@@ -50,15 +50,16 @@ describe('Sidebar project leads group', () => {
     expect(groupToggle()).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('no longer renders the three destinations as flat sidebar links', () => {
+  it('no longer renders the project destinations as flat sidebar links', () => {
     renderSidebar();
     const hrefs = screen.getAllByRole('link').map((l) => l.getAttribute('href'));
     expect(hrefs).not.toContain('/tg-leads');
     expect(hrefs).not.toContain('/mypetplus-leads');
+    expect(hrefs).not.toContain('/mybeauty-leads');
     expect(hrefs).not.toContain('/vista-express-leads');
   });
 
-  it('opens on click and reveals all three destinations', async () => {
+  it('opens on click and reveals all project lead destinations', async () => {
     const user = userEvent.setup();
     renderSidebar();
 
@@ -66,6 +67,7 @@ describe('Sidebar project leads group', () => {
 
     expect(screen.getByRole('link', { name: /tg leads/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /my ?pet plus leads/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /my beauty leads/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /vista express leads/i })).toBeInTheDocument();
   });
 
@@ -77,6 +79,7 @@ describe('Sidebar project leads group', () => {
 
     expect(screen.getByRole('link', { name: /tg leads/i })).toHaveAttribute('href', '/tg-leads');
     expect(screen.getByRole('link', { name: /my ?pet plus leads/i })).toHaveAttribute('href', '/mypetplus-leads');
+    expect(screen.getByRole('link', { name: /my beauty leads/i })).toHaveAttribute('href', '/mybeauty-leads');
     expect(screen.getByRole('link', { name: /vista express leads/i })).toHaveAttribute('href', '/vista-express-leads');
   });
 
@@ -87,7 +90,7 @@ describe('Sidebar project leads group', () => {
     expect(screen.getByRole('link', { name: /vista express leads/i })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('marks the right child active for each of the three routes', () => {
+  it('marks the right child active for each project leads route', () => {
     renderSidebar('/tg-leads');
     expect(screen.getByRole('link', { name: /tg leads/i })).toHaveAttribute('aria-current', 'page');
   });

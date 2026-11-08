@@ -47,6 +47,12 @@ interface ProjectAccess {
   project: Project;
 }
 
+interface LeadCategory {
+  id: number;
+  name: string;
+  description?: string | null;
+}
+
 export default function Companies() {
   const { t } = useTranslation();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -56,8 +62,12 @@ export default function Companies() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [viewingCompany, setViewingCompany] = useState<Company | null>(null);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [allCategories, setAllCategories] = useState<LeadCategory[]>([]);
+  const [companyCategories, setCompanyCategories] = useState<LeadCategory[]>([]);
   const [showProjectAccessModal, setShowProjectAccessModal] = useState(false);
+  const [showCategoryAccessModal, setShowCategoryAccessModal] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     vat: '',
@@ -81,6 +91,7 @@ export default function Companies() {
   useEffect(() => {
     fetchCompanies();
     fetchAllProjects();
+    fetchAllCategories();
   }, [searchTerm, statusFilter, currentPage]);
 
   const fetchAllProjects = async () => {
@@ -89,6 +100,28 @@ export default function Companies() {
       setAllProjects(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch projects:', error);
+    }
+  };
+
+  const fetchAllCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      const data = response.data?.data || response.data || [];
+      setAllCategories(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+      setAllCategories([]);
+    }
+  };
+
+  const fetchCompanyCategories = async (companyId: number) => {
+    try {
+      const response = await api.get(`/companies/${companyId}/categories`);
+      const data = response.data?.data || response.data || [];
+      setCompanyCategories(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to fetch company categories:', error);
+      setCompanyCategories([]);
     }
   };
 
@@ -240,6 +273,8 @@ export default function Companies() {
         console.error('Failed to fetch project accesses:', error);
         companyData.project_accesses = [];
       }
+
+      await fetchCompanyCategories(company.id);
       
       setViewingCompany(companyData);
       setShowViewModal(true);
@@ -305,6 +340,33 @@ export default function Companies() {
       console.error('Failed to grant project access:', error);
       console.error('Error response:', error.response?.data);
       alert(error.response?.data?.message || t('companies.grantFailed'));
+    }
+  };
+
+  const handleGrantCategoryAccess = async () => {
+    if (!viewingCompany || !selectedCategoryId) return;
+    try {
+      await api.post(`/companies/${viewingCompany.id}/categories/grant`, {
+        category_id: selectedCategoryId,
+      });
+      setShowCategoryAccessModal(false);
+      setSelectedCategoryId(null);
+      await fetchCompanyCategories(viewingCompany.id);
+    } catch (error: any) {
+      console.error('Failed to grant category access:', error);
+      alert(error.response?.data?.message || t('companies.grantFailed'));
+    }
+  };
+
+  const handleRevokeCategoryAccess = async (categoryId: number) => {
+    if (!viewingCompany) return;
+    if (!confirm(t('companies.revokeCategoryConfirm', 'Revoke this lead category from the company?'))) return;
+    try {
+      await api.delete(`/companies/${viewingCompany.id}/categories/${categoryId}`);
+      await fetchCompanyCategories(viewingCompany.id);
+    } catch (error: any) {
+      console.error('Failed to revoke category access:', error);
+      alert(error.response?.data?.message || t('companies.revokeFailed', 'Failed to revoke access'));
     }
   };
 
@@ -678,6 +740,40 @@ export default function Companies() {
                 </div>
               )}
 
+              {/* Lead Category Access Section */}
+              <div className="border-t border-line pt-4 mt-4">
+                <div className="flex justify-between items-center mb-3">
+                  <label className="block text-sm font-semibold text-ink">
+                    {t('companies.leadCategories', 'Lead Categories')}
+                  </label>
+                  <button
+                    onClick={() => setShowCategoryAccessModal(true)}
+                    className="px-3 py-1 text-xs bg-aqua-5 text-white rounded-lg hover:bg-aqua-4 transition-colors"
+                  >
+                    ➕ {t('companies.grantCategoryBtn', 'Grant category')}
+                  </button>
+                </div>
+                {companyCategories.length > 0 ? (
+                  <div className="space-y-2">
+                    {companyCategories.map((category) => (
+                      <div key={category.id} className="flex items-center justify-between p-2 bg-aqua-1/20 rounded-lg">
+                        <div className="font-medium text-sm text-ink">{category.name}</div>
+                        <button
+                          onClick={() => handleRevokeCategoryAccess(category.id)}
+                          className="px-2 py-1 text-xs bg-bad text-white rounded-lg hover:bg-bad/80 transition-colors"
+                        >
+                          {t('companies.revoke')}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted">
+                    {t('companies.noLeadCategories', 'No lead categories granted yet. Clients will not see shared leads until a category is granted.')}
+                  </p>
+                )}
+              </div>
+
               {/* Project Access Section */}
               <div className="border-t border-line pt-4 mt-4">
                 <div className="flex justify-between items-center mb-3">
@@ -743,6 +839,56 @@ export default function Companies() {
                 className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold"
               >
                 {t('common.edit')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Grant Lead Category Modal */}
+      {showCategoryAccessModal && viewingCompany && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold text-ink mb-4">
+              {t('companies.grantCategoryTitle', 'Grant lead category')}
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-ink mb-2">
+                  {t('common.category')}
+                </label>
+                <select
+                  value={selectedCategoryId || ''}
+                  onChange={(e) => setSelectedCategoryId(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-aqua-5"
+                >
+                  <option value="">{t('companies.selectCategoryPlaceholder', 'Select a category')}</option>
+                  {allCategories
+                    .filter((category) => !companyCategories.some((granted) => granted.id === category.id))
+                    .map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowCategoryAccessModal(false);
+                  setSelectedCategoryId(null);
+                }}
+                className="flex-1 px-4 py-2 border border-line rounded-xl hover:bg-aqua-1/30 transition-colors text-ink font-medium"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleGrantCategoryAccess}
+                disabled={!selectedCategoryId}
+                className="flex-1 px-4 py-2 bg-aqua-5 text-white rounded-xl hover:bg-aqua-4 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t('companies.grantCategoryBtn', 'Grant category')}
               </button>
             </div>
           </div>

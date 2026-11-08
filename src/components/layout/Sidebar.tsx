@@ -66,6 +66,7 @@ export default function Sidebar({ iconOnly = false, mobileOpen = false, onNaviga
       children: [
         { path: '/tg-leads', label: t('sidebar.tgLeads'), icon: '📰', badge: null, roles: ['super_admin', 'company_admin', 'manager', 'staff'] },
         { path: '/mypetplus-leads', label: 'MyPet Plus Leads', icon: '🐾', badge: null, roles: ['super_admin', 'company_admin', 'manager', 'staff'] },
+        { path: '/mybeauty-leads', label: 'My Beauty Leads', icon: '💅', badge: null, roles: ['super_admin', 'company_admin', 'manager', 'staff'] },
         { path: '/vista-express-leads', label: t('sidebar.vistaExpressLeads'), icon: '🛒', badge: null, roles: ['super_admin', 'company_admin', 'manager', 'staff'] },
       ],
     },

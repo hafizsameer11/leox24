@@ -66,6 +66,30 @@ function displayCell(value?: string | null): string {
   return s || '—';
 }
 
+/** Italian national digits: strip +39 / 0039 for kind checks. */
+function italianNationalDigits(value?: string | null): string {
+  let digits = String(value || '').replace(/\D+/g, '');
+  if (digits.startsWith('0039')) digits = digits.slice(4);
+  else if (digits.startsWith('39') && digits.length >= 11) digits = digits.slice(2);
+  return digits;
+}
+
+function isItalianMobile(value?: string | null): boolean {
+  return italianNationalDigits(value).startsWith('3');
+}
+
+/** Voice call: landline or mobile. Prefer landline phone, then mobile. */
+function callNumberForLead(row: { phone?: string | null; mobile?: string | null }): string {
+  return (row.phone?.trim() || row.mobile?.trim() || '');
+}
+
+/** SMS / WhatsApp: Italian mobile only (national number starts with 3). */
+function mobileNumberForMessaging(row: { phone?: string | null; mobile?: string | null }): string {
+  if (isItalianMobile(row.mobile)) return row.mobile!.trim();
+  if (isItalianMobile(row.phone)) return row.phone!.trim();
+  return '';
+}
+
 function rawAttributeCell(row: LeadTableRow, headerKey: string): string {
   const raw = row.raw_attributes;
   if (!raw) return '—';
@@ -249,7 +273,14 @@ export default function Leads() {
   const fetchCategories = async () => {
     try {
       const response = await api.get('/categories');
-      setCategories(response.data || []);
+      const data = response.data?.data || response.data || [];
+      const list = Array.isArray(data) ? data : [];
+      setCategories(list);
+      // Clients only receive granted categories; if exactly one, select it.
+      if (!isSuperAdmin && list.length === 1) {
+        setFilters((prev) => (prev.category === 'all' ? { ...prev, category: list[0].name } : prev));
+        setUploadFormData((prev) => (prev.category ? prev : { ...prev, category: list[0].name }));
+      }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
       setCategories([]);
@@ -626,7 +657,7 @@ export default function Leads() {
 
   const handleStartCall = async (followUp: FollowUp | null, row: LeadTableRow | null) => {
     try {
-      const contactPhone = row?.phone?.trim() || row?.mobile?.trim();
+      const contactPhone = row ? callNumberForLead(row) : '';
       if (!contactPhone) {
         alert(t('leads.noPhoneForCall'));
         return;
@@ -666,8 +697,8 @@ export default function Leads() {
   };
 
   const openWhatsAppModal = (row: LeadTableRow) => {
-    if (!(row.phone?.trim() || row.mobile?.trim())) {
-      alert(t('leads.noPhoneForCall'));
+    if (!mobileNumberForMessaging(row)) {
+      alert(t('leads.whatsAppMobileOnly', { defaultValue: 'WhatsApp can only be sent to Italian mobile numbers (starting with 3).' }));
       return;
     }
     setActionContactRow(row);
@@ -676,9 +707,9 @@ export default function Leads() {
   };
 
   const handleSendWhatsApp = async () => {
-    const contactPhone = actionContactRow?.phone?.trim() || actionContactRow?.mobile?.trim();
+    const contactPhone = actionContactRow ? mobileNumberForMessaging(actionContactRow) : '';
     if (!contactPhone || !whatsAppMessage.trim()) {
-      alert(t('leadsPage.enterMessage'));
+      alert(contactPhone ? t('leadsPage.enterMessage') : t('leads.whatsAppMobileOnly', { defaultValue: 'WhatsApp can only be sent to Italian mobile numbers (starting with 3).' }));
       return;
     }
 
@@ -830,7 +861,9 @@ export default function Leads() {
             onChange={(e) => setFilters({ ...filters, category: e.target.value })}
             className="px-4 py-2 border border-line rounded-xl focus:border-aqua-5 focus:ring-2 focus:ring-aqua-5/20 outline-none text-sm"
           >
-            <option value="all">{t('common.all')} {t('common.category')}</option>
+            {isSuperAdmin || categories.length !== 1 ? (
+              <option value="all">{t('common.all')} {t('common.category')}</option>
+            ) : null}
             {categories.map((cat) => (
               <option key={cat.id} value={cat.name}>{cat.name}</option>
             ))}
@@ -990,20 +1023,24 @@ export default function Leads() {
                     <div className="flex items-center justify-end gap-2">
                       {(row.phone?.trim() || row.mobile?.trim()) && (
                         <>
-                          <button
-                            onClick={() => handleStartCall(null, row)}
-                            className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
-                            title={t('leadsPage.startCallNow')}
-                          >
-                            📞
-                          </button>
-                          <button
-                            onClick={() => openWhatsAppModal(row)}
-                            className="p-1.5 hover:bg-green-100 rounded-lg transition-colors text-green-600"
-                            title={t('leads.sendWhatsApp')}
-                          >
-                            💬
-                          </button>
+                          {callNumberForLead(row) && (
+                            <button
+                              onClick={() => handleStartCall(null, row)}
+                              className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
+                              title={t('leadsPage.startCallNow')}
+                            >
+                              📞
+                            </button>
+                          )}
+                          {mobileNumberForMessaging(row) && (
+                            <button
+                              onClick={() => openWhatsAppModal(row)}
+                              className="p-1.5 hover:bg-green-100 rounded-lg transition-colors text-green-600"
+                              title={t('leads.sendWhatsApp')}
+                            >
+                              💬
+                            </button>
+                          )}
                         </>
                       )}
                       <button
