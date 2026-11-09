@@ -86,6 +86,13 @@ export default function Projects() {
         navigate(`/projects/${projectId}/doctor`);
         return;
       }
+
+      // My Doctor Plus is a read-only CRM analytics integration, just like
+      // MyPet Plus leads. It does not use the legacy MyDoctor SSO workflow.
+      if (project.slug === 'mydoctorplus') {
+        navigate('/mydoctorplus-leads');
+        return;
+      }
       
       // Special handling for TG Calabria project
       if (project.slug === 'tg-calabria') {

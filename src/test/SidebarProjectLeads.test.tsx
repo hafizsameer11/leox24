@@ -55,6 +55,7 @@ describe('Sidebar project leads group', () => {
     const hrefs = screen.getAllByRole('link').map((l) => l.getAttribute('href'));
     expect(hrefs).not.toContain('/tg-leads');
     expect(hrefs).not.toContain('/mypetplus-leads');
+    expect(hrefs).not.toContain('/mydoctorplus-leads');
     expect(hrefs).not.toContain('/mybeauty-leads');
     expect(hrefs).not.toContain('/vista-express-leads');
   });
@@ -67,6 +68,7 @@ describe('Sidebar project leads group', () => {
 
     expect(screen.getByRole('link', { name: /tg leads/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /my ?pet plus leads/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /my doctor plus/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /my beauty leads/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /vista express leads/i })).toBeInTheDocument();
   });
@@ -79,6 +81,7 @@ describe('Sidebar project leads group', () => {
 
     expect(screen.getByRole('link', { name: /tg leads/i })).toHaveAttribute('href', '/tg-leads');
     expect(screen.getByRole('link', { name: /my ?pet plus leads/i })).toHaveAttribute('href', '/mypetplus-leads');
+    expect(screen.getByRole('link', { name: /my doctor plus/i })).toHaveAttribute('href', '/mydoctorplus-leads');
     expect(screen.getByRole('link', { name: /my beauty leads/i })).toHaveAttribute('href', '/mybeauty-leads');
     expect(screen.getByRole('link', { name: /vista express leads/i })).toHaveAttribute('href', '/vista-express-leads');
   });
@@ -93,6 +96,13 @@ describe('Sidebar project leads group', () => {
   it('marks the right child active for each project leads route', () => {
     renderSidebar('/tg-leads');
     expect(screen.getByRole('link', { name: /tg leads/i })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('auto-expands and marks My Doctor Plus as active on its dedicated page', () => {
+    renderSidebar('/mydoctorplus-leads');
+
+    expect(groupToggle()).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('link', { name: /my doctor plus/i })).toHaveAttribute('aria-current', 'page');
   });
 
   it('does not highlight the group for an unrelated page that shares a prefix', () => {

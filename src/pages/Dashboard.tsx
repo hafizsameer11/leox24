@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import Topbar from '../components/layout/Topbar';
 import api from '../services/api';
 import { fetchMyPetPlusLeads } from '../services/myPetPlusApi';
+import { fetchMyDoctorPlusLeads } from '../services/myDoctorPlusApi';
 import { fetchTgRegistrations } from '../services/tgCalabriaApi';
 import type { Project } from '../types/project.types';
 
@@ -65,16 +66,20 @@ export default function Dashboard() {
   const [hotLeads, setHotLeads] = useState<HotLead[]>([]);
   const [tgInsight, setTgInsight] = useState<ProjectInsight>(loadingInsight);
   const [myPetInsight, setMyPetInsight] = useState<ProjectInsight>(loadingInsight);
+  const [myDoctorInsight, setMyDoctorInsight] = useState<ProjectInsight>(loadingInsight);
   const [loading, setLoading] = useState(true);
 
   const loadProjectInsights = useCallback(async () => {
     setTgInsight(loadingInsight());
     setMyPetInsight(loadingInsight());
+    setMyDoctorInsight(loadingInsight());
     const projects = await api.get<Project[]>('/projects').then((response) => projectsFrom(response.data)).catch(() => [] as Project[]);
     const myPetProject = projects.find((project) => project.slug === 'mypetplus');
-    const [tgResult, myPetResult] = await Promise.allSettled([
+    const myDoctorProject = projects.find((project) => project.slug === 'mydoctorplus');
+    const [tgResult, myPetResult, myDoctorResult] = await Promise.allSettled([
       fetchTgRegistrations({ page: 1, limit: 1 }),
       myPetProject ? fetchMyPetPlusLeads(myPetProject.id, { page: 1, limit: 1 }) : Promise.reject(new Error('MyPet Plus unavailable')),
+      myDoctorProject ? fetchMyDoctorPlusLeads(myDoctorProject.id, { page: 1, limit: 1 }) : Promise.reject(new Error('My Doctor Plus unavailable')),
     ]);
 
     setTgInsight(tgResult.status === 'fulfilled' && tgResult.value.success
@@ -86,6 +91,13 @@ export default function Dashboard() {
       setMyPetInsight({ status: 'ready', registrations: myPetResult.value.pagination.total, subscriptionRevenue: revenue?.totalRevenue ?? null, subscriptionPayments: revenue?.totalPayments ?? null });
     } else {
       setMyPetInsight({ status: 'unavailable', registrations: null });
+    }
+
+    if (myDoctorResult.status === 'fulfilled') {
+      const payments = myDoctorResult.value.stats?.payments;
+      setMyDoctorInsight({ status: 'ready', registrations: myDoctorResult.value.stats?.registrations ?? myDoctorResult.value.pagination.total, subscriptionRevenue: payments?.revenue?.subscriptions ?? null, subscriptionPayments: payments?.successful ?? null });
+    } else {
+      setMyDoctorInsight({ status: 'unavailable', registrations: null });
     }
   }, []);
 
@@ -124,7 +136,7 @@ export default function Dashboard() {
 
     <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"><MetricCard icon="◎" label={t('dashboard.newLeads')} value={kpis?.lead_new ?? 0} delta={kpis?.lead_new_delta} percentage detail={t('dashboard.selectedPeriod')} /><MetricCard icon="↗" label={t('dashboard.openOpportunities')} value={kpis?.opportunities_open ?? 0} delta={kpis?.opportunities_delta} detail={t('dashboard.currentPipeline')} /><MetricCard icon="✓" label={t('dashboard.salesPeriod')} value={kpis?.sales_count ?? 0} delta={kpis?.sales_count_delta} detail={t('dashboard.selectedPeriod')} /><MetricCard icon="€" label={t('dashboard.valuePeriod')} value={formatMoney(kpis?.sales_value)} delta={kpis?.sales_value_delta} percentage detail={t('dashboard.selectedPeriod')} /></section>
 
-    <section className="rounded-2xl border border-line bg-white p-5 shadow-sm"><SectionTitle icon="◈" title={t('dashboard.projectPulse')} subtitle={t('dashboard.projectPulseSubtitle')} /><div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{projectCard(t('dashboard.tgLeadsProject'), '📰', tgInsight, 'aqua', '/tg-leads')}{projectCard(t('dashboard.myPetPlusProject'), '🐾', myPetInsight, 'violet', '/mypetplus-leads', myPetInsight.status === 'ready' ? <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-muted">{t('dashboard.subscriptionRevenue')}</p><p className="mt-1 text-lg font-extrabold text-ink">{formatMoney(myPetInsight.subscriptionRevenue)}</p></div><p className="text-right text-xs text-muted">{myPetInsight.subscriptionPayments ?? 0}<br />{t('dashboard.subscriptionPayments')}</p></div> : undefined)}</div></section>
+    <section className="rounded-2xl border border-line bg-white p-5 shadow-sm"><SectionTitle icon="◈" title={t('dashboard.projectPulse')} subtitle={t('dashboard.projectPulseSubtitle')} /><div className="grid grid-cols-1 gap-4 xl:grid-cols-3">{projectCard(t('dashboard.tgLeadsProject'), '📰', tgInsight, 'aqua', '/tg-leads')}{projectCard(t('dashboard.myPetPlusProject'), '🐾', myPetInsight, 'violet', '/mypetplus-leads', myPetInsight.status === 'ready' ? <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-muted">{t('dashboard.subscriptionRevenue')}</p><p className="mt-1 text-lg font-extrabold text-ink">{formatMoney(myPetInsight.subscriptionRevenue)}</p></div><p className="text-right text-xs text-muted">{myPetInsight.subscriptionPayments ?? 0}<br />{t('dashboard.subscriptionPayments')}</p></div> : undefined)}{projectCard('My Doctor Plus', '🩺', myDoctorInsight, 'aqua', '/mydoctorplus-leads', myDoctorInsight.status === 'ready' ? <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-muted">{t('dashboard.subscriptionRevenue')}</p><p className="mt-1 text-lg font-extrabold text-ink">{formatMoney(myDoctorInsight.subscriptionRevenue)}</p></div><p className="text-right text-xs text-muted">{myDoctorInsight.subscriptionPayments ?? 0}<br />{t('dashboard.subscriptionPayments')}</p></div> : undefined)}</div></section>
 
     <section className="grid grid-cols-1 gap-4 xl:grid-cols-3"><article className="rounded-2xl border border-line bg-white p-5 shadow-sm xl:col-span-2"><SectionTitle icon="▥" title={t('dashboard.leadsByPortal')} subtitle={t('dashboard.lastThirtyDays')} />{leadSources.length > 0 ? <ResponsiveContainer width="100%" height={230}><BarChart data={leadSources} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}><CartesianGrid vertical={false} stroke="#e6eef2" /><XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} /><YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} /><Tooltip cursor={{ fill: '#eefbff' }} /><Bar dataKey="value" fill="#0aa6d3" radius={[7, 7, 0, 0]} /></BarChart></ResponsiveContainer> : <EmptyState label={t('dashboard.noData')} />}</article><article className="rounded-2xl border border-line bg-white p-5 shadow-sm"><SectionTitle icon="✓" title={t('dashboard.crmWorkload')} subtitle={t('dashboard.currentCrmData')} /><div className="space-y-3"><WorkloadRow label={t('dashboard.weightedPipeline')} value={formatMoney(kpis?.weighted_pipeline)} /><WorkloadRow label={t('dashboard.pendingTasks')} value={String(kpis?.tasks_pending ?? 0)} /><WorkloadRow label={t('dashboard.overdueTasks')} value={String(kpis?.tasks_overdue ?? 0)} warning={(kpis?.tasks_overdue ?? 0) > 0} /></div></article></section>
 

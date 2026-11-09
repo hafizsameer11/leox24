@@ -6,6 +6,7 @@ import Leads from './pages/Leads';
 import Categories from './pages/Categories';
 import TGLeads from './pages/TGLeads';
 import MyPetPlusLeads from './pages/MyPetPlusLeads';
+import MyDoctorPlusLeads from './pages/MyDoctorPlusLeads';
 import MyBeautyLeads from './pages/MyBeautyLeads';
 import VistaExpressLeads from './pages/VistaExpressLeads';
 import EmailBulk from './pages/EmailBulk';
@@ -91,6 +92,10 @@ export const router = createBrowserRouter([
       {
         path: 'mypetplus-leads',
         element: <MyPetPlusLeads />,
+      },
+      {
+        path: 'mydoctorplus-leads',
+        element: <MyDoctorPlusLeads />,
       },
       {
         path: 'mybeauty-leads',
